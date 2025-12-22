@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Check-in Panel</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+
+  <!-- FORM VIEW -->
+  <div class="container" id="formView">
+    <h1>Trials Automated Check-in SideKick</h1>
+
+    <div class="mini-row">
+      <button id="refreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
+    </div>
+
+    <form id="checkinForm">
+
+      <!-- Device number -->
+      <label>Device Number (Put an X if only Checking in Mount) *</label>
+      <input type="text" id="deviceNumberInput" required />
+
+      <!-- Device condition -->
+      <div id="conditionContainer">
+        <label>Device Condition *</label>
+        <select id="conditionSelect" required>
+          <option value="">Select condition...</option>
+          <option value="Working">Working</option>
+          <option value="Needs Repair">Needs Repair</option>
+        </select>
+      </div>
+
+      <!-- Repairs -->
+      <div id="repairSection" class="hidden-section">
+        <label>Repairs Needed</label>
+        <div class="repair-buttons">
+          <button type="button" class="repair-btn">Loose or broken handle</button>
+          <button type="button" class="repair-btn">Loose or broken kickstand</button>
+          <button type="button" class="repair-btn">Replace screen protector</button>
+          <button type="button" class="repair-btn">Missing buttons</button>
+          <button type="button" class="repair-btn">Broken display</button>
+          <button type="button" class="repair-btn" id="otherRepairBtn">Other</button>
+        </div>
+
+        <textarea id="repairsTextBox" placeholder="Selected repairs will appear here..."></textarea>
+        <textarea id="otherRepairInput" placeholder="Describe other repair..." style="display:none;"></textarea>
+      </div>
+
+      <!-- Client info -->
+      <label>Client First Name</label>
+      <input type="text" id="firstName" />
+
+      <label>Client Last Name</label>
+      <input type="text" id="lastName" />
+
+      <label>AAC</label>
+      <input type="text" id="aac" />
+
+      <label>CRM ID</label>
+      <input type="text" id="crmId" />
+
+      <!-- Vocab checkbox -->
+      <label style="margin-top:12px;">
+        <input type="checkbox" id="vocabNotReturned" />
+        Vocab NOT returned
+      </label>
+
+      <!-- Vocab file upload -->
+      <label style="margin-top:12px;">Vocab Files to Zip + Download (optional)</label>
+      <input type="file" id="vocabFiles" multiple />
+      <div class="hint" style="margin-top:6px; font-size:12px; opacity:0.85;">
+        If files are selected, clicking <b>Check-in Device</b> will also create a ZIP and download it.
+      </div>
+
+      <!-- Camera / Lumin -->
+      <button type="button" class="toggle-btn" id="cameraToggle">+ Add Camera & Lumin-I Info</button>
+      <div id="cameraLuminSection" class="hidden-section">
+        <label>Camera Number</label>
+        <input type="text" name="cameraNumber" />
+
+        <label>Lumin-I Number (GPL.XXXXXXX)</label>
+        <input type="text" name="luminNumber" />
+      </div>
+
+      <!-- Mounts -->
+      <button type="button" class="toggle-btn" id="mountToggle">+ Add Mount Info</button>
+      <div id="mountSection" class="hidden-section">
+        <label>Clamp Mount Number</label>
+        <input type="text" name="clampMount" />
+
+        <label>Table Mount Number</label>
+        <input type="text" name="tableMount" />
+
+        <label>Rolling Mount Number</label>
+        <input type="text" name="rollingMount" />
+      </div>
+
+      <!-- Accessories -->
+      <button type="button" class="toggle-btn" id="accessoryToggle">+ Add Trial Accessories</button>
+      <div id="accessorySection" class="hidden-section">
+        <label>Trial Accessories (Switches, KGs)</label>
+        <input type="text" name="accessories" />
+      </div>
+
+      <button type="submit" id="submitBtn">Check-in Device</button>
+    </form>
+
+    <div id="thankYouMessage">✅ Check-in completed.</div>
+  </div>
+
+  <!-- COMPLETE VIEW -->
+  <div class="container" id="completeView" style="display:none;">
+    <h1>Check-in Complete</h1>
+    <p style="margin-top:10px; opacity:0.9;">
+      ✅ Device check-in finished successfully.
+    </p>
+
+    <button id="startAnotherBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Start another Checkin
+    </button>
+  </div>
+
+  <!-- JSZip bundled with extension -->
+  <script src="libs/jszip.min.js"></script>
+
+  <!-- Panel logic -->
+  <script src="panel.js"></script>
+</body>
+</html>
