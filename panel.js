@@ -386,20 +386,23 @@ async function downloadZip(zipName, bytes) {
   return { ok: true };
 }
 
-async function waitForUploadSuccessLabel(tabId, timeoutMs = 45000) {
+async function getUploadStatusText(tabId) {
+  const res = await chrome.tabs.sendMessage(tabId, {
+    type: "GET_TEXT_BY_XPATH",
+    xpath: UPLOAD_SUCCESS_LABEL_XPATH
+  }).catch(() => null);
+
+  return (res?.text || "").trim();
+}
+
+async function waitForUploadStatusChange(tabId, previousText, timeoutMs = 45000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const res = await chrome.tabs.sendMessage(tabId, {
-      type: "GET_TEXT_BY_XPATH",
-      xpath: UPLOAD_SUCCESS_LABEL_XPATH
-    }).catch(() => null);
-
-    const txt = res?.text || "";
-    if (txt && txt.length > 0) return { ok: true, text: txt };
-
+    const txt = await getUploadStatusText(tabId);
+    if (txt && txt !== previousText) return { ok: true, text: txt };
     await wait(600);
   }
-  return { ok: false };
+  return { ok: false, text: previousText };
 }
 
 async function uploadZipToCrm(zipName, bytes) {
@@ -430,6 +433,8 @@ async function uploadZipToCrm(zipName, bytes) {
 
   await wait(400);
 
+  const preUploadStatus = await getUploadStatusText(tabId);
+
   // 3) Click Upload (CRM refreshes)
   const uploadClick = await chrome.tabs.sendMessage(tabId, {
     type: "CLICK_BY_XPATH",
@@ -439,8 +444,17 @@ async function uploadZipToCrm(zipName, bytes) {
   if (!uploadClick?.ok) return { ok: false, error: "Failed clicking Upload" };
 
   // 4) Wait for success label
-  const success = await waitForUploadSuccessLabel(tabId, 45000);
-  if (!success.ok) return { ok: false, error: "Upload never confirmed success (label not found)" };
+  const status = await waitForUploadStatusChange(tabId, preUploadStatus, 45000);
+  if (!status.ok) return { ok: false, error: "Upload status never changed or label missing" };
+
+  const statusText = status.text || "";
+  const statusLower = statusText.toLowerCase();
+  const isSuccess = statusLower.includes("success") || statusLower.includes("uploaded") || statusLower.includes("complete");
+
+  if (!isSuccess) {
+    const detail = statusText ? `Upload reported: ${statusText}` : "Upload status label stayed empty";
+    return { ok: false, error: detail };
+  }
 
   // 5) Title textbox = zip name
   const titleRes = await chrome.tabs.sendMessage(tabId, {
