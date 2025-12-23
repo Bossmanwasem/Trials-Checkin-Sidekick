@@ -6,6 +6,7 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
+const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
@@ -730,6 +731,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
   setText("completeIntro", "CRM note submitted. Review the details below.");
+  await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
   if (zipName) {
     showUploadPrompt(zipName);
   }
