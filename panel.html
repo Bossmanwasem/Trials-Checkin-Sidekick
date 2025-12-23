@@ -137,6 +137,22 @@
     </button>
   </div>
 
+  <!-- INVENTORY VIEW -->
+  <div class="container" id="inventoryView" style="display:none;">
+    <h1>Manage Inventory</h1>
+    <p class="complete-intro">Run the inventory script using the device, camera, or Lumin-I number from your last check-in.</p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Search value</div>
+      <pre id="inventorySearchValue" class="note-preview__body"></pre>
+      <div id="inventoryStatus" class="status-line"></div>
+    </div>
+
+    <button id="runInventoryScriptBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Run inventory script
+    </button>
+  </div>
+
   <!-- Panel logic -->
   <script src="panel.js"></script>
 </body>
