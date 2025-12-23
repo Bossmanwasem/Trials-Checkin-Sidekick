@@ -106,12 +106,13 @@ function getFormValue(selector) {
 
 const repairsBox = document.getElementById("repairsTextBox");
 const otherInput = document.getElementById("otherRepairInput");
+const repairButtons = Array.from(document.querySelectorAll(".repair-btn"));
 
 function updateRepairsBox() {
   const items = [];
-  document.querySelectorAll(".repair-btn.active").forEach(b => {
-    if (b.id !== "otherRepairBtn") items.push(b.textContent.trim());
-  });
+  repairButtons
+    .filter(btn => btn.classList.contains("active") && btn.id !== "otherRepairBtn")
+    .forEach(btn => items.push(btn.textContent.trim()));
 
   const otherText = otherInput?.value?.trim() || "";
   if (otherText) items.push("Other: " + otherText);
@@ -119,7 +120,7 @@ function updateRepairsBox() {
   if (repairsBox) repairsBox.value = items.join(", ");
 }
 
-document.querySelectorAll(".repair-btn").forEach(btn => {
+repairButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.id === "otherRepairBtn") {
       btn.classList.toggle("active");
@@ -151,7 +152,7 @@ function clearRepairsUI() {
     otherInput.value = "";
     otherInput.style.display = "none";
   }
-  document.querySelectorAll(".repair-btn").forEach(b => b.classList.remove("active"));
+  repairButtons.forEach(b => b.classList.remove("active"));
   if (repairSection) repairSection.style.display = "none";
 }
 
@@ -362,6 +363,13 @@ function getLastCheckinDataForDaf() {
     chrome.storage.local.get(DAF_DATA_STORAGE_KEY, res => {
       resolve(res?.[DAF_DATA_STORAGE_KEY] || null);
     });
+  });
+}
+
+function clearStoredCheckinData() {
+  if (!chrome?.storage?.local) return Promise.resolve();
+  return new Promise(resolve => {
+    chrome.storage.local.remove([IDENTIFIER_STORAGE_KEY, DAF_DATA_STORAGE_KEY], resolve);
   });
 }
 
@@ -657,6 +665,19 @@ function resetAllFieldsAndUI() {
   if (msg) msg.style.display = "none";
 
   hideUploadPrompt();
+  setText("notePreviewText", "");
+  setText("completeIntro", "");
+  setText("inventoryStatus", "");
+  setInventoryNextStepVisibility(false);
+}
+
+async function finishCheckinAndReset() {
+  resetAllFieldsAndUI();
+  clearSelectedTrialFiles();
+  await clearStoredCheckinData();
+  await updateInventorySearchDisplay();
+  await renderDafRecap();
+  showFormView();
 }
 
 /* ---------------- Submit: Check-in Device ---------------- */
@@ -763,8 +784,8 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
   chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
 });
 
-document.getElementById("backToInventoryBtn")?.addEventListener("click", () => {
-  showInventoryView();
+document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
+  await finishCheckinAndReset();
 });
 
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
