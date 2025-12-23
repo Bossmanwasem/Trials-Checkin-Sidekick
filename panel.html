@@ -102,15 +102,12 @@
         <label>Trial Vocab/Export Files</label>
         <input type="file" id="trialFilesInput" multiple />
         <div class="hint-text">
-          Select the Grid, Saltillo, and P2G exports you want to zip and upload directly to the CRM page.
+          Select the Grid, Saltillo, and P2G exports you want zipped. We'll prompt you to save the zip when you click Next Step.
         </div>
         <div id="trialFilesStatus" class="status-line">No files selected.</div>
-        <button type="button" class="toggle-btn" id="zipUploadBtn">
-          Zip, download, and upload to CRM
-        </button>
       </div>
 
-      <button type="submit" id="submitBtn">Check-in Device</button>
+      <button type="submit" id="submitBtn">Next Step</button>
     </form>
 
     <div id="thankYouMessage">✅ Check-in completed.</div>
@@ -120,6 +117,15 @@
   <div class="container" id="completeView" style="display:none;">
     <h1>Next Steps</h1>
     <p id="completeIntro" class="complete-intro"></p>
+
+    <div id="uploadPrompt" class="note-preview" style="display:none;">
+      <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
+      <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
+      <div class="copy-row">
+        <input type="text" id="zipFilenameField" class="copy-field" readonly />
+        <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
+      </div>
+    </div>
 
     <div class="note-preview">
       <div class="note-preview__title">CRM note submitted</div>

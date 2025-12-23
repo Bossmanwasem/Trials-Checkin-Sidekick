@@ -305,8 +305,11 @@ async function sendToCrm(type, payload) {
 
 const trialFilesInput = document.getElementById("trialFilesInput");
 const trialFilesStatus = document.getElementById("trialFilesStatus");
-const zipUploadBtn = document.getElementById("zipUploadBtn");
 const selectedTrialFiles = [];
+const uploadPrompt = document.getElementById("uploadPrompt");
+const uploadPromptText = document.getElementById("uploadPromptText");
+const zipFilenameField = document.getElementById("zipFilenameField");
+const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
@@ -320,12 +323,28 @@ function clearSelectedTrialFiles(messageOverride = null) {
   updateTrialFilesStatus(messageOverride || "No files selected.");
 }
 
+function getVocabTypesFromFiles(files) {
+  const hasGrid = files.some(file => file.name.toLowerCase().endsWith(".grid3user"));
+  const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
+  const hasSaltillo = files.some(file => file.name.toLowerCase().endsWith(".ce"));
+
+  const ordered = [];
+  if (hasGrid) ordered.push("Grid");
+  if (hasP2G) ordered.push("P2G");
+  if (hasSaltillo) ordered.push("Saltillo");
+  return ordered;
+}
+
 function buildZipFilename() {
   const first = sanitizeName(getFormValue("#firstName"));
   const last = sanitizeName(getFormValue("#lastName"));
   const fullName = [first, last].filter(Boolean).join(" ") || "Client";
   const dateStr = formatDateForFilename();
-  return `${fullName} Grid, Saltillo, P2G Vocab Sets from Trial ${dateStr}.zip`;
+  const vocabTypes = getVocabTypesFromFiles(selectedTrialFiles);
+  const typeLabel = vocabTypes.length
+    ? `${vocabTypes.join(", ")}`
+    : "Vocab";
+  return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
 }
 
 async function promptUserDownload(blob, filename) {
@@ -348,55 +367,37 @@ async function promptUserDownload(blob, filename) {
   }
 }
 
-async function uploadZipToCrm(zipArrayBuffer, zipName) {
-  const res = await sendToCrm("UPLOAD_ZIP_TO_CRM", { zipArrayBuffer, zipName });
-  if (!res?.ok) {
-    throw new Error(res?.message || "Upload failed. The CRM page may not have an upload form.");
-  }
-  return res;
-}
-
-async function handleZipAndUpload() {
-  if (!selectedTrialFiles.length) {
-    updateTrialFilesStatus("Please select at least one file to zip and upload.", true);
-    return;
-  }
-  if (typeof JSZip === "undefined") {
-    updateTrialFilesStatus("JSZip failed to load. Please reload the panel.", true);
-    return;
-  }
-
-  updateTrialFilesStatus("Zipping selected files...");
-  const zip = new JSZip();
-  selectedTrialFiles.forEach(file => zip.file(file.name, file));
-  const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
-  const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
-  const zipName = buildZipFilename();
-
-  try {
-    updateTrialFilesStatus("Prompting download so you can save the zip...");
-    await promptUserDownload(zipBlob, zipName);
-    updateTrialFilesStatus("Uploading zip directly to the CRM page...");
-    await uploadZipToCrm(zipArrayBuffer, zipName);
-    clearSelectedTrialFiles(`Uploaded "${zipName}" to CRM successfully. Files cleared from the panel.`);
-  } catch (err) {
-    console.error(err);
-    updateTrialFilesStatus(err.message || "Failed to zip or upload files.", true);
-  }
-}
-
 trialFilesInput?.addEventListener("change", () => {
   selectedTrialFiles.length = 0;
   selectedTrialFiles.push(...(trialFilesInput.files ? Array.from(trialFilesInput.files) : []));
   if (!selectedTrialFiles.length) {
     updateTrialFilesStatus("No files selected.");
+    hideUploadPrompt();
   } else {
-    updateTrialFilesStatus(`${selectedTrialFiles.length} file(s) ready to zip and upload.`);
+    updateTrialFilesStatus(`${selectedTrialFiles.length} file(s) ready to zip.`);
   }
 });
 
-zipUploadBtn?.addEventListener("click", () => {
-  handleZipAndUpload();
+function hideUploadPrompt() {
+  if (uploadPrompt) uploadPrompt.style.display = "none";
+  if (zipFilenameField) zipFilenameField.value = "";
+}
+
+function showUploadPrompt(zipName) {
+  if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
+  zipFilenameField.value = zipName || "";
+  uploadPromptText.textContent = zipName
+    ? "Upload the downloaded zip file to the CRM Documents tab using the filename below."
+    : "Upload the downloaded zip file to the CRM Documents tab.";
+  uploadPrompt.style.display = "block";
+}
+
+copyZipFilenameBtn?.addEventListener("click", async () => {
+  const name = zipFilenameField?.value;
+  if (!name) return;
+  await navigator.clipboard.writeText(name);
+  copyZipFilenameBtn.textContent = "Copied!";
+  setTimeout(() => { copyZipFilenameBtn.textContent = "Copy filename"; }, 1200);
 });
 
 /* ---------------- Reset everything after success ---------------- */
@@ -433,6 +434,8 @@ function resetAllFieldsAndUI() {
 
   const msg = document.getElementById("thankYouMessage");
   if (msg) msg.style.display = "none";
+
+  hideUploadPrompt();
 }
 
 /* ---------------- Submit: Check-in Device ---------------- */
@@ -440,19 +443,40 @@ function resetAllFieldsAndUI() {
 document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
 
-  // 1) Build note + clipboard backup
+  // 1) Zip vocab files (if any) and prompt download
+  let zipName = "";
+  if (selectedTrialFiles.length) {
+    if (typeof JSZip === "undefined") {
+      alert("JSZip failed to load. Please reload the panel before submitting.");
+      return;
+    }
+    updateTrialFilesStatus("Zipping selected files...");
+    const zip = new JSZip();
+    selectedTrialFiles.forEach(file => zip.file(file.name, file));
+    const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+    const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
+    zipName = buildZipFilename();
+
+    updateTrialFilesStatus("Prompting download so you can save the zip...");
+    await promptUserDownload(zipBlob, zipName);
+    clearSelectedTrialFiles(`Downloaded "${zipName}". Upload it to the CRM Documents tab.`);
+  } else {
+    hideUploadPrompt();
+  }
+
+  // 2) Build note + clipboard backup
   const note = buildCannedNote();
   await navigator.clipboard.writeText(note);
 
-  // 2) Fill note in CRM
+  // 3) Fill note in CRM
   const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
   if (!setNoteRes.ok) { alert("Failed to fill CRM note box."); return; }
 
-  // 3) Select category
+  // 4) Select category
   const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: "Device Returned" });
   if (!setCatRes.ok) { alert('Failed to select note category "Device Returned".'); return; }
 
-  // 4) Submit note
+  // 5) Submit note
   const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
   if (!clickRes.ok) { alert("Failed to submit the note."); return; }
 
@@ -460,6 +484,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
   setText("completeIntro", "CRM note submitted. Review the details below.");
+  if (zipName) {
+    showUploadPrompt(zipName);
+  }
   showCompleteView();
 });
 

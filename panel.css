@@ -154,6 +154,35 @@ button[type="submit"]:hover {
   padding: 12px;
 }
 
+.copy-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.copy-field {
+  flex: 1;
+  background: #1e1e2f;
+  border: 1px solid #2f4b6f;
+  color: #e0e0e0;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.copy-btn {
+  background-color: #003366;
+  border: 1px solid #81cfff;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.copy-btn:hover {
+  background-color: #005599;
+}
+
 .note-preview__title {
   font-weight: 600;
   color: #81cfff;
