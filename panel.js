@@ -8,9 +8,10 @@ const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNote
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
+const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["formView", "completeView", "inventoryView"];
+const VIEW_IDS = ["formView", "completeView", "inventoryView", "dafRecapView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -23,6 +24,7 @@ function showView(targetId) {
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showInventoryView() { showView("inventoryView"); }
+function showDafView() { showView("dafRecapView"); }
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -329,8 +331,75 @@ function getLastIdentifiers() {
   });
 }
 
+function collectCheckinFormDataForDaf() {
+  const firstName = sanitizeName(getFormValue("#firstName"));
+  const lastName = sanitizeName(getFormValue("#lastName"));
+
+  return {
+    deviceNumber: getFormValue("#deviceNumberInput"),
+    cameraNumber: getFormValue('input[name="cameraNumber"]'),
+    luminNumber: getFormValue('input[name="luminNumber"]'),
+    crmId: getFormValue("#crmId"),
+    firstName,
+    lastName,
+    aac: getFormValue("#aac"),
+    clampMount: getFormValue('input[name="clampMount"]'),
+    tableMount: getFormValue('input[name="tableMount"]'),
+    rollingMount: getFormValue('input[name="rollingMount"]')
+  };
+}
+
+function saveLastCheckinDataForDaf(data) {
+  if (!chrome?.storage?.local) return Promise.resolve();
+  return new Promise(resolve => {
+    chrome.storage.local.set({ [DAF_DATA_STORAGE_KEY]: data }, resolve);
+  });
+}
+
+function getLastCheckinDataForDaf() {
+  if (!chrome?.storage?.local) return Promise.resolve(null);
+  return new Promise(resolve => {
+    chrome.storage.local.get(DAF_DATA_STORAGE_KEY, res => {
+      resolve(res?.[DAF_DATA_STORAGE_KEY] || null);
+    });
+  });
+}
+
 function buildInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminNumber = "" } = {}) {
   return (cameraNumber || "").trim() || (luminNumber || "").trim() || (deviceNumber || "").trim() || "";
+}
+
+function buildDafRecapText(data) {
+  if (!data) return "No check-in details saved. Submit a check-in to populate this page.";
+
+  const lines = [
+    `Device: ${data.deviceNumber || "—"}`,
+    `Camera: ${data.cameraNumber || "—"}`,
+    `Lumin-I: ${data.luminNumber || "—"}`,
+    `CRM ID: ${data.crmId || "—"}`,
+    `Client: ${[data.firstName, data.lastName].filter(Boolean).join(" ") || "—"}`,
+    `AAC: ${data.aac || "—"}`,
+    `Clamp Mount: ${data.clampMount || "—"}`,
+    `Table Mount: ${data.tableMount || "—"}`,
+    `Rolling Mount: ${data.rollingMount || "—"}`
+  ];
+
+  return lines.join("\n");
+}
+
+async function renderDafRecap() {
+  const recapEl = document.getElementById("dafRecapDetails");
+  const statusEl = document.getElementById("dafRecapStatus");
+  const data = await getLastCheckinDataForDaf();
+
+  if (recapEl) recapEl.textContent = buildDafRecapText(data);
+  if (statusEl) {
+    statusEl.textContent = data
+      ? "We'll auto-fill the DAF form using these values."
+      : "No saved check-in found. Fill out the check-in form first.";
+  }
+
+  return data;
 }
 
 let inventoryNextStepVisible = false;
@@ -373,8 +442,22 @@ function isManageInventoryUrl(url) {
   return typeof url === "string" && url.includes("ManageInventory.aspx");
 }
 
+function isDafFormUrl(url) {
+  return typeof url === "string"
+    && url.includes("talktometechnologies2com.sharepoint.com/")
+    && url.includes("listforms.aspx");
+}
+
 async function syncViewForTab(tab) {
-  if (!tab || !isCrmUrl(tab.url)) return;
+  if (!tab) return;
+
+  if (isDafFormUrl(tab.url)) {
+    await renderDafRecap();
+    showDafView();
+    return;
+  }
+
+  if (!isCrmUrl(tab.url)) return;
 
   if (isManageInventoryUrl(tab.url)) {
     showInventoryView();
@@ -559,8 +642,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const note = buildCannedNote();
   await navigator.clipboard.writeText(note);
 
-  // 2.5) Remember identifiers for the inventory page
+  // 2.5) Remember identifiers for the inventory page + DAF recap
   await saveLastIdentifiers(getCurrentIdentifiers());
+  await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
 
   // 3) Fill note in CRM
   const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
@@ -626,8 +710,14 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
   setInventoryNextStepVisibility(true);
 });
 
-document.getElementById("inventoryNextStepBtn")?.addEventListener("click", () => {
+document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async () => {
+  await renderDafRecap();
+  showDafView();
   chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
+});
+
+document.getElementById("backToInventoryBtn")?.addEventListener("click", () => {
+  showInventoryView();
 });
 
 /* ---------------- Init ---------------- */

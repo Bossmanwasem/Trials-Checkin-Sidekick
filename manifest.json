@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "description": "Side panel check-in form for TTMT CRM pages. Auto-fills client data and copies a summary to clipboard.",
   "permissions": ["sidePanel", "activeTab", "tabs", "scripting", "downloads", "storage"],
-  "host_permissions": ["https://portal.talktometechnologies.com/*"],
+  "host_permissions": [
+    "https://portal.talktometechnologies.com/*",
+    "https://talktometechnologies2com.sharepoint.com/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -16,7 +19,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://portal.talktometechnologies.com/*"],
+      "matches": [
+        "https://portal.talktometechnologies.com/*",
+        "https://talktometechnologies2com.sharepoint.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
