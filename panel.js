@@ -7,20 +7,7 @@ const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 
-// Documents (re-enabled)
-const CRM_DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
-const CRM_FILE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
-const CRM_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
-const CRM_DOCUMENT_TITLE_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
-const CRM_ADD_DOCUMENT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
-const UPLOAD_SUCCESS_LABEL_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_lblFileUploadSuccess"]';
-
 /* ---------------- Helpers ---------------- */
-
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 function showCompleteView() {
   const formView = document.getElementById("formView");
   const completeView = document.getElementById("completeView");
@@ -38,16 +25,6 @@ function showFormView() {
 function setValue(id, val) {
   const el = document.getElementById(id);
   if (el) el.value = val || "";
-}
-
-function clearFileInput(inputId) {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-  input.value = "";
-  if (input.files && input.files.length > 0) {
-    const clone = input.cloneNode(true);
-    input.parentNode.replaceChild(clone, input);
-  }
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -215,51 +192,11 @@ function detectDeviceModel(deviceNumberRaw) {
   return "Device";
 }
 
-/* ---------------- ZIP naming helpers ---------------- */
-
-function formatTodayMMDDYYYY() {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${mm}.${dd}.${yyyy}`;
-}
-
-function detectVocabTypesFromFiles(filesArray) {
-  const found = new Set();
-  const files = Array.isArray(filesArray) ? filesArray : Array.from(filesArray || []);
-  for (const file of files) {
-    const name = (file?.name || "").toLowerCase();
-    if (name.endsWith(".grid3user")) found.add("Grid");
-    if (name.endsWith(".ce")) found.add("Saltillo");
-    if (name.endsWith(".p2gbk")) found.add("P2G");
-  }
-  return Array.from(found);
-}
-
-function buildZipFileNameFromSelectedFiles(filesArray) {
-  const first = getFormValue("#firstName") || "Client";
-  const last = getFormValue("#lastName") || "";
-  const fullName = `${first} ${last}`.trim();
-  const dateStr = formatTodayMMDDYYYY();
-
-  const files = Array.isArray(filesArray) ? filesArray : Array.from(filesArray || []);
-  const vocabTypes = detectVocabTypesFromFiles(files);
-
-  if (vocabTypes.length > 0) {
-    return `${fullName} ${vocabTypes.join(", ")} Vocab Sets from Trial ${dateStr}.zip`;
-  }
-  if (files.length > 0) {
-    return `${fullName} (vocab files present) Vocab Sets from Trial ${dateStr}.zip`;
-  }
-  return `${fullName} Vocab Sets from Trial ${dateStr}.zip`;
-}
-
 /* ---------------- NOTE helpers ---------------- */
 
 function buildVocabLine() {
   const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
-  return vocabNotReturned ? "No vocab returned." : "Vocab was saved to the CRM.";
+  return vocabNotReturned ? "No vocab returned." : "Vocab was returned.";
 }
 
 function buildAccessoriesLineIfAny() {
@@ -346,141 +283,6 @@ async function sendToCrm(type, payload) {
   return res || { ok: false };
 }
 
-async function clickCrmDocumentsTab() {
-  return sendToCrm("CLICK_BY_XPATH", { xpath: CRM_DOCUMENTS_TAB_XPATH });
-}
-
-/* ---------------- ZIP: Build once -> Download + Upload ---------------- */
-
-async function buildZipBytesFromSelectedFiles() {
-  const fileInput = document.getElementById("vocabFiles");
-  const files = fileInput?.files ? Array.from(fileInput.files) : [];
-  if (files.length === 0) return { ok: true, skipped: true };
-
-  if (typeof JSZip === "undefined") return { ok: false, error: "JSZip not loaded" };
-
-  const z = new JSZip();
-  for (const f of files) z.file(f.name, f);
-
-  const zipName = buildZipFileNameFromSelectedFiles(files);
-
-  // ✅ generate once (arraybuffer), reuse for both download + upload
-  const bytes = await z.generateAsync({ type: "arraybuffer" });
-
-  return { ok: true, zipName, bytes };
-}
-
-async function downloadZip(zipName, bytes) {
-  // Requires "downloads" permission
-  const blob = new Blob([new Uint8Array(bytes)], { type: "application/zip" });
-  const url = URL.createObjectURL(blob);
-
-  try {
-    await chrome.downloads.download({
-      url,
-      filename: zipName,
-      saveAs: true
-    });
-  } catch {
-    URL.revokeObjectURL(url);
-    return { ok: false, error: "Download failed (check downloads permission)" };
-  }
-
-  await wait(1500);
-  URL.revokeObjectURL(url);
-  return { ok: true };
-}
-
-async function getUploadStatusText(tabId) {
-  const res = await chrome.tabs.sendMessage(tabId, {
-    type: "GET_TEXT_BY_XPATH",
-    xpath: UPLOAD_SUCCESS_LABEL_XPATH
-  }).catch(() => null);
-
-  return (res?.text || "").trim();
-}
-
-async function waitForUploadStatusChange(tabId, previousText, timeoutMs = 45000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const txt = await getUploadStatusText(tabId);
-    if (txt && txt !== previousText) return { ok: true, text: txt };
-    await wait(600);
-  }
-  return { ok: false, text: previousText };
-}
-
-async function uploadZipToCrm(zipName, bytes) {
-  const tabId = await getActiveCrmTabId();
-  if (!tabId) return { ok: false, error: "No CRM tab found" };
-
-  // 1) Attach file bytes to CRM file input
-  const attachRes = await chrome.tabs.sendMessage(tabId, {
-    type: "SET_FILE_INPUT_FROM_BYTES",
-    xpath: CRM_FILE_INPUT_XPATH,
-    bytes,
-    filename: zipName
-  }).catch(() => null);
-
-  if (!attachRes?.ok) {
-    return { ok: false, error: `Attach failed (${attachRes?.reason || "unknown"})` };
-  }
-
-  // 2) Verify CRM input actually has the file
-  const infoRes = await chrome.tabs.sendMessage(tabId, {
-    type: "GET_FILE_INPUT_INFO_BY_XPATH",
-    xpath: CRM_FILE_INPUT_XPATH
-  }).catch(() => null);
-
-  if (!infoRes?.ok || (infoRes.count || 0) === 0) {
-    return { ok: false, error: "CRM file input shows 0 attached files (not on Documents tab or CRM blocked it)" };
-  }
-
-  await wait(400);
-
-  const preUploadStatus = await getUploadStatusText(tabId);
-
-  // 3) Click Upload (CRM refreshes)
-  const uploadClick = await chrome.tabs.sendMessage(tabId, {
-    type: "CLICK_BY_XPATH",
-    xpath: CRM_UPLOAD_BUTTON_XPATH
-  }).catch(() => null);
-
-  if (!uploadClick?.ok) return { ok: false, error: "Failed clicking Upload" };
-
-  // 4) Wait for success label
-  const status = await waitForUploadStatusChange(tabId, preUploadStatus, 45000);
-  if (!status.ok) return { ok: false, error: "Upload status never changed or label missing" };
-
-  const statusText = status.text || "";
-  const statusLower = statusText.toLowerCase();
-  const isSuccess = statusLower.includes("success") || statusLower.includes("uploaded") || statusLower.includes("complete");
-
-  if (!isSuccess) {
-    const detail = statusText ? `Upload reported: ${statusText}` : "Upload status label stayed empty";
-    return { ok: false, error: detail };
-  }
-
-  // 5) Title textbox = zip name
-  const titleRes = await chrome.tabs.sendMessage(tabId, {
-    type: "SET_VALUE_BY_XPATH",
-    xpath: CRM_DOCUMENT_TITLE_XPATH,
-    value: zipName
-  }).catch(() => null);
-
-  if (!titleRes?.ok) return { ok: false, error: "Failed setting Document Title" };
-
-  // 6) Click Add Document
-  const addRes = await chrome.tabs.sendMessage(tabId, {
-    type: "CLICK_BY_XPATH",
-    xpath: CRM_ADD_DOCUMENT_XPATH
-  }).catch(() => null);
-
-  if (!addRes?.ok) return { ok: false, error: "Failed clicking Add Document" };
-
-  return { ok: true };
-}
-
 /* ---------------- Reset everything after success ---------------- */
 
 function resetAllFieldsAndUI() {
@@ -510,8 +312,6 @@ function resetAllFieldsAndUI() {
     'input[name="cameraNumber"], input[name="luminNumber"], input[name="clampMount"], input[name="tableMount"], input[name="rollingMount"], input[name="accessories"]'
   ).forEach(el => el.value = "");
 
-  clearFileInput("vocabFiles");
-
   if (conditionContainer) conditionContainer.style.display = "block";
   updateDeviceRules();
 
@@ -539,27 +339,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // 4) Submit note
   const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
   if (!clickRes.ok) { alert("Failed to submit the note."); return; }
-
-  // 5) ZIP (optional)
-  const zipRes = await buildZipBytesFromSelectedFiles();
-  if (!zipRes.ok) {
-    alert(`Note submitted, but ZIP failed:\n\n${zipRes.error || "Unknown error"}`);
-    return;
-  }
-
-  // 6) If files selected: download AND upload
-  if (!zipRes.skipped) {
-    const dlRes = await downloadZip(zipRes.zipName, zipRes.bytes);
-    if (!dlRes.ok) {
-      alert(`Note submitted, but ZIP download failed:\n\n${dlRes.error}`);
-      return;
-    }
-
-    const docTabRes = await clickCrmDocumentsTab();
-    if (!docTabRes.ok) {
-      console.warn("Failed to navigate to Documents tab after download.");
-    }
-  }
 
   // ✅ SUCCESS
   resetAllFieldsAndUI();

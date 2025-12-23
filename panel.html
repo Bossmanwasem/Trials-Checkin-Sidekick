@@ -66,13 +66,6 @@
         Vocab NOT returned
       </label>
 
-      <!-- Vocab file upload -->
-      <label style="margin-top:12px;">Vocab Files to Zip + Download (optional)</label>
-      <input type="file" id="vocabFiles" multiple />
-      <div class="hint" style="margin-top:6px; font-size:12px; opacity:0.85;">
-        If files are selected, clicking <b>Check-in Device</b> will also create a ZIP and download it.
-      </div>
-
       <!-- Camera / Lumin -->
       <button type="button" class="toggle-btn" id="cameraToggle">+ Add Camera & Lumin-I Info</button>
       <div id="cameraLuminSection" class="hidden-section">
@@ -113,16 +106,13 @@
   <div class="container" id="completeView" style="display:none;">
     <h1>Check-in Complete</h1>
     <p style="margin-top:10px; opacity:0.9;">
-      Vocab upload: please upload the zip file you downloaded. Note is posted.
+      Note is posted.
     </p>
 
     <button id="startAnotherBtn" class="toggle-btn" type="button" style="margin-top:16px;">
       Start another Checkin
     </button>
   </div>
-
-  <!-- JSZip bundled with extension -->
-  <script src="libs/jszip.min.js"></script>
 
   <!-- Panel logic -->
   <script src="panel.js"></script>

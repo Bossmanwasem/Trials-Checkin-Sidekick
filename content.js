@@ -90,68 +90,6 @@ function clickByXPath(xpath) {
   return true;
 }
 
-/**
- * Attach zip bytes (ArrayBuffer) to an <input type="file">
- */
-function setFileInputFromBytes(xpath, arrayBuffer, filename) {
-  const input = getElementByXPath(xpath);
-  if (!input || input.tagName !== "INPUT" || input.type !== "file") {
-    return { ok: false, reason: "file_input_not_found_or_wrong_type" };
-  }
-
-  try {
-    const bytes = new Uint8Array(arrayBuffer);
-    const blob = new Blob([bytes], { type: "application/zip" });
-    const file = new File([blob], filename, { type: "application/zip" });
-
-    const dt = new DataTransfer();
-    dt.items.add(file);
-
-    input.files = dt.files;
-
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-
-    const count = input.files?.length ?? 0;
-    const names = [];
-    for (let i = 0; i < count; i++) names.push(input.files[i].name);
-
-    return { ok: true, count, names };
-  } catch {
-    return { ok: false, reason: "exception_setting_files" };
-  }
-}
-
-/**
- * Read displayed text from any element by xpath
- */
-function getTextByXPath(xpath) {
-  const el = getElementByXPath(xpath);
-  if (!el) return null;
-
-  const txt =
-    (typeof el.innerText === "string" ? el.innerText : "") ||
-    (typeof el.textContent === "string" ? el.textContent : "") ||
-    (typeof el.value === "string" ? el.value : "");
-
-  return (txt || "").trim();
-}
-
-/**
- * Confirm file input state
- */
-function getFileInputInfoByXPath(xpath) {
-  const input = getElementByXPath(xpath);
-  if (!input || input.tagName !== "INPUT" || input.type !== "file") {
-    return { ok: false, reason: "file_input_not_found_or_wrong_type" };
-  }
-  const count = input.files?.length ?? 0;
-  const names = [];
-  for (let i = 0; i < count; i++) names.push(input.files[i].name);
-  const valueLen = (input.value || "").length;
-  return { ok: true, count, names, valueLen };
-}
-
 /* ---------------- Message Listener ---------------- */
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -184,21 +122,4 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  if (msg.type === "SET_FILE_INPUT_FROM_BYTES") {
-    const result = setFileInputFromBytes(msg.xpath, msg.bytes, msg.filename);
-    sendResponse(result);
-    return true;
-  }
-
-  if (msg.type === "GET_TEXT_BY_XPATH") {
-    const text = getTextByXPath(msg.xpath);
-    sendResponse({ ok: true, text });
-    return true;
-  }
-
-  if (msg.type === "GET_FILE_INPUT_INFO_BY_XPATH") {
-    const info = getFileInputInfoByXPath(msg.xpath);
-    sendResponse(info);
-    return true;
-  }
 });
