@@ -64,6 +64,10 @@ function safeTrimLower(str) {
   return (str || "").trim().toLowerCase();
 }
 
+function normalizeText(str) {
+  return (str || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 /* ---------------- Existing CRM Data Grab ---------------- */
 
 function getCrmIdFromUrl() {
@@ -304,6 +308,88 @@ function getLastCheckinDataForDaf() {
   });
 }
 
+function findInputMatchingLabels(labelVariants) {
+  const targets = labelVariants.map(normalizeText);
+  const inputs = Array.from(document.querySelectorAll("input[type='text'], input:not([type]), textarea"));
+
+  const matches = (input) => {
+    if (!isVisible(input)) return false;
+
+    const textParts = [
+      input.getAttribute("aria-label"),
+      input.getAttribute("placeholder"),
+      input.getAttribute("name"),
+      input.id
+    ];
+
+    if (input.id) {
+      const forLabel = document.querySelector(`label[for="${input.id}"]`);
+      if (forLabel) textParts.push(forLabel.textContent);
+    }
+
+    const labeledAncestor = input.closest("label");
+    if (labeledAncestor) textParts.push(labeledAncestor.textContent);
+
+    const context = input.closest("div, span, p");
+    if (context) textParts.push(context.textContent);
+
+    const normalized = textParts.map(normalizeText);
+    return targets.some(t => normalized.some(n => n.includes(t)));
+  };
+
+  return inputs.find(matches) || null;
+}
+
+function waitForInputByLabels(labelVariants, { timeoutMs = 10000, pollMs = 200 } = {}) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      const input = findInputMatchingLabels(labelVariants);
+      if (input) {
+        resolve(input);
+        return;
+      }
+      if (Date.now() - start >= timeoutMs) {
+        reject(new Error("Timed out waiting for DAF field: " + labelVariants.join("/")));
+        return;
+      }
+      setTimeout(check, pollMs);
+    };
+    check();
+  });
+}
+
+function findCheckboxMatchingLabels(labelVariants) {
+  const targets = labelVariants.map(normalizeText);
+  const checkboxes = Array.from(document.querySelectorAll("input[type='checkbox']"));
+
+  const matches = (input) => {
+    if (!isVisible(input)) return false;
+
+    const textParts = [
+      input.getAttribute("aria-label"),
+      input.getAttribute("name"),
+      input.id
+    ];
+
+    if (input.id) {
+      const forLabel = document.querySelector(`label[for="${input.id}"]`);
+      if (forLabel) textParts.push(forLabel.textContent);
+    }
+
+    const labeledAncestor = input.closest("label");
+    if (labeledAncestor) textParts.push(labeledAncestor.textContent);
+
+    const context = input.closest("div, span, p");
+    if (context) textParts.push(context.textContent);
+
+    const normalized = textParts.map(normalizeText);
+    return targets.some(t => normalized.some(n => n.includes(t)));
+  };
+
+  return checkboxes.find(matches) || null;
+}
+
 async function fillDafFieldByXPath(xpath, value, options = {}) {
   if (!value) return false;
   try {
@@ -318,7 +404,27 @@ async function fillDafFieldByXPath(xpath, value, options = {}) {
   }
 }
 
-async function ensureDafCheckboxChecked(xpath) {
+async function fillDafFieldWithFallback({ value, xpath, labels }) {
+  const safeVal = (value || "").trim();
+  if (!safeVal) return false;
+
+  if (xpath) {
+    const ok = await fillDafFieldByXPath(xpath, safeVal, { timeoutMs: 4000 }).catch(() => false);
+    if (ok) return true;
+  }
+
+  try {
+    const input = await waitForInputByLabels(labels);
+    input.value = safeVal;
+    dispatchChangeEvents(input);
+    return true;
+  } catch (err) {
+    console.warn("Fallback fill failed for", labels, err);
+    return false;
+  }
+}
+
+async function ensureDafCheckboxChecked(xpath, labelVariants = []) {
   try {
     const target = await waitForElementByXPath(xpath, { timeoutMs: 10000 });
     const checkbox = target.querySelector("input[type='checkbox']") ||
@@ -338,9 +444,19 @@ async function ensureDafCheckboxChecked(xpath) {
     target.click();
     return true;
   } catch (err) {
-    console.warn("Failed to check DAF checkbox", err);
-    return false;
+    console.warn("Failed to check DAF checkbox by XPath", err);
   }
+
+  const fallbackCheckbox = labelVariants.length ? findCheckboxMatchingLabels(labelVariants) : null;
+  if (fallbackCheckbox) {
+    if (!fallbackCheckbox.checked) {
+      fallbackCheckbox.checked = true;
+      dispatchChangeEvents(fallbackCheckbox);
+    }
+    return true;
+  }
+
+  return false;
 }
 
 async function fillDafFormFromStorage() {
@@ -351,19 +467,55 @@ async function fillDafFormFromStorage() {
 
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim();
 
-  await Promise.all([
-    fillDafFieldByXPath('//*[@id="TextField1"]', data.deviceNumber),
-    fillDafFieldByXPath('//*[@id="TextField7"]', data.cameraNumber),
-    fillDafFieldByXPath('//*[@id="TextField13"]', data.luminNumber),
-    fillDafFieldByXPath('//*[@id="TextField19"]', data.crmId),
-    fillDafFieldByXPath('//*[@id="TextField25"]', fullName),
-    fillDafFieldByXPath('//*[@id="field-element-5"]/div/span', data.aac),
-    fillDafFieldByXPath('//*[@id="TextField32"]', data.clampMount),
-    fillDafFieldByXPath('//*[@id="TextField38"]', data.tableMount),
-    fillDafFieldByXPath('//*[@id="TextField44"]', data.rollingMount)
-  ]);
+  const fields = [
+    {
+      value: data.deviceNumber,
+      xpath: '//*[@id="TextField1"]',
+      labels: ["device serial", "device number", "device serial number", "device serial #"]
+    },
+    {
+      value: data.cameraNumber,
+      xpath: '//*[@id="TextField7"]',
+      labels: ["camera", "camera number", "camera serial"]
+    },
+    {
+      value: data.luminNumber,
+      xpath: '//*[@id="TextField13"]',
+      labels: ["lumin-i", "lumin", "lumin i number"]
+    },
+    {
+      value: data.crmId,
+      xpath: '//*[@id="TextField19"]',
+      labels: ["crm id", "crm number"]
+    },
+    {
+      value: fullName,
+      xpath: '//*[@id="TextField25"]',
+      labels: ["client name", "full name", "name of client"]
+    },
+    {
+      value: data.clampMount,
+      xpath: '//*[@id="TextField32"]',
+      labels: ["clamp mount"]
+    },
+    {
+      value: data.tableMount,
+      xpath: '//*[@id="TextField38"]',
+      labels: ["table mount"]
+    },
+    {
+      value: data.rollingMount,
+      xpath: '//*[@id="TextField44"]',
+      labels: ["rolling mount"]
+    }
+  ];
 
-  await ensureDafCheckboxChecked('//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label');
+  await Promise.all(fields.map(f => fillDafFieldWithFallback(f)));
+
+  await ensureDafCheckboxChecked(
+    '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label',
+    ["device returned", "daf", "device received back", "ttmt device confirmation"]
+  );
 }
 
 if (isDafFormPage()) {

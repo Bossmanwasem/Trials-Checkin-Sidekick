@@ -369,33 +369,80 @@ function buildInventorySearchValue({ deviceNumber = "", cameraNumber = "", lumin
   return (cameraNumber || "").trim() || (luminNumber || "").trim() || (deviceNumber || "").trim() || "";
 }
 
-function buildDafRecapText(data) {
-  if (!data) return "No check-in details saved. Submit a check-in to populate this page.";
+function buildDafRecapEntries(data) {
+  if (!data) return [];
 
-  const lines = [
-    `Device: ${data.deviceNumber || "—"}`,
-    `Camera: ${data.cameraNumber || "—"}`,
-    `Lumin-I: ${data.luminNumber || "—"}`,
-    `CRM ID: ${data.crmId || "—"}`,
-    `Client: ${[data.firstName, data.lastName].filter(Boolean).join(" ") || "—"}`,
-    `AAC: ${data.aac || "—"}`,
-    `Clamp Mount: ${data.clampMount || "—"}`,
-    `Table Mount: ${data.tableMount || "—"}`,
-    `Rolling Mount: ${data.rollingMount || "—"}`
+  const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
+
+  return [
+    { key: "deviceNumber", label: "Device", value: data.deviceNumber },
+    { key: "cameraNumber", label: "Camera", value: data.cameraNumber },
+    { key: "luminNumber", label: "Lumin-I", value: data.luminNumber },
+    { key: "crmId", label: "CRM ID", value: data.crmId },
+    { key: "clientName", label: "Client", value: fullName },
+    { key: "aac", label: "AAC (copy only)", value: data.aac },
+    { key: "clampMount", label: "Clamp Mount", value: data.clampMount },
+    { key: "tableMount", label: "Table Mount", value: data.tableMount },
+    { key: "rollingMount", label: "Rolling Mount", value: data.rollingMount }
   ];
-
-  return lines.join("\n");
 }
 
 async function renderDafRecap() {
-  const recapEl = document.getElementById("dafRecapDetails");
+  const recapEl = document.getElementById("dafRecapFields");
+  const emptyEl = document.getElementById("dafRecapEmpty");
   const statusEl = document.getElementById("dafRecapStatus");
   const data = await getLastCheckinDataForDaf();
+  const entries = buildDafRecapEntries(data);
 
-  if (recapEl) recapEl.textContent = buildDafRecapText(data);
+  if (recapEl) {
+    recapEl.innerHTML = "";
+    if (entries.length) {
+      entries.forEach(entry => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "daf-field";
+
+        const labelEl = document.createElement("div");
+        labelEl.className = "daf-field__label";
+        labelEl.textContent = entry.label;
+
+        const row = document.createElement("div");
+        row.className = "copy-row";
+
+        const valInput = document.createElement("input");
+        valInput.type = "text";
+        valInput.className = "copy-field";
+        valInput.readOnly = true;
+        valInput.value = entry.value || "";
+        valInput.placeholder = "—";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "copy-btn";
+        btn.textContent = entry.value ? "Copy" : "No value";
+        btn.dataset.copyValue = entry.value || "";
+        btn.disabled = !entry.value;
+
+        row.appendChild(valInput);
+        row.appendChild(btn);
+
+        wrapper.appendChild(labelEl);
+        wrapper.appendChild(row);
+
+        recapEl.appendChild(wrapper);
+      });
+    }
+  }
+
+  if (emptyEl) {
+    emptyEl.style.display = entries.length ? "none" : "block";
+    emptyEl.textContent = entries.length
+      ? ""
+      : "No check-in details saved. Submit a check-in to populate this page.";
+  }
+
   if (statusEl) {
-    statusEl.textContent = data
-      ? "We'll auto-fill the DAF form using these values."
+    statusEl.textContent = entries.length
+      ? "We'll auto-fill the DAF form using these values. Use the Copy buttons if the form blocks autofill."
       : "No saved check-in found. Fill out the check-in form first.";
   }
 
@@ -718,6 +765,15 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 
 document.getElementById("backToInventoryBtn")?.addEventListener("click", () => {
   showInventoryView();
+});
+
+document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button.copy-btn");
+  if (!btn || !btn.dataset.copyValue) return;
+  await navigator.clipboard.writeText(btn.dataset.copyValue);
+  const original = btn.textContent;
+  btn.textContent = "Copied!";
+  setTimeout(() => { btn.textContent = original; }, 1200);
 });
 
 /* ---------------- Init ---------------- */

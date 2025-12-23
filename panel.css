@@ -183,6 +183,13 @@ button[type="submit"]:hover {
   background-color: #005599;
 }
 
+.copy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #1b1b2f;
+  color: #9aa6b2;
+}
+
 .note-preview__title {
   font-weight: 600;
   color: #81cfff;
@@ -224,4 +231,15 @@ input[type="file"] {
 
 .error-text {
   color: #ff7b7b;
+}
+
+.daf-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.daf-field__label {
+  font-weight: 600;
+  color: #d5e9ff;
 }
