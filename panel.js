@@ -7,6 +7,7 @@ const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
+const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["formView", "completeView", "inventoryView"];
@@ -338,6 +339,7 @@ async function updateInventorySearchDisplay() {
   const display = document.getElementById("inventorySearchValue");
   const runBtn = document.getElementById("runInventoryScriptBtn");
   const status = document.getElementById("inventoryStatus");
+  setInventoryNextStepVisibility(false);
 
   if (display) {
     display.textContent = searchValue || "No stored identifiers. Fill out the first page first.";
@@ -346,6 +348,12 @@ async function updateInventorySearchDisplay() {
   if (status) status.textContent = "";
 
   return identifiers;
+}
+
+function setInventoryNextStepVisibility(show) {
+  const btn = document.getElementById("inventoryNextStepBtn");
+  if (!btn) return;
+  btn.style.display = show ? "block" : "none";
 }
 
 function watchIdentifierInputs() {
@@ -600,6 +608,7 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
 
   const status = document.getElementById("inventoryStatus");
   if (status) status.textContent = `Looking for "${searchValue}"...`;
+  setInventoryNextStepVisibility(false);
 
   const res = await sendToCrm("RUN_INVENTORY_SCRIPT", { identifiers });
   if (!res.ok) {
@@ -609,6 +618,11 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
   }
 
   if (status) status.textContent = "Script sent to page. Watch the table for the highlighted row.";
+  setInventoryNextStepVisibility(true);
+});
+
+document.getElementById("inventoryNextStepBtn")?.addEventListener("click", () => {
+  chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
 });
 
 /* ---------------- Init ---------------- */
