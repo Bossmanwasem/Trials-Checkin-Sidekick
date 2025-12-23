@@ -187,7 +187,10 @@ async function runInventoryEditSearch(searchValueRaw) {
 
 /* ---------------- Message Listener ---------------- */
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
+
+if (runtime?.onMessage?.addListener) {
+  runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "GET_CLIENT_DATA") {
     sendResponse({ ok: true, data: collectClientData() });
     return true;
@@ -236,4 +239,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-});
+  });
+} else {
+  console.warn("Chrome runtime not available; skipping message listener setup.");
+}
