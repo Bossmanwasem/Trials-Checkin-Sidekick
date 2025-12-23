@@ -20,12 +20,25 @@ function getElementByXPath(xpath) {
   }
 }
 
-function waitForElementByXPath(xpath, timeoutMs = 7000, pollMs = 150) {
+function isVisible(el) {
+  if (!el) return false;
+  const style = window.getComputedStyle(el);
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    (el.offsetParent !== null || style.position === "fixed")
+  );
+}
+
+function waitForElementByXPath(
+  xpath,
+  { timeoutMs = 7000, pollMs = 150, visibleOnly = false } = {}
+) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const check = () => {
       const el = getElementByXPath(xpath);
-      if (el) {
+      if (el && (!visibleOnly || isVisible(el))) {
         resolve(el);
         return;
       }
@@ -159,7 +172,9 @@ async function runInventoryEditSearch(searchValueRaw) {
     editBtn.click();
 
     try {
-      await waitForElementByXPath(INVENTORY_RETURNED_DROPDOWN_XPATH);
+      await waitForElementByXPath(INVENTORY_RETURNED_DROPDOWN_XPATH, {
+        visibleOnly: true
+      });
     } catch (err) {
       alert(err.message || "Inventory edit view did not load.");
       return false;
