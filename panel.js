@@ -32,6 +32,13 @@ function setText(id, text) {
   if (el) el.textContent = text || "";
 }
 
+function formatDateForFilename(date = new Date()) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = String(date.getFullYear());
+  return `${month}.${day}.${year}`;
+}
+
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
@@ -293,6 +300,104 @@ async function sendToCrm(type, payload) {
   const res = await chrome.tabs.sendMessage(tabId, { type, ...payload }).catch(() => null);
   return res || { ok: false };
 }
+
+/* ---------------- Trial file zip + upload ---------------- */
+
+const trialFilesInput = document.getElementById("trialFilesInput");
+const trialFilesStatus = document.getElementById("trialFilesStatus");
+const zipUploadBtn = document.getElementById("zipUploadBtn");
+const selectedTrialFiles = [];
+
+function updateTrialFilesStatus(message, isError = false) {
+  if (!trialFilesStatus) return;
+  trialFilesStatus.textContent = message;
+  trialFilesStatus.classList.toggle("error-text", isError);
+}
+
+function clearSelectedTrialFiles(messageOverride = null) {
+  selectedTrialFiles.length = 0;
+  if (trialFilesInput) trialFilesInput.value = "";
+  updateTrialFilesStatus(messageOverride || "No files selected.");
+}
+
+function buildZipFilename() {
+  const first = sanitizeName(getFormValue("#firstName"));
+  const last = sanitizeName(getFormValue("#lastName"));
+  const fullName = [first, last].filter(Boolean).join(" ") || "Client";
+  const dateStr = formatDateForFilename();
+  return `${fullName} Grid, Saltillo, P2G Vocab Sets from Trial ${dateStr}.zip`;
+}
+
+async function promptUserDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  try {
+    if (chrome?.downloads?.download) {
+      await chrome.downloads.download({
+        url,
+        filename,
+        saveAs: true
+      });
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+    }
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function uploadZipToCrm(zipArrayBuffer, zipName) {
+  const res = await sendToCrm("UPLOAD_ZIP_TO_CRM", { zipArrayBuffer, zipName });
+  if (!res?.ok) {
+    throw new Error(res?.message || "Upload failed. The CRM page may not have an upload form.");
+  }
+  return res;
+}
+
+async function handleZipAndUpload() {
+  if (!selectedTrialFiles.length) {
+    updateTrialFilesStatus("Please select at least one file to zip and upload.", true);
+    return;
+  }
+  if (typeof JSZip === "undefined") {
+    updateTrialFilesStatus("JSZip failed to load. Please reload the panel.", true);
+    return;
+  }
+
+  updateTrialFilesStatus("Zipping selected files...");
+  const zip = new JSZip();
+  selectedTrialFiles.forEach(file => zip.file(file.name, file));
+  const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+  const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
+  const zipName = buildZipFilename();
+
+  try {
+    updateTrialFilesStatus("Prompting download so you can save the zip...");
+    await promptUserDownload(zipBlob, zipName);
+    updateTrialFilesStatus("Uploading zip directly to the CRM page...");
+    await uploadZipToCrm(zipArrayBuffer, zipName);
+    clearSelectedTrialFiles(`Uploaded "${zipName}" to CRM successfully. Files cleared from the panel.`);
+  } catch (err) {
+    console.error(err);
+    updateTrialFilesStatus(err.message || "Failed to zip or upload files.", true);
+  }
+}
+
+trialFilesInput?.addEventListener("change", () => {
+  selectedTrialFiles.length = 0;
+  selectedTrialFiles.push(...(trialFilesInput.files ? Array.from(trialFilesInput.files) : []));
+  if (!selectedTrialFiles.length) {
+    updateTrialFilesStatus("No files selected.");
+  } else {
+    updateTrialFilesStatus(`${selectedTrialFiles.length} file(s) ready to zip and upload.`);
+  }
+});
+
+zipUploadBtn?.addEventListener("click", () => {
+  handleZipAndUpload();
+});
 
 /* ---------------- Reset everything after success ---------------- */
 
