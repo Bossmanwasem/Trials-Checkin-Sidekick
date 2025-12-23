@@ -21,6 +21,12 @@ function dispatchChangeEvents(el) {
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+
+function sanitizeName(name) {
+  return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
+}
+
 /* ---------------- Existing CRM Data Grab ---------------- */
 
 function getCrmIdFromUrl() {
@@ -48,11 +54,15 @@ function getAacSelectedText() {
 function collectClientData() {
   return {
     crmId: getCrmIdFromUrl(),
-    firstName: getInputValueById(
+    firstName: sanitizeName(
+      getInputValueById(
       "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientFirstName"
+      )
     ),
-    lastName: getInputValueById(
+    lastName: sanitizeName(
+      getInputValueById(
       "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientLastName"
+      )
     ),
     aac: getAacSelectedText()
   };

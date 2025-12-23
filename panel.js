@@ -27,6 +27,12 @@ function setValue(id, val) {
   if (el) el.value = val || "";
 }
 
+const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+
+function sanitizeName(name) {
+  return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
+}
+
 /* ---------------- Tab + CRM data fetch ---------------- */
 
 async function getActiveCrmTab() {
@@ -245,8 +251,8 @@ function buildMountsReturnedOnlyNote() {
 /* ---------------- NOTE GENERATION ---------------- */
 
 function buildCannedNote() {
-  const first = getFormValue("#firstName");
-  const last = getFormValue("#lastName");
+  const first = sanitizeName(getFormValue("#firstName"));
+  const last = sanitizeName(getFormValue("#lastName"));
   const deviceNum = getFormValue("#deviceNumberInput");
 
   const fullName = [first, last].filter(Boolean).join(" ") || "Client";
