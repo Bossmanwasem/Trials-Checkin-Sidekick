@@ -686,6 +686,9 @@ async function finishCheckinAndReset() {
 document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
 
+  const deviceNumber = getFormValue("#deviceNumberInput");
+  const isMountOnly = deviceNumber.toLowerCase() === "x";
+
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
   if (selectedTrialFiles.length) {
@@ -730,6 +733,12 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // ✅ SUCCESS
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
+  if (isMountOnly) {
+    await renderDafRecap();
+    showDafView();
+    return;
+  }
+
   setText("completeIntro", "CRM note submitted. Review the details below.");
   await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
   if (zipName) {
