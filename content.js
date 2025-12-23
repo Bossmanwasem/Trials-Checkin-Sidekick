@@ -2,8 +2,6 @@
 
 /* ---------------- Utilities ---------------- */
 
-const INVENTORY_URL = "https://portal.talktometechnologies.com/admin/ManageInventory.aspx";
-
 function getElementByXPath(xpath) {
   try {
     return document.evaluate(
@@ -48,10 +46,6 @@ function waitForElementByXPath(
     };
     check();
   });
-}
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function dispatchChangeEvents(el) {
@@ -138,53 +132,6 @@ function clickByXPath(xpath) {
   return true;
 }
 
-async function runInventoryEditSearch(searchValueRaw) {
-  const target = (searchValueRaw || "").trim().toLowerCase();
-  const rows = document.querySelectorAll("table tr");
-  let foundRow = null;
-
-  for (const row of rows) {
-    row.style.outline = "";
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 2) continue;
-
-    const serialCell = cells[1];
-    const cellText = serialCell.textContent.trim().toLowerCase();
-
-    if (cellText.startsWith(target)) {
-      foundRow = row;
-      break;
-    }
-  }
-
-  if (foundRow) {
-    foundRow.style.outline = "4px solid limegreen";
-    foundRow.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    await delay(1200);
-    const editBtn = foundRow.querySelector("input[src*='Edit.gif']");
-    if (!editBtn) {
-      alert("Edit icon not found in matching row!");
-      return false;
-    }
-    editBtn.click();
-
-    try {
-      await waitForElementByXPath('//*[@id="ctl00_MainContent_dvwInventory"]', {
-        visibleOnly: true
-      });
-    } catch (err) {
-      alert(err.message || "Inventory edit view did not load.");
-      return false;
-    }
-
-    return true;
-  } else {
-    alert("No matching row found for: " + searchValueRaw);
-    return false;
-  }
-}
-
 /* ---------------- Message Listener ---------------- */
 
 const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
@@ -217,25 +164,6 @@ if (runtime?.onMessage?.addListener) {
   if (msg.type === "CLICK_BY_XPATH") {
     const ok = clickByXPath(msg.xpath);
     sendResponse({ ok });
-    return true;
-  }
-
-  if (msg.type === "RUN_INVENTORY_SCRIPT") {
-    const href = window.location.href;
-    if (!href.startsWith(INVENTORY_URL)) {
-      sendResponse({ ok: false, error: "Inventory tab is not open to ManageInventory.aspx." });
-      return true;
-    }
-
-    if (!msg.searchValue) {
-      sendResponse({ ok: false, error: "No search value provided." });
-      return true;
-    }
-
-    (async () => {
-      const ok = await runInventoryEditSearch(msg.searchValue);
-      sendResponse({ ok });
-    })();
     return true;
   }
 

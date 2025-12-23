@@ -141,15 +141,6 @@ button[type="submit"]:hover {
   flex: 1;
 }
 
-.callout {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  background: #102a3a;
-  border: 1px solid #81cfff;
-  color: #d8ecff;
-}
-
 .complete-intro {
   margin-top: 10px;
   opacity: 0.9;
