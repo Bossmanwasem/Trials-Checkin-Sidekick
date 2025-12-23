@@ -140,3 +140,39 @@ button[type="submit"]:hover {
 .mini-row .toggle-btn {
   flex: 1;
 }
+
+.callout {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #102a3a;
+  border: 1px solid #81cfff;
+  color: #d8ecff;
+}
+
+.complete-intro {
+  margin-top: 10px;
+  opacity: 0.9;
+}
+
+.note-preview {
+  margin-top: 14px;
+  background: #0f1b2b;
+  border: 1px solid #2f4b6f;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.note-preview__title {
+  font-weight: 600;
+  color: #81cfff;
+  margin-bottom: 8px;
+}
+
+.note-preview__body {
+  margin: 0;
+  white-space: pre-wrap;
+  color: #e0e0e0;
+  font-family: Consolas, Menlo, monospace;
+  background: transparent;
+}

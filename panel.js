@@ -28,6 +28,11 @@ function setValue(id, val) {
   if (el) el.value = val || "";
 }
 
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text || "";
+}
+
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
@@ -408,21 +413,22 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
   if (!clickRes.ok) { alert("Failed to submit the note."); return; }
 
+  // 5) Run inventory script if data present
+  const searchValue = getInventorySearchValue();
+  if (searchValue) {
+    await runInventoryScript(searchValue);
+  }
+
   // ✅ SUCCESS
   resetAllFieldsAndUI();
+  setText("notePreviewText", note);
+  setText("completeIntro", "Please mark your device as returned and confirm your CRM note below.");
+  setText("inventoryStatus", searchValue ? "Inventory script run. Verify the device shows as returned." : "No device or accessory ID provided for inventory search.");
   showCompleteView();
 });
 
 /* ---------------- Inventory button ---------------- */
-
-document.getElementById("runInventoryBtn")?.addEventListener("click", async () => {
-  const searchValue = getInventorySearchValue();
-  if (!searchValue) {
-    alert("Enter a device number or camera/Lumin-I number first.");
-    return;
-  }
-  await runInventoryScript(searchValue);
-});
+// Removed dedicated button; inventory now runs during check-in when possible.
 
 /* ---------------- Start another Checkin ---------------- */
 
