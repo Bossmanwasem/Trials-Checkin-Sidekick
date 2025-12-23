@@ -338,6 +338,18 @@ async function openInventoryTab() {
   return created?.id || null;
 }
 
+async function ensureInventoryContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"]
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function runInventoryScript(searchValue) {
   const tabId = await openInventoryTab();
   if (!tabId) {
@@ -346,6 +358,12 @@ async function runInventoryScript(searchValue) {
   }
 
   const readyTabId = await waitForInventoryTabReady(tabId);
+  const injected = await ensureInventoryContentScript(readyTabId);
+  if (!injected) {
+    alert("Failed to inject inventory helper. Make sure the inventory page is loaded.");
+    return;
+  }
+
   const res = await chrome.tabs.sendMessage(readyTabId, {
     type: "RUN_INVENTORY_SCRIPT",
     searchValue
