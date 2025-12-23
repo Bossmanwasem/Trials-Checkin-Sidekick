@@ -54,6 +54,7 @@ function dispatchChangeEvents(el) {
 }
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -285,4 +286,86 @@ if (runtime?.onMessage?.addListener) {
   });
 } else {
   console.warn("Chrome runtime not available; skipping message listener setup.");
+}
+
+/* ---------------- DAF form autofill ---------------- */
+
+function isDafFormPage() {
+  return window.location.host.includes("talktometechnologies2com.sharepoint.com")
+    && window.location.href.includes("listforms.aspx");
+}
+
+function getLastCheckinDataForDaf() {
+  if (!chrome?.storage?.local) return Promise.resolve(null);
+  return new Promise(resolve => {
+    chrome.storage.local.get(DAF_DATA_STORAGE_KEY, res => {
+      resolve(res?.[DAF_DATA_STORAGE_KEY] || null);
+    });
+  });
+}
+
+async function fillDafFieldByXPath(xpath, value, options = {}) {
+  if (!value) return false;
+  try {
+    const el = await waitForElementByXPath(xpath, { timeoutMs: 10000, ...options });
+    if ("value" in el) el.value = value;
+    else el.textContent = value;
+    dispatchChangeEvents(el);
+    return true;
+  } catch (err) {
+    console.warn("Failed to fill DAF field for", xpath, err);
+    return false;
+  }
+}
+
+async function ensureDafCheckboxChecked(xpath) {
+  try {
+    const target = await waitForElementByXPath(xpath, { timeoutMs: 10000 });
+    const checkbox = target.querySelector("input[type='checkbox']") ||
+      (target.tagName === "INPUT" && target.type === "checkbox" ? target : null) ||
+      (target.previousElementSibling?.tagName === "INPUT" && target.previousElementSibling.type === "checkbox"
+        ? target.previousElementSibling
+        : null);
+
+    if (checkbox) {
+      if (!checkbox.checked) {
+        checkbox.checked = true;
+        dispatchChangeEvents(checkbox);
+      }
+      return true;
+    }
+
+    target.click();
+    return true;
+  } catch (err) {
+    console.warn("Failed to check DAF checkbox", err);
+    return false;
+  }
+}
+
+async function fillDafFormFromStorage() {
+  if (!isDafFormPage()) return;
+
+  const data = await getLastCheckinDataForDaf();
+  if (!data) return;
+
+  const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim();
+
+  await Promise.all([
+    fillDafFieldByXPath('//*[@id="TextField1"]', data.deviceNumber),
+    fillDafFieldByXPath('//*[@id="TextField7"]', data.cameraNumber),
+    fillDafFieldByXPath('//*[@id="TextField13"]', data.luminNumber),
+    fillDafFieldByXPath('//*[@id="TextField19"]', data.crmId),
+    fillDafFieldByXPath('//*[@id="TextField25"]', fullName),
+    fillDafFieldByXPath('//*[@id="field-element-5"]/div/span', data.aac),
+    fillDafFieldByXPath('//*[@id="TextField32"]', data.clampMount),
+    fillDafFieldByXPath('//*[@id="TextField38"]', data.tableMount),
+    fillDafFieldByXPath('//*[@id="TextField44"]', data.rollingMount)
+  ]);
+
+  await ensureDafCheckboxChecked('//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label');
+}
+
+if (isDafFormPage()) {
+  fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
 }
