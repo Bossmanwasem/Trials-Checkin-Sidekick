@@ -385,7 +385,8 @@ function hideUploadPrompt() {
 
 function showUploadPrompt(zipName) {
   if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
-  zipFilenameField.value = zipName || "";
+  const displayName = zipName ? zipName.replace(/\.zip$/i, "") : "";
+  zipFilenameField.value = displayName;
   uploadPromptText.textContent = zipName
     ? "Upload the downloaded zip file to the CRM Documents tab using the filename below."
     : "Upload the downloaded zip file to the CRM Documents tab.";
@@ -492,10 +493,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
 /* ---------------- Start another Checkin ---------------- */
 
-document.getElementById("startAnotherBtn")?.addEventListener("click", async () => {
-  showFormView();
-  const res = await fetchClientData();
-  if (res?.data) applyClientData(res.data);
+document.getElementById("startAnotherBtn")?.addEventListener("click", () => {
+  chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
 });
 
 /* ---------------- Refresh ---------------- */
