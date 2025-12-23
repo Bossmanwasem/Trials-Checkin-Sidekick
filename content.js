@@ -67,6 +67,25 @@ function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
 }
 
+/* ---------------- Inventory helpers ---------------- */
+
+async function setReturnedDropdownToYesAndSubmit() {
+  await waitForElementByXPath(INVENTORY_RETURNED_DROPDOWN_XPATH, {
+    visibleOnly: true
+  });
+
+  const setDropdown = setDropdownByVisibleText(INVENTORY_RETURNED_DROPDOWN_XPATH, "Yes");
+  if (!setDropdown) {
+    throw new Error('Could not set "Returned" dropdown to "Yes".');
+  }
+
+  const submitLink = await waitForElementByXPath(INVENTORY_SUBMIT_LINK_XPATH, {
+    visibleOnly: true
+  });
+
+  submitLink.click();
+}
+
 /* ---------------- Existing CRM Data Grab ---------------- */
 
 function getCrmIdFromUrl() {
@@ -180,15 +199,8 @@ async function runInventoryEditSearch(searchValueRaw) {
       return false;
     }
 
-    const setDropdown = setDropdownByVisibleText(INVENTORY_RETURNED_DROPDOWN_XPATH, "Yes");
-    if (!setDropdown) {
-      alert('Could not set "Returned" dropdown to "Yes".');
-      return false;
-    }
-
     try {
-      const submitLink = await waitForElementByXPath(INVENTORY_SUBMIT_LINK_XPATH);
-      submitLink.click();
+      await setReturnedDropdownToYesAndSubmit();
     } catch (err) {
       alert(err.message || "Could not click the submit link.");
       return false;
