@@ -3,6 +3,8 @@
 /* ---------------- Utilities ---------------- */
 
 const INVENTORY_URL = "https://portal.talktometechnologies.com/admin/ManageInventory.aspx";
+const INVENTORY_RETURNED_DROPDOWN_XPATH = '//*[@id="ctl00_MainContent_dvwInventory_ddlReturned"]';
+const INVENTORY_SUBMIT_LINK_XPATH = '//*[@id="ctl00_MainContent_dvwInventory"]/tbody/tr[10]/td/a[1]';
 
 function getElementByXPath(xpath) {
   try {
@@ -16,6 +18,29 @@ function getElementByXPath(xpath) {
   } catch {
     return null;
   }
+}
+
+function waitForElementByXPath(xpath, timeoutMs = 7000, pollMs = 150) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      const el = getElementByXPath(xpath);
+      if (el) {
+        resolve(el);
+        return;
+      }
+      if (Date.now() - start >= timeoutMs) {
+        reject(new Error("Timed out waiting for element: " + xpath));
+        return;
+      }
+      setTimeout(check, pollMs);
+    };
+    check();
+  });
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function dispatchChangeEvents(el) {
@@ -102,7 +127,7 @@ function clickByXPath(xpath) {
   return true;
 }
 
-function runInventoryEditSearch(searchValueRaw) {
+async function runInventoryEditSearch(searchValueRaw) {
   const target = (searchValueRaw || "").trim().toLowerCase();
   const rows = document.querySelectorAll("table tr");
   let foundRow = null;
@@ -125,16 +150,39 @@ function runInventoryEditSearch(searchValueRaw) {
     foundRow.style.outline = "4px solid limegreen";
     foundRow.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    setTimeout(() => {
-      const editBtn = foundRow.querySelector("input[src*='Edit.gif']");
-      if (editBtn) {
-        editBtn.click();
-      } else {
-        alert("Edit icon not found in matching row!");
-      }
-    }, 1200);
+    await delay(1200);
+    const editBtn = foundRow.querySelector("input[src*='Edit.gif']");
+    if (!editBtn) {
+      alert("Edit icon not found in matching row!");
+      return false;
+    }
+    editBtn.click();
+
+    try {
+      await waitForElementByXPath(INVENTORY_RETURNED_DROPDOWN_XPATH);
+    } catch (err) {
+      alert(err.message || "Inventory edit view did not load.");
+      return false;
+    }
+
+    const setDropdown = setDropdownByVisibleText(INVENTORY_RETURNED_DROPDOWN_XPATH, "Yes");
+    if (!setDropdown) {
+      alert('Could not set "Returned" dropdown to "Yes".');
+      return false;
+    }
+
+    try {
+      const submitLink = await waitForElementByXPath(INVENTORY_SUBMIT_LINK_XPATH);
+      submitLink.click();
+    } catch (err) {
+      alert(err.message || "Could not click the submit link.");
+      return false;
+    }
+
+    return true;
   } else {
     alert("No matching row found for: " + searchValueRaw);
+    return false;
   }
 }
 
@@ -182,8 +230,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
     }
 
-    runInventoryEditSearch(msg.searchValue);
-    sendResponse({ ok: true });
+    (async () => {
+      const ok = await runInventoryEditSearch(msg.searchValue);
+      sendResponse({ ok });
+    })();
     return true;
   }
 
