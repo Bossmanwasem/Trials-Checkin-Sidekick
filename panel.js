@@ -8,6 +8,7 @@ const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNote
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 
 // Documents (re-enabled)
+const CRM_DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const CRM_FILE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
 const CRM_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
 const CRM_DOCUMENT_TITLE_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
@@ -345,6 +346,10 @@ async function sendToCrm(type, payload) {
   return res || { ok: false };
 }
 
+async function clickCrmDocumentsTab() {
+  return sendToCrm("CLICK_BY_XPATH", { xpath: CRM_DOCUMENTS_TAB_XPATH });
+}
+
 /* ---------------- ZIP: Build once -> Download + Upload ---------------- */
 
 async function buildZipBytesFromSelectedFiles() {
@@ -550,10 +555,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       return;
     }
 
-    const upRes = await uploadZipToCrm(zipRes.zipName, zipRes.bytes);
-    if (!upRes.ok) {
-      alert(`Note submitted and ZIP downloaded, but CRM upload failed:\n\n${upRes.error}`);
-      return; // keep fields so user can retry if desired
+    const docTabRes = await clickCrmDocumentsTab();
+    if (!docTabRes.ok) {
+      console.warn("Failed to navigate to Documents tab after download.");
     }
   }
 
