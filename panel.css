@@ -167,3 +167,32 @@ button[type="submit"]:hover {
   font-family: Consolas, Menlo, monospace;
   background: transparent;
 }
+
+.upload-block {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid #2f4b6f;
+  border-radius: 8px;
+  background: #0f1b2b;
+}
+
+input[type="file"] {
+  margin-top: 8px;
+  color: #e0e0e0;
+}
+
+.hint-text {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.status-line {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #81cfff;
+}
+
+.error-text {
+  color: #ff7b7b;
+}

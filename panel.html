@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Check-in Panel</title>
   <link rel="stylesheet" href="panel.css" />
+  <script src="libs/jszip.min.js"></script>
 </head>
 <body>
 
@@ -94,6 +95,19 @@
       <div id="accessorySection" class="hidden-section">
         <label>Trial Accessories (Switches, KGs)</label>
         <input type="text" name="accessories" />
+      </div>
+
+      <!-- Trial files -->
+      <div class="upload-block">
+        <label>Trial Vocab/Export Files</label>
+        <input type="file" id="trialFilesInput" multiple />
+        <div class="hint-text">
+          Select the Grid, Saltillo, and P2G exports you want to zip and upload directly to the CRM page.
+        </div>
+        <div id="trialFilesStatus" class="status-line">No files selected.</div>
+        <button type="button" class="toggle-btn" id="zipUploadBtn">
+          Zip, download, and upload to CRM
+        </button>
       </div>
 
       <button type="submit" id="submitBtn">Check-in Device</button>
