@@ -136,3 +136,7 @@ button[type="submit"]:hover {
   display: flex;
   gap: 8px;
 }
+
+.mini-row .toggle-btn {
+  flex: 1;
+}

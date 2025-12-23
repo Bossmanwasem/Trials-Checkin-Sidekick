@@ -6,6 +6,7 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
+const INVENTORY_URL = "https://portal.talktometechnologies.com/admin/ManageInventory.aspx";
 
 /* ---------------- Helpers ---------------- */
 function showCompleteView() {
@@ -84,6 +85,13 @@ function toggleSection(sectionId) {
 function getFormValue(selector) {
   const el = document.querySelector(selector);
   return (el?.value || "").trim();
+}
+
+function getInventorySearchValue() {
+  const device = getFormValue("#deviceNumberInput");
+  const lumin = getFormValue('input[name="luminNumber"]');
+  const camera = getFormValue('input[name="cameraNumber"]');
+  return lumin || camera || device;
 }
 
 /* ---------------- Repairs logic ---------------- */
@@ -289,6 +297,60 @@ async function sendToCrm(type, payload) {
   return res || { ok: false };
 }
 
+/* ---------------- Inventory script ---------------- */
+
+async function waitForInventoryTabReady(tabId) {
+  const tab = await chrome.tabs.get(tabId).catch(() => null);
+  if (tab?.status === "complete" && tab.url?.startsWith(INVENTORY_URL)) return tabId;
+
+  return new Promise(resolve => {
+    const timeout = setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+      resolve(tabId);
+    }, 15000);
+
+    const onUpdated = (updatedTabId, info, updatedTab) => {
+      if (updatedTabId !== tabId) return;
+      if (updatedTab?.url?.startsWith(INVENTORY_URL) && info.status === "complete") {
+        clearTimeout(timeout);
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        resolve(tabId);
+      }
+    };
+
+    chrome.tabs.onUpdated.addListener(onUpdated);
+  });
+}
+
+async function openInventoryTab() {
+  const existing = await chrome.tabs.query({ url: `${INVENTORY_URL}*` }).catch(() => []);
+  if (existing?.length && existing[0]?.id) {
+    await chrome.tabs.update(existing[0].id, { active: true }).catch(() => null);
+    return existing[0].id;
+  }
+
+  const created = await chrome.tabs.create({ url: INVENTORY_URL, active: true }).catch(() => null);
+  return created?.id || null;
+}
+
+async function runInventoryScript(searchValue) {
+  const tabId = await openInventoryTab();
+  if (!tabId) {
+    alert("Could not open the inventory tab.");
+    return;
+  }
+
+  const readyTabId = await waitForInventoryTabReady(tabId);
+  const res = await chrome.tabs.sendMessage(readyTabId, {
+    type: "RUN_INVENTORY_SCRIPT",
+    searchValue
+  }).catch(() => null);
+
+  if (!res?.ok) {
+    alert(res?.error || "Failed to run the inventory script. Make sure the inventory page is loaded.");
+  }
+}
+
 /* ---------------- Reset everything after success ---------------- */
 
 function resetAllFieldsAndUI() {
@@ -349,6 +411,17 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // ✅ SUCCESS
   resetAllFieldsAndUI();
   showCompleteView();
+});
+
+/* ---------------- Inventory button ---------------- */
+
+document.getElementById("runInventoryBtn")?.addEventListener("click", async () => {
+  const searchValue = getInventorySearchValue();
+  if (!searchValue) {
+    alert("Enter a device number or camera/Lumin-I number first.");
+    return;
+  }
+  await runInventoryScript(searchValue);
 });
 
 /* ---------------- Start another Checkin ---------------- */
