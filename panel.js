@@ -333,13 +333,14 @@ function buildInventorySearchValue({ deviceNumber = "", cameraNumber = "", lumin
   return (cameraNumber || "").trim() || (luminNumber || "").trim() || (deviceNumber || "").trim() || "";
 }
 
+let inventoryNextStepVisible = false;
+
 async function updateInventorySearchDisplay() {
   const identifiers = await getLastIdentifiers();
   const searchValue = buildInventorySearchValue(identifiers);
   const display = document.getElementById("inventorySearchValue");
   const runBtn = document.getElementById("runInventoryScriptBtn");
   const status = document.getElementById("inventoryStatus");
-  setInventoryNextStepVisibility(false);
 
   if (display) {
     display.textContent = searchValue || "No stored identifiers. Fill out the first page first.";
@@ -347,14 +348,18 @@ async function updateInventorySearchDisplay() {
   if (runBtn) runBtn.disabled = !searchValue;
   if (status) status.textContent = "";
 
+  setInventoryNextStepVisibility(Boolean(searchValue) && inventoryNextStepVisible);
+
   return identifiers;
 }
 
 function setInventoryNextStepVisibility(show) {
   const btn = document.getElementById("inventoryNextStepBtn");
   if (!btn) return;
-  btn.style.display = show ? "block" : "none";
+  inventoryNextStepVisible = !!show;
+  btn.style.display = inventoryNextStepVisible ? "block" : "none";
 }
+
 
 function watchIdentifierInputs() {
   const selectors = ["#deviceNumberInput", "input[name='cameraNumber']", "input[name='luminNumber']"];
