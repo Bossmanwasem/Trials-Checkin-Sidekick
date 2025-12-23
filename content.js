@@ -3,8 +3,6 @@
 /* ---------------- Utilities ---------------- */
 
 const INVENTORY_URL = "https://portal.talktometechnologies.com/admin/ManageInventory.aspx";
-const INVENTORY_RETURNED_DROPDOWN_XPATH = '//*[@id="ctl00_MainContent_dvwInventory_ddlReturned"]';
-const INVENTORY_SUBMIT_LINK_XPATH = '//*[@id="ctl00_MainContent_dvwInventory"]/tbody/tr[10]/td/a[1]';
 
 function getElementByXPath(xpath) {
   try {
@@ -65,25 +63,6 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
-}
-
-/* ---------------- Inventory helpers ---------------- */
-
-async function setReturnedDropdownToYesAndSubmit() {
-  await waitForElementByXPath(INVENTORY_RETURNED_DROPDOWN_XPATH, {
-    visibleOnly: true
-  });
-
-  const setDropdown = setDropdownByVisibleText(INVENTORY_RETURNED_DROPDOWN_XPATH, "Yes");
-  if (!setDropdown) {
-    throw new Error('Could not set "Returned" dropdown to "Yes".');
-  }
-
-  const submitLink = await waitForElementByXPath(INVENTORY_SUBMIT_LINK_XPATH, {
-    visibleOnly: true
-  });
-
-  submitLink.click();
 }
 
 /* ---------------- Existing CRM Data Grab ---------------- */
@@ -191,18 +170,11 @@ async function runInventoryEditSearch(searchValueRaw) {
     editBtn.click();
 
     try {
-      await waitForElementByXPath(INVENTORY_RETURNED_DROPDOWN_XPATH, {
+      await waitForElementByXPath('//*[@id="ctl00_MainContent_dvwInventory"]', {
         visibleOnly: true
       });
     } catch (err) {
       alert(err.message || "Inventory edit view did not load.");
-      return false;
-    }
-
-    try {
-      await setReturnedDropdownToYesAndSubmit();
-    } catch (err) {
-      alert(err.message || "Could not click the submit link.");
       return false;
     }
 

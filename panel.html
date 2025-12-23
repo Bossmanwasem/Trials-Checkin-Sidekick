@@ -13,7 +13,6 @@
 
     <div class="mini-row">
       <button id="refreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
-      <button id="runInventoryBtn" class="toggle-btn" type="button">Run inventory script</button>
     </div>
 
     <form id="checkinForm">
@@ -105,10 +104,15 @@
 
   <!-- COMPLETE VIEW -->
   <div class="container" id="completeView" style="display:none;">
-    <h1>Check-in Complete</h1>
-    <p style="margin-top:10px; opacity:0.9;">
-      Note is posted.
-    </p>
+    <h1>Next Steps</h1>
+    <p id="completeIntro" class="complete-intro"></p>
+
+    <div class="callout" id="inventoryStatus"></div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">CRM note submitted</div>
+      <pre id="notePreviewText" class="note-preview__body"></pre>
+    </div>
 
     <button id="startAnotherBtn" class="toggle-btn" type="button" style="margin-top:16px;">
       Start another Checkin
