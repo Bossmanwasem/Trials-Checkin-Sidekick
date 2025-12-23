@@ -6,21 +6,22 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
+const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 
 /* ---------------- Helpers ---------------- */
-function showCompleteView() {
-  const formView = document.getElementById("formView");
-  const completeView = document.getElementById("completeView");
-  if (formView) formView.style.display = "none";
-  if (completeView) completeView.style.display = "block";
+const VIEW_IDS = ["formView", "completeView", "inventoryView"];
+
+function showView(targetId) {
+  VIEW_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = id === targetId ? "block" : "none";
+  });
 }
 
-function showFormView() {
-  const formView = document.getElementById("formView");
-  const completeView = document.getElementById("completeView");
-  if (completeView) completeView.style.display = "none";
-  if (formView) formView.style.display = "block";
-}
+function showCompleteView() { showView("completeView"); }
+function showFormView() { showView("formView"); }
+function showInventoryView() { showView("inventoryView"); }
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -301,6 +302,82 @@ async function sendToCrm(type, payload) {
   return res || { ok: false };
 }
 
+/* ---------------- Inventory identifiers storage ---------------- */
+
+function getCurrentIdentifiers() {
+  return {
+    deviceNumber: getFormValue("#deviceNumberInput"),
+    cameraNumber: getFormValue('input[name="cameraNumber"]'),
+    luminNumber: getFormValue('input[name="luminNumber"]')
+  };
+}
+
+function saveLastIdentifiers(identifiers) {
+  if (!chrome?.storage?.local) return Promise.resolve();
+  return new Promise(resolve => {
+    chrome.storage.local.set({ [IDENTIFIER_STORAGE_KEY]: identifiers }, resolve);
+  });
+}
+
+function getLastIdentifiers() {
+  if (!chrome?.storage?.local) return Promise.resolve({});
+  return new Promise(resolve => {
+    chrome.storage.local.get(IDENTIFIER_STORAGE_KEY, res => {
+      resolve(res?.[IDENTIFIER_STORAGE_KEY] || {});
+    });
+  });
+}
+
+function buildInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminNumber = "" } = {}) {
+  return (cameraNumber || "").trim() || (luminNumber || "").trim() || (deviceNumber || "").trim() || "";
+}
+
+async function updateInventorySearchDisplay() {
+  const identifiers = await getLastIdentifiers();
+  const searchValue = buildInventorySearchValue(identifiers);
+  const display = document.getElementById("inventorySearchValue");
+  const runBtn = document.getElementById("runInventoryScriptBtn");
+  const status = document.getElementById("inventoryStatus");
+
+  if (display) {
+    display.textContent = searchValue || "No stored identifiers. Fill out the first page first.";
+  }
+  if (runBtn) runBtn.disabled = !searchValue;
+  if (status) status.textContent = "";
+
+  return identifiers;
+}
+
+function watchIdentifierInputs() {
+  const selectors = ["#deviceNumberInput", "input[name='cameraNumber']", "input[name='luminNumber']"];
+  const handler = () => saveLastIdentifiers(getCurrentIdentifiers());
+  selectors.forEach(sel => {
+    document.querySelector(sel)?.addEventListener("input", handler);
+  });
+}
+
+function isManageInventoryUrl(url) {
+  return typeof url === "string" && url.includes("ManageInventory.aspx");
+}
+
+async function syncViewForTab(tab) {
+  if (!tab || !isCrmUrl(tab.url)) return;
+
+  if (isManageInventoryUrl(tab.url)) {
+    showInventoryView();
+    await updateInventorySearchDisplay();
+    return;
+  }
+
+  const inventoryVisible = document.getElementById("inventoryView")?.style.display === "block";
+  if (inventoryVisible) {
+    showFormView();
+  }
+
+  const res = await fetchClientData(tab.id);
+  if (res?.data) applyClientData(res.data);
+}
+
 /* ---------------- Trial file zip + upload ---------------- */
 
 const trialFilesInput = document.getElementById("trialFilesInput");
@@ -469,6 +546,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const note = buildCannedNote();
   await navigator.clipboard.writeText(note);
 
+  // 2.5) Remember identifiers for the inventory page
+  await saveLastIdentifiers(getCurrentIdentifiers());
+
   // 3) Fill note in CRM
   const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
   if (!setNoteRes.ok) { alert("Failed to fill CRM note box."); return; }
@@ -508,9 +588,44 @@ chrome.runtime.onMessage.addListener(msg => {
   if (msg?.type === "CLIENT_DATA_CHANGED") applyClientData(msg.data);
 });
 
+/* ---------------- Inventory page ---------------- */
+
+document.getElementById("runInventoryScriptBtn")?.addEventListener("click", async () => {
+  const identifiers = await updateInventorySearchDisplay();
+  const searchValue = buildInventorySearchValue(identifiers);
+  if (!searchValue) {
+    alert("No device, camera, or Lumin-I number stored. Fill out the first page first.");
+    return;
+  }
+
+  const status = document.getElementById("inventoryStatus");
+  if (status) status.textContent = `Looking for "${searchValue}"...`;
+
+  const res = await sendToCrm("RUN_INVENTORY_SCRIPT", { identifiers });
+  if (!res.ok) {
+    alert(res.message || "Failed to run inventory script.");
+    if (status) status.textContent = "";
+    return;
+  }
+
+  if (status) status.textContent = "Script sent to page. Watch the table for the highlighted row.";
+});
+
 /* ---------------- Init ---------------- */
 
 (async function init() {
-  const res = await fetchClientData();
-  if (res?.data) applyClientData(res.data);
+  const activeTab = await getActiveCrmTab();
+  watchIdentifierInputs();
+  await syncViewForTab(activeTab);
+
+  chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    await syncViewForTab(tab);
+  });
+
+  chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (tab?.active && changeInfo?.status === "complete") {
+      await syncViewForTab(tab);
+    }
+  });
 })();

@@ -59,6 +59,10 @@ function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
 }
 
+function safeTrimLower(str) {
+  return (str || "").trim().toLowerCase();
+}
+
 /* ---------------- Existing CRM Data Grab ---------------- */
 
 function getCrmIdFromUrl() {
@@ -173,6 +177,51 @@ async function uploadZipDirectlyToPage(zipArrayBuffer, zipName) {
 
 /* ---------------- Message Listener ---------------- */
 
+function pickInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminNumber = "" } = {}) {
+  const camera = cameraNumber.trim();
+  const lumin = luminNumber.trim();
+  const device = deviceNumber.trim();
+  return camera || lumin || device || "";
+}
+
+function clickEditForDevice(searchValue) {
+  const target = safeTrimLower(searchValue);
+  const rows = document.querySelectorAll("table tr");
+  let foundRow = null;
+
+  for (const row of rows) {
+    row.style.outline = "";
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 2) continue;
+
+    const serialCell = cells[1];
+    const cellText = safeTrimLower(serialCell.textContent);
+
+    if (cellText.startsWith(target)) {
+      foundRow = row;
+      break;
+    }
+  }
+
+  if (foundRow) {
+    foundRow.style.outline = "4px solid limegreen";
+    foundRow.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    setTimeout(() => {
+      const editBtn = foundRow.querySelector("input[src*='Edit.gif']");
+      if (editBtn) {
+        editBtn.click();
+      } else {
+        alert("Edit icon not found in matching row!");
+      }
+    }, 1200);
+    return true;
+  }
+
+  alert("No matching row found for: " + searchValue);
+  return false;
+}
+
 const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
 
 if (runtime?.onMessage?.addListener) {
@@ -213,6 +262,23 @@ if (runtime?.onMessage?.addListener) {
         console.error(err);
         sendResponse({ ok: false, message: err?.message || "Upload failed." });
       });
+    return true;
+  }
+
+  if (msg.type === "RUN_INVENTORY_SCRIPT") {
+    const searchValue = pickInventorySearchValue(msg.identifiers);
+    if (!searchValue) {
+      sendResponse({ ok: false, message: "No device, camera, or Lumin-I number provided." });
+      return true;
+    }
+
+    try {
+      const ok = clickEditForDevice(searchValue);
+      sendResponse({ ok });
+    } catch (err) {
+      console.error(err);
+      sendResponse({ ok: false, message: err?.message || "Failed to run inventory script." });
+    }
     return true;
   }
 
