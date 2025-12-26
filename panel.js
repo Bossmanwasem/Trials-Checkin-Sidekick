@@ -13,7 +13,7 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["landingView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["landingView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -24,6 +24,7 @@ function showView(targetId) {
 }
 
 function showLandingView() { showView("landingView"); }
+function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showInventoryView() { showView("inventoryView"); }
@@ -1129,6 +1130,26 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showFormView();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
+  });
+
+  document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
+    showCrmNavigatorView();
+  });
+
+  document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const crmId = (document.getElementById("crmNavigatorInput")?.value || "").trim();
+    if (!crmId) {
+      alert("Enter a CRM ID to continue.");
+      return;
+    }
+    chrome.tabs.create({
+      url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}`
+    });
+  });
+
+  document.getElementById("crmNavigatorReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
   });
 
   const activeTab = await getActiveCrmTab();

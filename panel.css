@@ -76,6 +76,20 @@ body {
   text-align: left;
 }
 
+.crm-navigator-view {
+  position: relative;
+}
+
+.crm-navigator-view button[type="submit"] {
+  margin-top: 16px;
+}
+
+.crm-nav-footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 h1 {
   text-align: center;
   color: var(--accent);
