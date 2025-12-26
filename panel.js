@@ -1154,6 +1154,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showLandingView();
   });
 
+  document.getElementById("returnToLandingBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
   const activeTab = await getActiveCrmTab();
   await syncViewForTab(activeTab);
 
