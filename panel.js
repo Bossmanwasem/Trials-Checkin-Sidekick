@@ -1138,7 +1138,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const crmId = (document.getElementById("crmNavigatorInput")?.value || "").trim();
+    const crmInput = document.getElementById("crmNavigatorInput");
+    const crmId = (crmInput?.value || "").trim();
     if (!crmId) {
       alert("Enter a CRM ID to continue.");
       return;
@@ -1146,6 +1147,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     chrome.tabs.create({
       url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}`
     });
+    if (crmInput) crmInput.value = "";
   });
 
   document.getElementById("crmNavigatorReturnBtn")?.addEventListener("click", () => {

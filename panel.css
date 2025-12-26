@@ -15,6 +15,12 @@
   --error-color: #ff7b7b;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Segoe UI, sans-serif;
   background-color: var(--bg-color);
