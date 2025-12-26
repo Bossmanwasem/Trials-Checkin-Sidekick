@@ -187,6 +187,10 @@ function initThemeControls() {
   document.querySelectorAll(".theme-option").forEach(btn => {
     btn.addEventListener("click", () => {
       applyTheme(btn.dataset.theme);
+      if (menu && menuBtn) {
+        menu.style.display = "none";
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
     });
   });
 }
