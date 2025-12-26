@@ -242,10 +242,10 @@ const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
 
 if (runtime?.onMessage?.addListener) {
   runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "GET_CLIENT_DATA") {
-    sendResponse({ ok: true, data: collectClientData() });
-    return true;
-  }
+    if (msg.type === "GET_CLIENT_DATA") {
+      sendResponse({ ok: true, data: collectClientData() });
+      return true;
+    }
 
   if (msg.type === "SET_CRM_NOTE") {
     const ok = setValueByXPath(msg.xpath, msg.noteText);
@@ -281,22 +281,37 @@ if (runtime?.onMessage?.addListener) {
     return true;
   }
 
-  if (msg.type === "RUN_INVENTORY_SCRIPT") {
-    const searchValue = pickInventorySearchValue(msg.identifiers);
-    if (!searchValue) {
-      sendResponse({ ok: false, message: "No device, camera, or Lumin-I number provided." });
+    if (msg.type === "RUN_INVENTORY_SCRIPT") {
+      const searchValue = pickInventorySearchValue(msg.identifiers);
+      if (!searchValue) {
+        sendResponse({ ok: false, message: "No device, camera, or Lumin-I number provided." });
+        return true;
+      }
+
+      try {
+        const ok = clickEditForDevice(searchValue);
+        sendResponse({ ok });
+      } catch (err) {
+        console.error(err);
+        sendResponse({ ok: false, message: err?.message || "Failed to run inventory script." });
+      }
       return true;
     }
 
-    try {
-      const ok = clickEditForDevice(searchValue);
-      sendResponse({ ok });
-    } catch (err) {
-      console.error(err);
-      sendResponse({ ok: false, message: err?.message || "Failed to run inventory script." });
+    if (msg.type === "RUN_DAF_AUTOFILL") {
+      fillDafFormFromStorage()
+        .then(didRun => {
+          sendResponse({
+            ok: didRun,
+            message: didRun ? "" : "No saved check-in found. Fill out the check-in form first."
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          sendResponse({ ok: false, message: err?.message || "DAF autofill failed." });
+        });
+      return true;
     }
-    return true;
-  }
 
   });
 } else {
@@ -472,10 +487,10 @@ async function ensureDafCheckboxChecked(xpath, labelVariants = []) {
 }
 
 async function fillDafFormFromStorage() {
-  if (!isDafFormPage()) return;
+  if (!isDafFormPage()) return false;
 
   const data = await getLastCheckinDataForDaf();
-  if (!data) return;
+  if (!data) return false;
 
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim();
 
@@ -531,6 +546,8 @@ async function fillDafFormFromStorage() {
     '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label',
     ["device returned", "daf", "device received back", "ttmt device confirmation"]
   );
+
+  return true;
 }
 
 if (isDafFormPage()) {
