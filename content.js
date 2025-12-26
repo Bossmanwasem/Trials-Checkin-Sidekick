@@ -81,6 +81,7 @@ function resolveInputTarget(el) {
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
+const DAF_CONSULTANT_LISTBOX_XPATH = '//*[@id="CommonEditorCalloutId"]/div/div';
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -92,6 +93,86 @@ function safeTrimLower(str) {
 
 function normalizeText(str) {
   return (str || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function levenshteinDistance(a, b) {
+  const first = a || "";
+  const second = b || "";
+  if (!first.length) return second.length;
+  if (!second.length) return first.length;
+
+  const matrix = Array.from({ length: first.length + 1 }, () => []);
+  for (let i = 0; i <= first.length; i += 1) matrix[i][0] = i;
+  for (let j = 0; j <= second.length; j += 1) matrix[0][j] = j;
+
+  for (let i = 1; i <= first.length; i += 1) {
+    for (let j = 1; j <= second.length; j += 1) {
+      const cost = first[i - 1] === second[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return matrix[first.length][second.length];
+}
+
+function scoreNameSimilarity(target, candidate) {
+  const normalizedTarget = normalizeText(target);
+  const normalizedCandidate = normalizeText(candidate);
+  if (!normalizedTarget || !normalizedCandidate) return 0;
+  if (normalizedTarget === normalizedCandidate) return 1;
+  if (normalizedCandidate.includes(normalizedTarget) || normalizedTarget.includes(normalizedCandidate)) {
+    return 0.9;
+  }
+  const distance = levenshteinDistance(normalizedTarget, normalizedCandidate);
+  const maxLen = Math.max(normalizedTarget.length, normalizedCandidate.length);
+  return maxLen ? 1 - distance / maxLen : 0;
+}
+
+function selectClosestConsultantFromListBox(listBox, targetName) {
+  if (!listBox || !targetName) return false;
+
+  const candidates = Array.from(
+    listBox.querySelectorAll("[role='option'], li, div, span, button")
+  ).filter(el => isVisible(el) && normalizeText(el.textContent));
+
+  const seen = new Map();
+  candidates.forEach(el => {
+    const text = normalizeText(el.textContent);
+    if (!seen.has(text)) seen.set(text, el);
+  });
+
+  const uniqueCandidates = Array.from(seen.entries()).map(([text, el]) => ({
+    text,
+    el
+  }));
+
+  if (!uniqueCandidates.length) return false;
+
+  uniqueCandidates.sort((a, b) => {
+    const aRole = a.el.getAttribute("role") === "option" ? 1 : 0;
+    const bRole = b.el.getAttribute("role") === "option" ? 1 : 0;
+    return bRole - aRole;
+  });
+
+  let best = null;
+  let bestScore = 0;
+  uniqueCandidates.forEach(candidate => {
+    const score = scoreNameSimilarity(targetName, candidate.text);
+    if (score > bestScore) {
+      bestScore = score;
+      best = candidate.el;
+    }
+  });
+
+  if (!best || bestScore <= 0) return false;
+
+  best.click();
+  dispatchChangeEvents(best);
+  return true;
 }
 
 /* ---------------- Existing CRM Data Grab ---------------- */
@@ -476,6 +557,26 @@ async function fillDafFieldWithFallback({ value, xpath, xpaths, labels }) {
   }
 }
 
+async function selectDafConsultantByAac(aacName) {
+  const safeName = (aacName || "").trim();
+  if (!safeName) return false;
+
+  try {
+    const listBox = await waitForElementByXPath(DAF_CONSULTANT_LISTBOX_XPATH, {
+      timeoutMs: 8000,
+      visibleOnly: true
+    });
+    const selected = selectClosestConsultantFromListBox(listBox, safeName);
+    if (!selected) {
+      console.warn("DAF consultant list box loaded but no match found for AAC:", safeName);
+    }
+    return selected;
+  } catch (err) {
+    console.warn("Failed to select DAF consultant by AAC", err);
+    return false;
+  }
+}
+
 async function ensureDafCheckboxChecked(xpath, labelVariants = []) {
   try {
     const target = await waitForElementByXPath(xpath, { timeoutMs: 10000 });
@@ -566,6 +667,7 @@ async function fillDafFormFromStorage() {
   ];
 
   await Promise.all(fields.map(f => fillDafFieldWithFallback(f)));
+  await selectDafConsultantByAac(data.aac);
 
   await ensureDafCheckboxChecked(
     '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label',
