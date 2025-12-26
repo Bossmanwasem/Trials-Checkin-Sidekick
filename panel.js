@@ -231,7 +231,7 @@ function detectDeviceModel(deviceNumberRaw) {
 
 function buildVocabLine() {
   const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
-  return vocabNotReturned ? "No vocab returned." : "Vocab was returned.";
+  return vocabNotReturned ? "No vocab returned." : "I saved vocab to the CRM.";
 }
 
 function buildAccessoriesLineIfAny() {
