@@ -409,7 +409,7 @@ function buildDafRecapEntries(data) {
 
 function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
   const fullName = [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim() || "Client";
-  const subject = `${data?.aac || "AAC"} | ${fullName} Device Returned`;
+  const subject = `${data?.aac || "AAC"} | ${fullName} Device Returned.`;
   const lines = [];
   lines.push(`${fullName} Device was returned.`);
 
@@ -477,6 +477,7 @@ async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
   const crmLink = await getCrmLink();
   const payload = buildOutlookEmailPayload(data, { crmLink });
+  setValue("emailSubjectField", payload.subject);
   setText("emailBodyPreview", payload.body);
   setText("emailStatus", "");
   return payload;
@@ -893,6 +894,14 @@ document.getElementById("copyEmailBodyBtn")?.addEventListener("click", async () 
   await navigator.clipboard.writeText(payload.body);
   const status = document.getElementById("emailStatus");
   if (status) status.textContent = "Email body copied to clipboard.";
+});
+
+document.getElementById("copyEmailSubjectBtn")?.addEventListener("click", async () => {
+  const payload = await renderOutlookEmailPreview();
+  if (!payload?.subject) return;
+  await navigator.clipboard.writeText(payload.subject);
+  const status = document.getElementById("emailStatus");
+  if (status) status.textContent = "Email subject copied to clipboard.";
 });
 
 document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
