@@ -128,6 +128,101 @@ const THEMES = {
       "note-border": "#2a3646",
       "error-color": "#ff9f9f"
     }
+  },
+  aurora: {
+    label: "Aurora Mint",
+    vars: {
+      "bg-color": "#0b1413",
+      "text-color": "#e7fffb",
+      "muted-text": "#b6f7ea",
+      "container-bg": "#12201e",
+      "container-border": "#5eead4",
+      "container-shadow": "0 0 20px rgba(94, 234, 212, 0.25)",
+      "accent": "#5eead4",
+      "accent-strong": "#0f4b45",
+      "accent-strong-hover": "#146056",
+      "input-bg": "#1a2b29",
+      "input-border": "#355a55",
+      "note-bg": "#0c1716",
+      "note-border": "#284946",
+      "error-color": "#ff9fb0"
+    }
+  },
+  citrus: {
+    label: "Citrus Pop",
+    vars: {
+      "bg-color": "#14130a",
+      "text-color": "#fff5d7",
+      "muted-text": "#fde68a",
+      "container-bg": "#2a250e",
+      "container-border": "#facc15",
+      "container-shadow": "0 0 20px rgba(250, 204, 21, 0.28)",
+      "accent": "#facc15",
+      "accent-strong": "#7a5a00",
+      "accent-strong-hover": "#946b00",
+      "input-bg": "#332c11",
+      "input-border": "#6d5a14",
+      "note-bg": "#1b1708",
+      "note-border": "#574a13",
+      "error-color": "#ff9f9f"
+    }
+  },
+  sand: {
+    label: "Desert Sand",
+    vars: {
+      "bg-color": "#14100d",
+      "text-color": "#fdf4e7",
+      "muted-text": "#f7d8b4",
+      "container-bg": "#2a2019",
+      "container-border": "#f5d0a9",
+      "container-shadow": "0 0 20px rgba(245, 208, 169, 0.25)",
+      "accent": "#f5d0a9",
+      "accent-strong": "#7a4a2c",
+      "accent-strong-hover": "#955935",
+      "input-bg": "#332720",
+      "input-border": "#6d5443",
+      "note-bg": "#1b140f",
+      "note-border": "#584234",
+      "error-color": "#ff9aa2"
+    }
+  },
+  midnight: {
+    label: "Midnight Violet",
+    vars: {
+      "bg-color": "#0c0b16",
+      "text-color": "#f2edff",
+      "muted-text": "#cfc9ff",
+      "container-bg": "#1a1830",
+      "container-border": "#8b5cf6",
+      "container-shadow": "0 0 20px rgba(139, 92, 246, 0.28)",
+      "accent": "#8b5cf6",
+      "accent-strong": "#3b2470",
+      "accent-strong-hover": "#4b2f8f",
+      "input-bg": "#241f3f",
+      "input-border": "#514177",
+      "note-bg": "#120f22",
+      "note-border": "#3a2f5c",
+      "error-color": "#ff9ccf"
+    }
+  },
+  rose: {
+    label: "Rose Quartz",
+    vars: {
+      "bg-color": "#150f14",
+      "text-color": "#ffeaf4",
+      "muted-text": "#f9c4db",
+      "container-bg": "#2a1822",
+      "container-border": "#f472b6",
+      "container-shadow": "0 0 20px rgba(244, 114, 182, 0.28)",
+      "accent": "#f472b6",
+      "accent-strong": "#7a2a4d",
+      "accent-strong-hover": "#95325f",
+      "input-bg": "#33202c",
+      "input-border": "#6d4054",
+      "note-bg": "#1c0f17",
+      "note-border": "#573245",
+      "error-color": "#ff8fab"
+    }
   }
 };
 
