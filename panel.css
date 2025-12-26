@@ -37,6 +37,7 @@ body {
   min-height: 360px;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .landing-content {
@@ -52,6 +53,27 @@ body {
 .landing-btn {
   font-size: 16px;
   font-weight: 600;
+}
+
+.theme-picker {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  text-align: right;
+}
+
+.theme-picker .landing-btn {
+  width: auto;
+  margin-top: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+.theme-picker .theme-menu {
+  margin-top: 8px;
+  width: 240px;
+  text-align: left;
 }
 
 h1 {
