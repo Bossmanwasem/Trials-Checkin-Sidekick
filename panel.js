@@ -736,6 +736,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   if (isMountOnly) {
     await renderDafRecap();
     showDafView();
+    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
     return;
   }
 
