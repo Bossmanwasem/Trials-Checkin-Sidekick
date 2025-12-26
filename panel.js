@@ -72,6 +72,16 @@ async function getActiveCrmTabId() {
   return tabs?.[0]?.id || null;
 }
 
+async function getActiveDafTabId() {
+  const tab = await getActiveCrmTab();
+  if (tab?.id && isDafFormUrl(tab.url)) return tab.id;
+
+  const tabs = await chrome.tabs.query({
+    url: "*://talktometechnologies2com.sharepoint.com/*listforms.aspx*"
+  });
+  return tabs?.[0]?.id || null;
+}
+
 async function fetchClientData(tabIdOverride = null) {
   const tabId = tabIdOverride ?? (await getActiveCrmTabId());
   if (!tabId) return null;
@@ -807,6 +817,25 @@ document.getElementById("dafRecapFields")?.addEventListener("click", async (e) =
   const original = btn.textContent;
   btn.textContent = "Copied!";
   setTimeout(() => { btn.textContent = original; }, 1200);
+});
+
+document.getElementById("dafAutofillBtn")?.addEventListener("click", async () => {
+  const status = document.getElementById("dafRecapStatus");
+  if (status) status.textContent = "Triggering autofill in the DAF form tab...";
+
+  const tabId = await getActiveDafTabId();
+  if (!tabId) {
+    if (status) status.textContent = "No DAF form tab found. Open the DAF form and try again.";
+    return;
+  }
+
+  const res = await chrome.tabs.sendMessage(tabId, { type: "RUN_DAF_AUTOFILL" }).catch(() => null);
+  if (!res?.ok) {
+    if (status) status.textContent = res?.message || "Autofill failed. Try again or use the copy buttons.";
+    return;
+  }
+
+  if (status) status.textContent = "Autofill triggered. Check the DAF form tab.";
 });
 
 /* ---------------- Init ---------------- */
