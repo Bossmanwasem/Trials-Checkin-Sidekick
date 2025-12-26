@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "TTMT CRM Check-in Side Panel",
+  "name": "TTMT CRM Sidekick",
   "version": "1.0.0",
   "description": "Side panel check-in form for TTMT CRM pages. Auto-fills client data and copies a summary to clipboard.",
   "permissions": ["sidePanel", "activeTab", "tabs", "scripting", "downloads", "storage"],
