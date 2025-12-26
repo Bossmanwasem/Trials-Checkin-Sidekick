@@ -12,7 +12,7 @@ const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["landingView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -22,11 +22,14 @@ function showView(targetId) {
   });
 }
 
+function showLandingView() { showView("landingView"); }
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showInventoryView() { showView("inventoryView"); }
 function showDafView() { showView("dafRecapView"); }
 function showEmailView() { showView("emailView"); }
+
+let hasStartedCheckin = false;
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -605,6 +608,7 @@ async function closeManageInventoryTabs(excludeTabId = null) {
 
 async function syncViewForTab(tab) {
   if (!tab) return;
+  if (!hasStartedCheckin) return;
 
   if (isDafFormUrl(tab.url)) {
     await renderDafRecap();
@@ -952,8 +956,17 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 /* ---------------- Init ---------------- */
 
 (async function init() {
-  const activeTab = await getActiveCrmTab();
   watchIdentifierInputs();
+  showLandingView();
+
+  document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
+    hasStartedCheckin = true;
+    showFormView();
+    const activeTab = await getActiveCrmTab();
+    await syncViewForTab(activeTab);
+  });
+
+  const activeTab = await getActiveCrmTab();
   await syncViewForTab(activeTab);
 
   chrome.tabs.onActivated.addListener(async ({ tabId }) => {

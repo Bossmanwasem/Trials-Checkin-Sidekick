@@ -15,6 +15,28 @@ body {
   box-shadow: 0 0 20px rgba(0, 128, 255, 0.25);
 }
 
+.landing-view {
+  display: flex;
+  min-height: 360px;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-content {
+  text-align: center;
+}
+
+.landing-subtitle {
+  margin: 12px 0 20px;
+  color: #d5e9ff;
+  opacity: 0.9;
+}
+
+.landing-btn {
+  font-size: 16px;
+  font-weight: 600;
+}
+
 h1 {
   text-align: center;
   color: #81cfff;
