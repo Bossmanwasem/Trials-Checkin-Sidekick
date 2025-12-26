@@ -415,12 +415,13 @@ async function fillDafFieldByXPath(xpath, value, options = {}) {
   }
 }
 
-async function fillDafFieldWithFallback({ value, xpath, labels }) {
+async function fillDafFieldWithFallback({ value, xpath, xpaths, labels }) {
   const safeVal = (value || "").trim();
   if (!safeVal) return false;
 
-  if (xpath) {
-    const ok = await fillDafFieldByXPath(xpath, safeVal, { timeoutMs: 4000 }).catch(() => false);
+  const candidateXPaths = xpaths || (xpath ? [xpath] : []);
+  for (const candidate of candidateXPaths) {
+    const ok = await fillDafFieldByXPath(candidate, safeVal, { timeoutMs: 4000 }).catch(() => false);
     if (ok) return true;
   }
 
@@ -481,7 +482,10 @@ async function fillDafFormFromStorage() {
   const fields = [
     {
       value: data.deviceNumber,
-      xpath: '//*[@id="TextField1"]',
+      xpaths: [
+        '//*[@id="TextField1"]',
+        "/html/body/div/div/div/form/div/div/div/div[1]/div/span/div/div/div/input"
+      ],
       labels: ["device serial", "device number", "device serial number", "device serial #"]
     },
     {
