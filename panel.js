@@ -573,6 +573,14 @@ function buildDafRecapEntries(data) {
   ];
 }
 
+const CRM_LINK_BASE = "https://portal.talktometechnologies.com/admin/EditClient.aspx?ID=";
+
+function buildCrmLink(data) {
+  const crmId = `${data?.crmId ?? ""}`.trim();
+  if (!crmId) return "";
+  return `${CRM_LINK_BASE}${crmId}`;
+}
+
 function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
   const fullName = [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim() || "Client";
   const subject = `${data?.aac || "AAC"} | ${fullName} Device Returned.`;
@@ -629,19 +637,9 @@ function buildOutlookComposeUrl({ subject, body, to = "" }) {
   return `mailto:${encodeURIComponent(to)}${query ? `?${query}` : ""}`;
 }
 
-async function getCrmLink() {
-  const tab = await getActiveCrmTab();
-  if (tab?.url && isCrmUrl(tab.url)) return tab.url;
-
-  const tabs = await chrome.tabs.query({
-    url: "https://portal.talktometechnologies.com/*"
-  });
-  return tabs?.[0]?.url || "";
-}
-
 async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
-  const crmLink = await getCrmLink();
+  const crmLink = buildCrmLink(data);
   const payload = buildOutlookEmailPayload(data, { crmLink });
   setValue("emailSubjectField", payload.subject);
   setText("emailBodyPreview", payload.body);
