@@ -407,26 +407,52 @@ function buildDafRecapEntries(data) {
   ];
 }
 
-function buildOutlookEmailPayload(data) {
-  const fullName = [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim();
-  const subject = `Trial check-in complete${fullName ? ` - ${fullName}` : ""}`;
-  const greetingName = data?.firstName || "there";
-  const lines = [
-    `Hi ${greetingName},`,
-    "",
-    "Your trial check-in is complete. Here are the details:",
-    data?.deviceNumber ? `Device: ${data.deviceNumber}` : "",
-    data?.cameraNumber ? `Camera: ${data.cameraNumber}` : "",
-    data?.luminNumber ? `Lumin-I: ${data.luminNumber}` : "",
-    data?.crmId ? `CRM ID: ${data.crmId}` : "",
-    data?.aac ? `AAC: ${data.aac}` : "",
-    [data?.clampMount, data?.tableMount, data?.rollingMount].filter(Boolean).length
-      ? `Mounts: ${[data?.clampMount, data?.tableMount, data?.rollingMount].filter(Boolean).join(", ")}`
-      : "",
-    "",
-    "Thanks,"
-  ].filter(Boolean);
-  return { subject, body: lines.join("\n") };
+function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
+  const fullName = [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim() || "Client";
+  const subject = `${data?.aac || "AAC"} | ${fullName} Device Returned`;
+  const lines = [];
+  lines.push(`${fullName} Device was returned.`);
+
+  if (data?.deviceNumber) {
+    lines.push(`Device: ${data.deviceNumber}`);
+  }
+
+  const hasExtraDetails = Boolean(
+    data?.cameraNumber ||
+    data?.luminNumber ||
+    data?.clampMount ||
+    data?.tableMount ||
+    data?.rollingMount
+  );
+
+  if (hasExtraDetails) {
+    lines.push("");
+  }
+
+  if (data?.cameraNumber) {
+    lines.push(`Camera Number: ${data.cameraNumber}`);
+  }
+
+  if (data?.luminNumber) {
+    lines.push(`Lumini: ${data.luminNumber}`);
+  }
+
+  if (data?.clampMount) {
+    lines.push(`Clamp Mount: ${data.clampMount}`);
+  }
+  if (data?.tableMount) {
+    lines.push(`Table Mount: ${data.tableMount}`);
+  }
+  if (data?.rollingMount) {
+    lines.push(`Rolling Mount: ${data.rollingMount}`);
+  }
+
+  if (crmLink) {
+    lines.push("", crmLink);
+  }
+
+  const to = "trials@talktometechnologies.com";
+  return { subject, body: lines.join("\n"), to };
 }
 
 function buildOutlookComposeUrl({ subject, body, to = "" }) {
@@ -437,9 +463,20 @@ function buildOutlookComposeUrl({ subject, body, to = "" }) {
   return `https://outlook.office.com/mail/deeplink/compose?${params.toString()}`;
 }
 
+async function getCrmLink() {
+  const tab = await getActiveCrmTab();
+  if (tab?.url && isCrmUrl(tab.url)) return tab.url;
+
+  const tabs = await chrome.tabs.query({
+    url: "https://portal.talktometechnologies.com/*"
+  });
+  return tabs?.[0]?.url || "";
+}
+
 async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
-  const payload = buildOutlookEmailPayload(data);
+  const crmLink = await getCrmLink();
+  const payload = buildOutlookEmailPayload(data, { crmLink });
   setText("emailSubjectPreview", payload.subject);
   setText("emailBodyPreview", payload.body);
   setText("emailStatus", "");
