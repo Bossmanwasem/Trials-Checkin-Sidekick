@@ -12,7 +12,7 @@ const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["formView", "completeView", "inventoryView", "dafRecapView"];
+const VIEW_IDS = ["formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -26,6 +26,7 @@ function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showInventoryView() { showView("inventoryView"); }
 function showDafView() { showView("dafRecapView"); }
+function showEmailView() { showView("emailView"); }
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -404,6 +405,45 @@ function buildDafRecapEntries(data) {
     { key: "tableMount", label: "Table Mount", value: data.tableMount },
     { key: "rollingMount", label: "Rolling Mount", value: data.rollingMount }
   ];
+}
+
+function buildOutlookEmailPayload(data) {
+  const fullName = [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim();
+  const subject = `Trial check-in complete${fullName ? ` - ${fullName}` : ""}`;
+  const greetingName = data?.firstName || "there";
+  const lines = [
+    `Hi ${greetingName},`,
+    "",
+    "Your trial check-in is complete. Here are the details:",
+    data?.deviceNumber ? `Device: ${data.deviceNumber}` : "",
+    data?.cameraNumber ? `Camera: ${data.cameraNumber}` : "",
+    data?.luminNumber ? `Lumin-I: ${data.luminNumber}` : "",
+    data?.crmId ? `CRM ID: ${data.crmId}` : "",
+    data?.aac ? `AAC: ${data.aac}` : "",
+    [data?.clampMount, data?.tableMount, data?.rollingMount].filter(Boolean).length
+      ? `Mounts: ${[data?.clampMount, data?.tableMount, data?.rollingMount].filter(Boolean).join(", ")}`
+      : "",
+    "",
+    "Thanks,"
+  ].filter(Boolean);
+  return { subject, body: lines.join("\n") };
+}
+
+function buildOutlookComposeUrl({ subject, body, to = "" }) {
+  const params = new URLSearchParams();
+  if (to) params.set("to", to);
+  if (subject) params.set("subject", subject);
+  if (body) params.set("body", body);
+  return `https://outlook.office.com/mail/deeplink/compose?${params.toString()}`;
+}
+
+async function renderOutlookEmailPreview() {
+  const data = await getLastCheckinDataForDaf();
+  const payload = buildOutlookEmailPayload(data);
+  setText("emailSubjectPreview", payload.subject);
+  setText("emailBodyPreview", payload.body);
+  setText("emailStatus", "");
+  return payload;
 }
 
 async function renderDafRecap() {
@@ -807,6 +847,23 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
+  const payload = await renderOutlookEmailPreview();
+  const status = document.getElementById("emailStatus");
+  if (status) status.textContent = "Opening Outlook compose window...";
+  const url = buildOutlookComposeUrl(payload);
+  chrome.tabs.create({ url });
+  showEmailView();
+});
+
+document.getElementById("openOutlookEmailBtn")?.addEventListener("click", async () => {
+  const payload = await renderOutlookEmailPreview();
+  const status = document.getElementById("emailStatus");
+  if (status) status.textContent = "Opening Outlook compose window...";
+  const url = buildOutlookComposeUrl(payload);
+  chrome.tabs.create({ url });
+});
+
+document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
   await finishCheckinAndReset();
 });
 
