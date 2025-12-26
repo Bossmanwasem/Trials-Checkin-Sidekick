@@ -332,6 +332,8 @@ input[type="file"] {
   border-radius: 10px;
   padding: 12px;
   text-align: left;
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
 }
 
 .theme-menu__title {
