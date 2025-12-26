@@ -50,6 +50,15 @@ body {
   text-align: center;
 }
 
+.landing-symojo {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 72px;
+  height: auto;
+  pointer-events: none;
+}
+
 .landing-subtitle {
   margin: 12px 0 20px;
   color: var(--muted-text);
