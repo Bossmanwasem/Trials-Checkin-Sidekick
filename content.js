@@ -53,6 +53,17 @@ function dispatchChangeEvents(el) {
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function setNativeValue(el, value) {
+  if (!el) return;
+  const prototype = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+  if (descriptor?.set) {
+    descriptor.set.call(el, value);
+  } else {
+    el.value = value;
+  }
+}
+
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 
@@ -394,7 +405,7 @@ async function fillDafFieldByXPath(xpath, value, options = {}) {
   if (!value) return false;
   try {
     const el = await waitForElementByXPath(xpath, { timeoutMs: 10000, ...options });
-    if ("value" in el) el.value = value;
+    if ("value" in el) setNativeValue(el, value);
     else el.textContent = value;
     dispatchChangeEvents(el);
     return true;
@@ -415,7 +426,7 @@ async function fillDafFieldWithFallback({ value, xpath, labels }) {
 
   try {
     const input = await waitForInputByLabels(labels);
-    input.value = safeVal;
+    setNativeValue(input, safeVal);
     dispatchChangeEvents(input);
     return true;
   } catch (err) {
