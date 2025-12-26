@@ -81,7 +81,10 @@ function resolveInputTarget(el) {
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
-const DAF_CONSULTANT_LISTBOX_XPATH = '//*[@id="CommonEditorCalloutId"]/div/div';
+const DAF_CONSULTANT_LISTBOX_XPATHS = [
+  '//*[@id="CommonEditorCalloutId"]/div',
+  '//*[@id="CommonEditorCalloutId"]/div/div'
+];
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -562,10 +565,21 @@ async function selectDafConsultantByAac(aacName) {
   if (!safeName) return false;
 
   try {
-    const listBox = await waitForElementByXPath(DAF_CONSULTANT_LISTBOX_XPATH, {
-      timeoutMs: 8000,
-      visibleOnly: true
-    });
+    let listBox = null;
+    for (const xpath of DAF_CONSULTANT_LISTBOX_XPATHS) {
+      try {
+        listBox = await waitForElementByXPath(xpath, {
+          timeoutMs: 8000,
+          visibleOnly: true
+        });
+        if (listBox) break;
+      } catch {
+        listBox = null;
+      }
+    }
+    if (!listBox) {
+      throw new Error("No consultant list box found for known XPaths.");
+    }
     const selected = selectClosestConsultantFromListBox(listBox, safeName);
     if (!selected) {
       console.warn("DAF consultant list box loaded but no match found for AAC:", safeName);
