@@ -477,7 +477,6 @@ async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
   const crmLink = await getCrmLink();
   const payload = buildOutlookEmailPayload(data, { crmLink });
-  setText("emailSubjectPreview", payload.subject);
   setText("emailBodyPreview", payload.body);
   setText("emailStatus", "");
   return payload;
@@ -884,20 +883,16 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
-  const payload = await renderOutlookEmailPreview();
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Opening Outlook app compose window...";
-  const url = buildOutlookComposeUrl(payload);
-  chrome.tabs.create({ url });
+  await renderOutlookEmailPreview();
   showEmailView();
 });
 
-document.getElementById("openOutlookEmailBtn")?.addEventListener("click", async () => {
+document.getElementById("copyEmailBodyBtn")?.addEventListener("click", async () => {
   const payload = await renderOutlookEmailPreview();
+  if (!payload?.body) return;
+  await navigator.clipboard.writeText(payload.body);
   const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Opening Outlook app compose window...";
-  const url = buildOutlookComposeUrl(payload);
-  chrome.tabs.create({ url });
+  if (status) status.textContent = "Email body copied to clipboard.";
 });
 
 document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
