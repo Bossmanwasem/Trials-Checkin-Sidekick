@@ -457,10 +457,10 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
 
 function buildOutlookComposeUrl({ subject, body, to = "" }) {
   const params = new URLSearchParams();
-  if (to) params.set("to", to);
   if (subject) params.set("subject", subject);
   if (body) params.set("body", body);
-  return `https://outlook.office.com/mail/deeplink/compose?${params.toString()}`;
+  const query = params.toString();
+  return `mailto:${encodeURIComponent(to)}${query ? `?${query}` : ""}`;
 }
 
 async function getCrmLink() {
@@ -886,7 +886,7 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
   const payload = await renderOutlookEmailPreview();
   const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Opening Outlook compose window...";
+  if (status) status.textContent = "Opening Outlook app compose window...";
   const url = buildOutlookComposeUrl(payload);
   chrome.tabs.create({ url });
   showEmailView();
@@ -895,7 +895,7 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
 document.getElementById("openOutlookEmailBtn")?.addEventListener("click", async () => {
   const payload = await renderOutlookEmailPreview();
   const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Opening Outlook compose window...";
+  if (status) status.textContent = "Opening Outlook app compose window...";
   const url = buildOutlookComposeUrl(payload);
   chrome.tabs.create({ url });
 });
