@@ -1,18 +1,35 @@
+:root {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --muted-text: #d5e9ff;
+  --container-bg: #1e1e2f;
+  --container-border: #81cfff;
+  --container-shadow: 0 0 20px rgba(0, 128, 255, 0.25);
+  --accent: #81cfff;
+  --accent-strong: #003366;
+  --accent-strong-hover: #005599;
+  --input-bg: #2a2a3a;
+  --input-border: #555;
+  --note-bg: #0f1b2b;
+  --note-border: #2f4b6f;
+  --error-color: #ff7b7b;
+}
+
 body {
   font-family: Segoe UI, sans-serif;
-  background-color: #121212;
-  color: #e0e0e0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   padding: 1em;
 }
 
 .container {
   max-width: 600px;
   margin: auto;
-  background: #1e1e2f;
+  background: var(--container-bg);
   padding: 18px 18px;
   border-radius: 12px;
-  border: 3px solid #81cfff;
-  box-shadow: 0 0 20px rgba(0, 128, 255, 0.25);
+  border: 3px solid var(--container-border);
+  box-shadow: var(--container-shadow);
 }
 
 .landing-view {
@@ -28,7 +45,7 @@ body {
 
 .landing-subtitle {
   margin: 12px 0 20px;
-  color: #d5e9ff;
+  color: var(--muted-text);
   opacity: 0.9;
 }
 
@@ -39,7 +56,7 @@ body {
 
 h1 {
   text-align: center;
-  color: #81cfff;
+  color: var(--accent);
   margin: 0;
 }
 
@@ -55,7 +72,7 @@ label {
   display: block;
   margin-top: 12px;
   font-weight: bold;
-  color: #81cfff;
+  color: var(--accent);
 }
 
 input[type="text"],
@@ -64,10 +81,10 @@ textarea {
   width: 100%;
   padding: 10px;
   margin-top: 6px;
-  border: 1px solid #555;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
-  background-color: #2a2a3a;
-  color: #ffffff;
+  background-color: var(--input-bg);
+  color: var(--text-color);
   font-size: 14px;
 }
 
@@ -79,8 +96,8 @@ textarea {
 .toggle-btn {
   display: block;
   background-color: transparent;
-  border: 1px solid #81cfff;
-  color: #81cfff;
+  border: 1px solid var(--accent);
+  color: var(--accent);
   padding: 10px;
   margin-top: 16px;
   text-align: center;
@@ -91,7 +108,7 @@ textarea {
 }
 
 .toggle-btn:hover {
-  background-color: #003366;
+  background-color: var(--accent-strong);
 }
 
 .hidden-section {
@@ -106,7 +123,7 @@ textarea {
 
 button[type="submit"] {
   width: 100%;
-  background-color: #003366;
+  background-color: var(--accent-strong);
   color: white;
   padding: 12px;
   border: none;
@@ -117,7 +134,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background-color: #005599;
+  background-color: var(--accent-strong-hover);
 }
 
 #thankYouMessage {
@@ -125,9 +142,9 @@ button[type="submit"]:hover {
   text-align: center;
   margin-top: 14px;
   padding: 12px;
-  background-color: #003366;
+  background-color: var(--accent-strong);
   border-radius: 8px;
-  border: 1px solid #81cfff;
+  border: 1px solid var(--accent);
   color: #ffffff;
   animation: fadeIn 0.5s ease;
 }
@@ -141,8 +158,8 @@ button[type="submit"]:hover {
 
 .repair-btn {
   background-color: transparent;
-  border: 1px solid #81cfff;
-  color: #81cfff;
+  border: 1px solid var(--accent);
+  color: var(--accent);
   padding: 10px;
   border-radius: 6px;
   cursor: pointer;
@@ -150,7 +167,7 @@ button[type="submit"]:hover {
 }
 
 .repair-btn.active {
-  background-color: #003366;
+  background-color: var(--accent-strong);
   color: #ffffff;
 }
 
@@ -170,8 +187,8 @@ button[type="submit"]:hover {
 
 .note-preview {
   margin-top: 14px;
-  background: #0f1b2b;
-  border: 1px solid #2f4b6f;
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
   border-radius: 8px;
   padding: 12px;
 }
@@ -184,16 +201,16 @@ button[type="submit"]:hover {
 
 .copy-field {
   flex: 1;
-  background: #1e1e2f;
-  border: 1px solid #2f4b6f;
-  color: #e0e0e0;
+  background: var(--container-bg);
+  border: 1px solid var(--note-border);
+  color: var(--text-color);
   padding: 8px;
   border-radius: 6px;
 }
 
 .copy-btn {
-  background-color: #003366;
-  border: 1px solid #81cfff;
+  background-color: var(--accent-strong);
+  border: 1px solid var(--accent);
   color: #ffffff;
   padding: 8px 12px;
   border-radius: 6px;
@@ -202,7 +219,7 @@ button[type="submit"]:hover {
 }
 
 .copy-btn:hover {
-  background-color: #005599;
+  background-color: var(--accent-strong-hover);
 }
 
 .copy-btn:disabled {
@@ -214,14 +231,14 @@ button[type="submit"]:hover {
 
 .note-preview__title {
   font-weight: 600;
-  color: #81cfff;
+  color: var(--accent);
   margin-bottom: 8px;
 }
 
 .note-preview__body {
   margin: 0;
   white-space: pre-wrap;
-  color: #e0e0e0;
+  color: var(--text-color);
   font-family: Consolas, Menlo, monospace;
   background: transparent;
 }
@@ -229,14 +246,14 @@ button[type="submit"]:hover {
 .upload-block {
   margin-top: 18px;
   padding: 12px;
-  border: 1px solid #2f4b6f;
+  border: 1px solid var(--note-border);
   border-radius: 8px;
-  background: #0f1b2b;
+  background: var(--note-bg);
 }
 
 input[type="file"] {
   margin-top: 8px;
-  color: #e0e0e0;
+  color: var(--text-color);
 }
 
 .hint-text {
@@ -248,11 +265,11 @@ input[type="file"] {
 .status-line {
   margin-top: 8px;
   font-size: 13px;
-  color: #81cfff;
+  color: var(--accent);
 }
 
 .error-text {
-  color: #ff7b7b;
+  color: var(--error-color);
 }
 
 .daf-fields {
@@ -263,5 +280,66 @@ input[type="file"] {
 
 .daf-field__label {
   font-weight: 600;
-  color: #d5e9ff;
+  color: var(--muted-text);
+}
+
+.theme-menu {
+  margin-top: 18px;
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+}
+
+.theme-menu__title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.theme-current {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted-text);
+}
+
+.theme-options {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--note-border);
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-option:hover {
+  border-color: var(--accent);
+}
+
+.theme-option.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.theme-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--theme-swatch, var(--accent));
+}
+
+.theme-option__label {
+  flex: 1;
+  font-weight: 600;
 }
