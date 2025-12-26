@@ -10,6 +10,7 @@ const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
+const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["landingView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
@@ -30,6 +31,168 @@ function showDafView() { showView("dafRecapView"); }
 function showEmailView() { showView("emailView"); }
 
 let hasStartedCheckin = false;
+
+const THEMES = {
+  ocean: {
+    label: "Ocean Blue",
+    vars: {
+      "bg-color": "#121212",
+      "text-color": "#e0e0e0",
+      "muted-text": "#d5e9ff",
+      "container-bg": "#1e1e2f",
+      "container-border": "#81cfff",
+      "container-shadow": "0 0 20px rgba(0, 128, 255, 0.25)",
+      "accent": "#81cfff",
+      "accent-strong": "#003366",
+      "accent-strong-hover": "#005599",
+      "input-bg": "#2a2a3a",
+      "input-border": "#555",
+      "note-bg": "#0f1b2b",
+      "note-border": "#2f4b6f",
+      "error-color": "#ff7b7b"
+    }
+  },
+  sunset: {
+    label: "Sunset Ember",
+    vars: {
+      "bg-color": "#141010",
+      "text-color": "#f3e9e4",
+      "muted-text": "#f8c9b4",
+      "container-bg": "#2a1917",
+      "container-border": "#ff9f68",
+      "container-shadow": "0 0 20px rgba(255, 159, 104, 0.28)",
+      "accent": "#ff9f68",
+      "accent-strong": "#6b2b1f",
+      "accent-strong-hover": "#8b3a2b",
+      "input-bg": "#33201d",
+      "input-border": "#6b3b30",
+      "note-bg": "#201312",
+      "note-border": "#5f3a33",
+      "error-color": "#ff8f8f"
+    }
+  },
+  forest: {
+    label: "Forest Glow",
+    vars: {
+      "bg-color": "#0d1512",
+      "text-color": "#e7f8f1",
+      "muted-text": "#b8f3dc",
+      "container-bg": "#14211c",
+      "container-border": "#6ee7b7",
+      "container-shadow": "0 0 20px rgba(110, 231, 183, 0.25)",
+      "accent": "#6ee7b7",
+      "accent-strong": "#0f4d37",
+      "accent-strong-hover": "#14614a",
+      "input-bg": "#1e2d26",
+      "input-border": "#3b5c4e",
+      "note-bg": "#0f1a15",
+      "note-border": "#2b4a3d",
+      "error-color": "#ff9f9f"
+    }
+  },
+  plum: {
+    label: "Plum Night",
+    vars: {
+      "bg-color": "#120f18",
+      "text-color": "#f2e9ff",
+      "muted-text": "#dbc7ff",
+      "container-bg": "#1f1930",
+      "container-border": "#c084fc",
+      "container-shadow": "0 0 20px rgba(192, 132, 252, 0.3)",
+      "accent": "#c084fc",
+      "accent-strong": "#4b1e6b",
+      "accent-strong-hover": "#5e2a87",
+      "input-bg": "#2a2140",
+      "input-border": "#5b4b73",
+      "note-bg": "#151021",
+      "note-border": "#3b2f52",
+      "error-color": "#ff9ccf"
+    }
+  },
+  slate: {
+    label: "Slate Storm",
+    vars: {
+      "bg-color": "#101317",
+      "text-color": "#e6ecf2",
+      "muted-text": "#c0cad8",
+      "container-bg": "#18202a",
+      "container-border": "#94a3b8",
+      "container-shadow": "0 0 20px rgba(148, 163, 184, 0.25)",
+      "accent": "#94a3b8",
+      "accent-strong": "#273449",
+      "accent-strong-hover": "#33445e",
+      "input-bg": "#222b36",
+      "input-border": "#4b5a6b",
+      "note-bg": "#111821",
+      "note-border": "#2a3646",
+      "error-color": "#ff9f9f"
+    }
+  }
+};
+
+function setThemeVars(vars) {
+  Object.entries(vars).forEach(([key, value]) => {
+    document.documentElement.style.setProperty(`--${key}`, value);
+  });
+}
+
+function updateThemeSelection(themeId) {
+  const current = THEMES[themeId] || THEMES.ocean;
+  const label = document.getElementById("themeCurrentLabel");
+  if (label) label.textContent = `Current theme: ${current.label}`;
+
+  document.querySelectorAll(".theme-option").forEach(btn => {
+    const isActive = btn.dataset.theme === themeId;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+function saveThemePreference(themeId) {
+  if (chrome?.storage?.local) {
+    chrome.storage.local.set({ [THEME_STORAGE_KEY]: themeId });
+    return;
+  }
+  localStorage.setItem(THEME_STORAGE_KEY, themeId);
+}
+
+function applyTheme(themeId, { persist = true } = {}) {
+  const resolvedTheme = THEMES[themeId] ? themeId : "ocean";
+  const theme = THEMES[resolvedTheme];
+  setThemeVars(theme.vars);
+  updateThemeSelection(resolvedTheme);
+  if (persist) saveThemePreference(resolvedTheme);
+}
+
+function loadThemePreference() {
+  if (chrome?.storage?.local) {
+    chrome.storage.local.get(THEME_STORAGE_KEY, res => {
+      applyTheme(res?.[THEME_STORAGE_KEY] || "ocean", { persist: false });
+    });
+    return;
+  }
+  applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "ocean", { persist: false });
+}
+
+function initThemeControls() {
+  const menuBtn = document.getElementById("themeMenuBtn");
+  const menu = document.getElementById("themeMenu");
+  menuBtn?.addEventListener("click", () => {
+    if (!menu) return;
+    const isOpen = menu.style.display === "block";
+    menu.style.display = isOpen ? "none" : "block";
+    menuBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+  });
+
+  document.querySelectorAll(".theme-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      applyTheme(btn.dataset.theme);
+    });
+  });
+}
+
+initThemeControls();
+loadThemePreference();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
