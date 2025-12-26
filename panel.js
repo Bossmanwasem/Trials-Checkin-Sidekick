@@ -591,11 +591,24 @@ function isDafFormUrl(url) {
     && url.includes("listforms.aspx");
 }
 
+async function closeManageInventoryTabs(excludeTabId = null) {
+  const tabs = await chrome.tabs.query({
+    url: "*://portal.talktometechnologies.com/*ManageInventory.aspx*"
+  });
+  const tabIds = tabs
+    .map(tab => tab.id)
+    .filter(tabId => typeof tabId === "number" && tabId !== excludeTabId);
+  if (tabIds.length) {
+    await chrome.tabs.remove(tabIds);
+  }
+}
+
 async function syncViewForTab(tab) {
   if (!tab) return;
 
   if (isDafFormUrl(tab.url)) {
     await renderDafRecap();
+    await closeManageInventoryTabs(tab.id);
     showDafView();
     return;
   }
