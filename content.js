@@ -48,20 +48,35 @@ function waitForElementByXPath(
   });
 }
 
-function dispatchChangeEvents(el) {
-  el.dispatchEvent(new Event("input", { bubbles: true }));
+function dispatchChangeEvents(el, value = "") {
+  if (typeof InputEvent === "function") {
+    el.dispatchEvent(new InputEvent("input", { bubbles: true, data: value, inputType: "insertText" }));
+  } else {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
   el.dispatchEvent(new Event("change", { bubbles: true }));
+  el.dispatchEvent(new Event("focusout", { bubbles: true }));
 }
 
 function setNativeValue(el, value) {
   if (!el) return;
   const prototype = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+  const previousValue = el.value;
   if (descriptor?.set) {
     descriptor.set.call(el, value);
   } else {
     el.value = value;
   }
+  if (el._valueTracker) {
+    el._valueTracker.setValue(previousValue);
+  }
+}
+
+function resolveInputTarget(el) {
+  if (!el) return null;
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el;
+  return el.querySelector("input, textarea");
 }
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
@@ -126,10 +141,15 @@ function setValueByXPath(xpath, value) {
   const el = getElementByXPath(xpath);
   if (!el) return false;
 
-  if ("value" in el) el.value = value;
-  else el.textContent = value;
+  const input = resolveInputTarget(el);
+  if (input) {
+    setNativeValue(input, value);
+    dispatchChangeEvents(input, value);
+    return true;
+  }
 
-  dispatchChangeEvents(el);
+  el.textContent = value;
+  dispatchChangeEvents(el, value);
   return true;
 }
 
@@ -420,9 +440,14 @@ async function fillDafFieldByXPath(xpath, value, options = {}) {
   if (!value) return false;
   try {
     const el = await waitForElementByXPath(xpath, { timeoutMs: 10000, ...options });
-    if ("value" in el) setNativeValue(el, value);
-    else el.textContent = value;
-    dispatchChangeEvents(el);
+    const input = resolveInputTarget(el);
+    if (input) {
+      setNativeValue(input, value);
+      dispatchChangeEvents(input, value);
+    } else {
+      el.textContent = value;
+      dispatchChangeEvents(el, value);
+    }
     return true;
   } catch (err) {
     console.warn("Failed to fill DAF field for", xpath, err);
@@ -443,7 +468,7 @@ async function fillDafFieldWithFallback({ value, xpath, xpaths, labels }) {
   try {
     const input = await waitForInputByLabels(labels);
     setNativeValue(input, safeVal);
-    dispatchChangeEvents(input);
+    dispatchChangeEvents(input, safeVal);
     return true;
   } catch (err) {
     console.warn("Fallback fill failed for", labels, err);
