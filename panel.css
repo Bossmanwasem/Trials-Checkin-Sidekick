@@ -70,18 +70,14 @@ body {
   font-weight: 600;
 }
 
-.user-settings-menu {
-  margin-top: 16px;
-  display: inline-block;
-  text-align: left;
-  position: relative;
-}
-
-.user-settings-menu .landing-btn {
+.landing-settings-btn {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
   width: auto;
   margin-top: 0;
-  padding: 8px 14px;
-  font-size: 14px;
+  padding: 6px 12px;
+  font-size: 13px;
   border-radius: 999px;
 }
 

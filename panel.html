@@ -37,63 +37,72 @@
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
         CRM Navigator
       </button>
-      <div class="user-settings-menu">
-        <button id="themeMenuBtn" class="toggle-btn landing-btn" type="button" aria-expanded="false">
-          User Settings &amp; Theme
-        </button>
-        <div class="theme-menu" id="themeMenu" style="display:none;">
-          <div class="theme-menu__title">User management</div>
-          <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
-            Edit user profile
-          </button>
-          <div class="theme-menu__title">Sidekick color themes</div>
-          <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
-          <div class="theme-options">
-            <button class="theme-option" type="button" data-theme="ocean" style="--theme-swatch:#81cfff;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Ocean Blue</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="sunset" style="--theme-swatch:#ff9f68;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Sunset Ember</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="forest" style="--theme-swatch:#6ee7b7;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Forest Glow</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="plum" style="--theme-swatch:#c084fc;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Plum Night</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="slate" style="--theme-swatch:#94a3b8;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Slate Storm</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="aurora" style="--theme-swatch:#5eead4;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Aurora Mint</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="citrus" style="--theme-swatch:#facc15;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Citrus Pop</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="sand" style="--theme-swatch:#f5d0a9;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Desert Sand</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="midnight" style="--theme-swatch:#8b5cf6;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Midnight Violet</span>
-            </button>
-            <button class="theme-option" type="button" data-theme="rose" style="--theme-swatch:#f472b6;">
-              <span class="theme-swatch"></span>
-              <span class="theme-option__label">Rose Quartz</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <button id="themeMenuBtn" class="toggle-btn landing-btn landing-settings-btn" type="button">
+        User Settings &amp; Theme
+      </button>
     </div>
     <img class="landing-symojo" src="assets/symoji.png" alt="Symojo mascot" />
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="container settings-view" id="settingsView" style="display:none;">
+    <h1>User Settings &amp; Theme</h1>
+    <p class="complete-intro">Update your profile details or select a new Sidekick theme.</p>
+    <div class="theme-menu" id="themeMenu">
+      <div class="theme-menu__title">User management</div>
+      <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
+        Edit user profile
+      </button>
+      <div class="theme-menu__title">Sidekick color themes</div>
+      <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
+      <div class="theme-options">
+        <button class="theme-option" type="button" data-theme="ocean" style="--theme-swatch:#81cfff;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Ocean Blue</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="sunset" style="--theme-swatch:#ff9f68;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Sunset Ember</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="forest" style="--theme-swatch:#6ee7b7;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Forest Glow</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="plum" style="--theme-swatch:#c084fc;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Plum Night</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="slate" style="--theme-swatch:#94a3b8;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Slate Storm</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="aurora" style="--theme-swatch:#5eead4;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Aurora Mint</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="citrus" style="--theme-swatch:#facc15;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Citrus Pop</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="sand" style="--theme-swatch:#f5d0a9;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Desert Sand</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="midnight" style="--theme-swatch:#8b5cf6;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Midnight Violet</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="rose" style="--theme-swatch:#f472b6;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Rose Quartz</span>
+        </button>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="settingsReturnBtn" class="toggle-btn" type="button">
+        Return to CRM Sidekick
+      </button>
+    </div>
   </div>
 
   <!-- CRM NAVIGATOR VIEW -->
