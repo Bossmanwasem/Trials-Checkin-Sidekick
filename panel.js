@@ -11,6 +11,14 @@ const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
+const LANDING_QUOTES = [
+  { line: "Even the smallest person can change the course of the future.", source: "The Lord of the Rings: The Fellowship of the Ring" },
+  { line: "All we have to decide is what to do with the time that is given us.", source: "The Lord of the Rings: The Fellowship of the Ring" },
+  { line: "There is some good in this world, and it's worth fighting for.", source: "The Lord of the Rings: The Two Towers" },
+  { line: "It is not the strength of the body, but the strength of the spirit.", source: "The Lord of the Rings: The Return of the King" },
+  { line: "A day may come when the courage of men fails, but it is not this day.", source: "The Lord of the Rings: The Return of the King" },
+  { line: "Deeds will not be less valiant because they are unpraised.", source: "The Lord of the Rings: The Two Towers" }
+];
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
@@ -24,7 +32,10 @@ function showView(targetId) {
 }
 
 function showOnboardingView() { showView("onboardingView"); }
-function showLandingView() { showView("landingView"); }
+function showLandingView() {
+  showView("landingView");
+  void refreshLandingView();
+}
 function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showCompleteView() { showView("completeView"); }
@@ -35,6 +46,8 @@ function showEmailView() { showView("emailView"); }
 
 let hasStartedCheckin = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
+let landingQuoteTimer = null;
+let landingQuoteIndex = 0;
 
 const THEMES = {
   ocean: {
@@ -399,6 +412,36 @@ async function getUserProfile() {
 
 async function saveUserProfile(profile) {
   await setStoredValue(USER_PROFILE_STORAGE_KEY, profile);
+}
+
+function setLandingQuote(index) {
+  const quote = LANDING_QUOTES[index];
+  if (!quote) return;
+  setText("landingQuote", `"${quote.line}" — ${quote.source}`);
+}
+
+function updateLandingGreeting(profile) {
+  const firstName = (profile?.firstName || "").trim();
+  const greeting = firstName ? `Welcome back, ${firstName}!` : "Welcome back!";
+  setText("landingGreeting", greeting);
+}
+
+function startLandingQuoteRotation() {
+  const quoteEl = document.getElementById("landingQuote");
+  if (!quoteEl || LANDING_QUOTES.length === 0) return;
+  if (landingQuoteTimer) clearInterval(landingQuoteTimer);
+  landingQuoteIndex = Math.floor(Math.random() * LANDING_QUOTES.length);
+  setLandingQuote(landingQuoteIndex);
+  landingQuoteTimer = setInterval(() => {
+    landingQuoteIndex = (landingQuoteIndex + 1) % LANDING_QUOTES.length;
+    setLandingQuote(landingQuoteIndex);
+  }, 8000);
+}
+
+async function refreshLandingView() {
+  const profile = await getUserProfile();
+  updateLandingGreeting(profile);
+  startLandingQuoteRotation();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
