@@ -13,7 +13,7 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["landingView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["onboardingView", "landingView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -23,6 +23,7 @@ function showView(targetId) {
   });
 }
 
+function showOnboardingView() { showView("onboardingView"); }
 function showLandingView() { showView("landingView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showCompleteView() { showView("completeView"); }
@@ -32,6 +33,7 @@ function showDafView() { showView("dafRecapView"); }
 function showEmailView() { showView("emailView"); }
 
 let hasStartedCheckin = false;
+const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 
 const THEMES = {
   ocean: {
@@ -270,6 +272,47 @@ function loadThemePreference() {
   applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "ocean", { persist: false });
 }
 
+function populateThemeSelect(selectEl) {
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+  Object.entries(THEMES).forEach(([id, theme]) => {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = theme.label;
+    selectEl.appendChild(option);
+  });
+}
+
+async function initOnboardingForm() {
+  const form = document.getElementById("onboardingForm");
+  const firstNameInput = document.getElementById("userFirstName");
+  const lastNameInput = document.getElementById("userLastName");
+  const themeSelect = document.getElementById("onboardingThemeSelect");
+
+  populateThemeSelect(themeSelect);
+  const storedTheme = await getStoredValue(THEME_STORAGE_KEY);
+  if (storedTheme && themeSelect) {
+    themeSelect.value = storedTheme;
+  }
+
+  if (!form) return;
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const firstName = (firstNameInput?.value || "").trim();
+    const lastName = (lastNameInput?.value || "").trim();
+    const themeId = themeSelect?.value || "ocean";
+
+    if (!firstName || !lastName) {
+      alert("Please enter your first and last name.");
+      return;
+    }
+
+    await saveUserProfile({ firstName, lastName });
+    applyTheme(themeId);
+    showLandingView();
+  });
+}
+
 function initThemeControls() {
   const menuBtn = document.getElementById("themeMenuBtn");
   const menu = document.getElementById("themeMenu");
@@ -293,6 +336,7 @@ function initThemeControls() {
 
 initThemeControls();
 loadThemePreference();
+initOnboardingForm();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -315,6 +359,44 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
+}
+
+function getStoredValue(key) {
+  return new Promise(resolve => {
+    if (chrome?.storage?.local) {
+      chrome.storage.local.get(key, res => resolve(res?.[key] ?? null));
+      return;
+    }
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      resolve(null);
+      return;
+    }
+    try {
+      resolve(JSON.parse(raw));
+    } catch {
+      resolve(raw);
+    }
+  });
+}
+
+function setStoredValue(key, value) {
+  return new Promise(resolve => {
+    if (chrome?.storage?.local) {
+      chrome.storage.local.set({ [key]: value }, () => resolve());
+      return;
+    }
+    localStorage.setItem(key, JSON.stringify(value));
+    resolve();
+  });
+}
+
+async function getUserProfile() {
+  return await getStoredValue(USER_PROFILE_STORAGE_KEY);
+}
+
+async function saveUserProfile(profile) {
+  await setStoredValue(USER_PROFILE_STORAGE_KEY, profile);
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -1218,7 +1300,12 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
 (async function init() {
   watchIdentifierInputs();
-  showLandingView();
+  const profile = await getUserProfile();
+  if (profile) {
+    showLandingView();
+  } else {
+    showOnboardingView();
+  }
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
     hasStartedCheckin = true;
@@ -1229,6 +1316,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
     showCrmNavigatorView();
+  });
+
+  document.getElementById("userSettingsBtn")?.addEventListener("click", () => {
+    showOnboardingView();
   });
 
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
