@@ -37,14 +37,15 @@
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
         CRM Navigator
       </button>
-      <button id="userSettingsBtn" class="toggle-btn landing-btn" type="button">
-        User Settings
-      </button>
-      <div class="theme-picker">
+      <div class="user-settings-menu">
         <button id="themeMenuBtn" class="toggle-btn landing-btn" type="button" aria-expanded="false">
-          Choose a color theme
+          User Settings &amp; Theme
         </button>
         <div class="theme-menu" id="themeMenu" style="display:none;">
+          <div class="theme-menu__title">User management</div>
+          <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
+            Edit user profile
+          </button>
           <div class="theme-menu__title">Sidekick color themes</div>
           <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
           <div class="theme-options">
