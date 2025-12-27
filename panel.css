@@ -65,6 +65,20 @@ body {
   opacity: 0.9;
 }
 
+.landing-greeting {
+  margin: 10px 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.landing-quote {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--muted-text);
+  opacity: 0.95;
+}
+
 .landing-btn {
   font-size: 16px;
   font-weight: 600;
