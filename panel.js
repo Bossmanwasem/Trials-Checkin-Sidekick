@@ -13,7 +13,7 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -25,6 +25,7 @@ function showView(targetId) {
 
 function showOnboardingView() { showView("onboardingView"); }
 function showLandingView() { showView("landingView"); }
+function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
@@ -315,30 +316,22 @@ async function initOnboardingForm() {
 
 function initThemeControls() {
   const menuBtn = document.getElementById("themeMenuBtn");
-  const menu = document.getElementById("themeMenu");
   const userSettingsAction = document.getElementById("userSettingsActionBtn");
+  const settingsReturnBtn = document.getElementById("settingsReturnBtn");
   menuBtn?.addEventListener("click", () => {
-    if (!menu) return;
-    const isOpen = menu.style.display === "block";
-    menu.style.display = isOpen ? "none" : "block";
-    menuBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    showSettingsView();
   });
 
   userSettingsAction?.addEventListener("click", () => {
     showOnboardingView();
-    if (menu && menuBtn) {
-      menu.style.display = "none";
-      menuBtn.setAttribute("aria-expanded", "false");
-    }
+  });
+  settingsReturnBtn?.addEventListener("click", () => {
+    showLandingView();
   });
 
   document.querySelectorAll(".theme-option").forEach(btn => {
     btn.addEventListener("click", () => {
       applyTheme(btn.dataset.theme);
-      if (menu && menuBtn) {
-        menu.style.display = "none";
-        menuBtn.setAttribute("aria-expanded", "false");
-      }
     });
   });
 }
