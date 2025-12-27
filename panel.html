@@ -8,6 +8,24 @@
 </head>
 <body>
 
+  <!-- ONBOARDING VIEW -->
+  <div class="container onboarding-view" id="onboardingView" style="display:none;">
+    <h1>Welcome to CRM Sidekick</h1>
+    <p class="complete-intro">Tell us your name and choose your starting color theme.</p>
+    <form id="onboardingForm">
+      <label for="userFirstName">First name</label>
+      <input type="text" id="userFirstName" autocomplete="given-name" required />
+
+      <label for="userLastName">Last name</label>
+      <input type="text" id="userLastName" autocomplete="family-name" required />
+
+      <label for="onboardingThemeSelect">Starting color theme</label>
+      <select id="onboardingThemeSelect" required></select>
+
+      <button type="submit">Save &amp; Continue</button>
+    </form>
+  </div>
+
   <!-- LANDING VIEW -->
   <div class="container landing-view" id="landingView">
     <div class="landing-content">
@@ -18,6 +36,9 @@
       </button>
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
         CRM Navigator
+      </button>
+      <button id="userSettingsBtn" class="toggle-btn landing-btn" type="button">
+        User Settings
       </button>
       <div class="theme-picker">
         <button id="themeMenuBtn" class="toggle-btn landing-btn" type="button" aria-expanded="false">
