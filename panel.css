@@ -70,25 +70,19 @@ body {
   font-weight: 600;
 }
 
-.theme-picker {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  text-align: right;
+.user-settings-menu {
+  margin-top: 16px;
+  display: inline-block;
+  text-align: left;
+  position: relative;
 }
 
-.theme-picker .landing-btn {
+.user-settings-menu .landing-btn {
   width: auto;
   margin-top: 0;
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
   border-radius: 999px;
-}
-
-.theme-picker .theme-menu {
-  margin-top: 8px;
-  width: 240px;
-  text-align: left;
 }
 
 .crm-navigator-view {
@@ -348,6 +342,15 @@ input[type="file"] {
 .theme-menu__title {
   font-weight: 600;
   color: var(--accent);
+}
+
+.theme-menu__action {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.theme-menu__action + .theme-menu__title {
+  margin-top: 16px;
 }
 
 .theme-current {

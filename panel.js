@@ -316,11 +316,20 @@ async function initOnboardingForm() {
 function initThemeControls() {
   const menuBtn = document.getElementById("themeMenuBtn");
   const menu = document.getElementById("themeMenu");
+  const userSettingsAction = document.getElementById("userSettingsActionBtn");
   menuBtn?.addEventListener("click", () => {
     if (!menu) return;
     const isOpen = menu.style.display === "block";
     menu.style.display = isOpen ? "none" : "block";
     menuBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+  });
+
+  userSettingsAction?.addEventListener("click", () => {
+    showOnboardingView();
+    if (menu && menuBtn) {
+      menu.style.display = "none";
+      menuBtn.setAttribute("aria-expanded", "false");
+    }
   });
 
   document.querySelectorAll(".theme-option").forEach(btn => {
@@ -1316,10 +1325,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
     showCrmNavigatorView();
-  });
-
-  document.getElementById("userSettingsBtn")?.addEventListener("click", () => {
-    showOnboardingView();
   });
 
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
