@@ -44,6 +44,9 @@
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
         CRM Navigator
       </button>
+      <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button">
+        Device Number Lookup Sidekick
+      </button>
     </div>
     <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
       <span class="landing-settings-icon" aria-hidden="true">⚙</span>
@@ -135,6 +138,96 @@
       <button id="crmNavigatorReturnBtn" class="toggle-btn" type="button">
         Return to CRM Sidekick
       </button>
+    </div>
+  </div>
+
+  <!-- DEVICE LOOKUP VIEW -->
+  <div class="container device-lookup-view" id="deviceLookupView" style="display:none;">
+    <h1>Device Number Lookup Sidekick</h1>
+    <p class="complete-intro">Lookup device, mount, and camera info using the OneDrive workbooks.</p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">OneDrive workbook connections</div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">RWL &amp; LTL Update</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+        </div>
+        <input type="file" id="ltlFileInput" accept=".xlsx,.xlsm" />
+        <div id="ltlFileStatus" class="status-line">Not connected.</div>
+      </div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">MountLog</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+        </div>
+        <input type="file" id="mountFileInput" accept=".xlsx,.xlsm" />
+        <div id="mountFileStatus" class="status-line">Not connected.</div>
+      </div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">Loan Library CRM Check</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+        </div>
+        <input type="file" id="crmFileInput" accept=".xlsx,.xlsm" />
+        <div id="crmFileStatus" class="status-line">Not connected.</div>
+      </div>
+    </div>
+
+    <form id="deviceLookupForm" class="lookup-form">
+      <label for="deviceLookupInput">Device serial number</label>
+      <input type="text" id="deviceLookupInput" placeholder="Scan or type the serial number" required />
+      <div class="lookup-meta">
+        <div>
+          <div class="lookup-meta__label">Raw scan</div>
+          <div id="deviceLookupRaw" class="lookup-meta__value">—</div>
+        </div>
+        <div>
+          <div class="lookup-meta__label">Extracted serial</div>
+          <div id="deviceLookupExtracted" class="lookup-meta__value">—</div>
+        </div>
+      </div>
+      <button type="submit" id="deviceLookupSearchBtn">Search</button>
+    </form>
+
+    <div class="lookup-results">
+      <div class="note-preview lookup-result" id="lookupSerialCard">
+        <div class="note-preview__title">Serial number result</div>
+        <pre id="lookupSerialResult" class="note-preview__body"></pre>
+      </div>
+      <div class="note-preview lookup-result" id="lookupMountCard">
+        <div class="note-preview__title">Mount result</div>
+        <pre id="lookupMountResult" class="note-preview__body"></pre>
+      </div>
+      <div class="note-preview lookup-result lookup-result--wide" id="lookupActionCard">
+        <div class="note-preview__title">Action required</div>
+        <pre id="lookupActionResult" class="note-preview__body"></pre>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Quick copy</div>
+      <div class="lookup-copy-grid">
+        <button class="copy-btn" type="button" id="copyDeviceSnBtn" disabled>Copy device SN</button>
+        <button class="copy-btn" type="button" id="copyCameraSnBtn" disabled>Copy camera SNs</button>
+        <button class="copy-btn" type="button" id="copyLuminSnBtn" disabled>Copy Lumin-I SNs</button>
+        <button class="copy-btn" type="button" id="copyEvoSnBtn" disabled>Copy Evo SNs</button>
+        <button class="copy-btn" type="button" id="copyCrmBtn" disabled>Copy CRM #</button>
+        <button class="copy-btn" type="button" id="copyClampBtn" disabled>Copy clamp mount</button>
+        <button class="copy-btn" type="button" id="copyTableBtn" disabled>Copy table mount</button>
+        <button class="copy-btn" type="button" id="copyRollingBtn" disabled>Copy rolling mount</button>
+      </div>
+      <div id="lookupCopyStatus" class="status-line"></div>
+    </div>
+
+    <div class="mini-row">
+      <button id="lookupOpenCrmBtn" class="toggle-btn" type="button">Open CRM Inventory</button>
+      <button id="lookupOpenVocabBtn" class="toggle-btn" type="button">Open Vocab folder</button>
+      <button id="lookupOpenWorkbookBtn" class="toggle-btn" type="button">Open LTL/RWL workbook</button>
+    </div>
+
+    <div class="crm-nav-footer">
+      <button id="deviceLookupReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
     </div>
   </div>
 

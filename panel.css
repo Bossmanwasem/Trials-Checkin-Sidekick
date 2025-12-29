@@ -460,6 +460,85 @@ input[type="file"] {
   gap: 12px;
 }
 
+.device-lookup-view .lookup-form {
+  margin-top: 16px;
+}
+
+.device-lookup-view .lookup-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 12px 0 4px;
+}
+
+.device-lookup-view .lookup-meta__label {
+  font-size: 12px;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.device-lookup-view .lookup-meta__value {
+  font-weight: 600;
+  color: var(--text-color);
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.device-lookup-view .lookup-file {
+  display: grid;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--note-border);
+}
+
+.device-lookup-view .lookup-file:last-of-type {
+  border-bottom: none;
+}
+
+.device-lookup-view .lookup-file__title {
+  font-weight: 600;
+}
+
+.device-lookup-view .lookup-results {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.device-lookup-view .lookup-result {
+  min-height: 120px;
+}
+
+.device-lookup-view .lookup-result--wide {
+  grid-column: 1 / -1;
+}
+
+.device-lookup-view .lookup-copy-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.device-lookup-view .lookup-result[data-status="green"] {
+  border-color: #22c55e;
+}
+
+.device-lookup-view .lookup-result[data-status="yellow"] {
+  border-color: #facc15;
+}
+
+.device-lookup-view .lookup-result[data-status="red"] {
+  border-color: #ef4444;
+}
+
+.device-lookup-view .lookup-result[data-status="blue"] {
+  border-color: var(--accent);
+}
+
 .daf-field__label {
   font-weight: 600;
   color: var(--muted-text);
