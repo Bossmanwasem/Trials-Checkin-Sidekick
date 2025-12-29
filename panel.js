@@ -1631,11 +1631,32 @@ function buildCannedNote() {
 
 /* ---------------- CRM messaging helpers ---------------- */
 
-async function sendToCrm(type, payload) {
+async function sendToCrm(type, payload = {}) {
   const tabId = await getActiveCrmTabId();
   if (!tabId) return { ok: false };
   const res = await chrome.tabs.sendMessage(tabId, { type, ...payload }).catch(() => null);
   return res || { ok: false };
+}
+
+function setOutreachStatus(message, isError = false) {
+  const el = document.getElementById("outreachStatus");
+  if (!el) return;
+  el.textContent = message || "";
+  el.classList.toggle("error-text", isError);
+}
+
+async function refreshOutreachStatus() {
+  setOutreachStatus("Checking for Outreach #5 in CRM notes...");
+  const res = await sendToCrm("CHECK_OUTREACH_FIVE");
+  if (!res?.ok) {
+    setOutreachStatus(res?.message || "Open a CRM client record to check Outreach #5.", true);
+    return;
+  }
+  if (res.found) {
+    setOutreachStatus("✅ Outreach #5 / Outreach SL #5 found in CRM notes.");
+  } else {
+    setOutreachStatus("⚠️ Outreach #5 / Outreach SL #5 not found in CRM notes.", true);
+  }
 }
 
 /* ---------------- Inventory identifiers storage ---------------- */
@@ -2209,6 +2230,7 @@ document.getElementById("smartboxContinueBtn")?.addEventListener("click", () => 
 document.getElementById("refreshBtn")?.addEventListener("click", async () => {
   const res = await fetchClientData();
   if (res?.data) applyClientData(res.data);
+  await refreshOutreachStatus();
 });
 
 chrome.runtime.onMessage.addListener(msg => {
@@ -2339,6 +2361,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showFormView();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
+    await refreshOutreachStatus();
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
