@@ -41,6 +41,9 @@
       <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button">
         Check-in Sidekick
       </button>
+      <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button">
+        Grid Sidekick
+      </button>
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
         CRM Navigator
       </button>
@@ -122,6 +125,48 @@
       <button id="crmNavigatorReturnBtn" class="toggle-btn" type="button">
         Return to CRM Sidekick
       </button>
+    </div>
+  </div>
+
+  <!-- GRID SIDEKICK VIEW -->
+  <div class="container" id="gridView" style="display:none;">
+    <h1>Grid Sidekick</h1>
+    <p class="complete-intro">Generate Grid credentials for the selected CRM client.</p>
+
+    <div class="mini-row">
+      <button id="gridRefreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
+      <button id="gridReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+
+    <div class="grid-form">
+      <label>Client First Name</label>
+      <input type="text" id="gridFirstName" />
+
+      <label>Client Last Name</label>
+      <input type="text" id="gridLastName" />
+
+      <label>CRM ID</label>
+      <input type="text" id="gridCrmId" />
+
+      <div class="grid-toggle">
+        <label class="grid-toggle__option">
+          <input type="radio" name="gridType" value="CL" checked />
+          CL
+        </label>
+        <label class="grid-toggle__option">
+          <input type="radio" name="gridType" value="LTL" />
+          LTL
+        </label>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Grid email</div>
+      <div class="copy-row">
+        <input type="text" id="gridEmailField" class="copy-field" readonly placeholder="Grid: email | Xqxq77##" />
+        <button id="gridCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
+      </div>
+      <div id="gridStatus" class="status-line"></div>
     </div>
   </div>
 
