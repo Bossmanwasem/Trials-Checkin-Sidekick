@@ -89,11 +89,10 @@ body.chaos-transitioning #themeTransitionLayer {
 }
 
 .landing-symojo {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  width: 72px;
+  display: block;
+  width: 96px;
   height: auto;
+  margin: 12px auto 6px;
   pointer-events: none;
 }
 
