@@ -11,7 +11,7 @@
   <!-- ONBOARDING VIEW -->
   <div class="container onboarding-view" id="onboardingView" style="display:none;">
     <h1>Welcome to CRM Sidekick</h1>
-    <p class="complete-intro">Tell us your name and choose your starting color theme.</p>
+    <p class="complete-intro">Tell us your name, choose your starting color theme, and connect your device lookup workbooks.</p>
     <form id="onboardingForm">
       <label for="userFirstName">First name</label>
       <input type="text" id="userFirstName" autocomplete="given-name" required />
@@ -21,6 +21,34 @@
 
       <label for="onboardingThemeSelect">Starting color theme</label>
       <select id="onboardingThemeSelect" required></select>
+
+      <div class="note-preview">
+        <div class="note-preview__title">OneDrive workbook connections</div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">RWL &amp; LTL Update</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+          </div>
+          <input type="file" id="onboardingLtlFileInput" data-workbook-input="ltl" accept=".xlsx,.xlsm" />
+          <div id="onboardingLtlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">MountLog</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+          </div>
+          <input type="file" id="onboardingMountFileInput" data-workbook-input="mount" accept=".xlsx,.xlsm" />
+          <div id="onboardingMountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">Loan Library CRM Check</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+          </div>
+          <input type="file" id="onboardingCrmFileInput" data-workbook-input="crm" accept=".xlsx,.xlsm" />
+          <div id="onboardingCrmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
+        </div>
+      </div>
 
       <button type="submit">Save &amp; Continue</button>
     </form>
@@ -66,24 +94,24 @@
           <div class="lookup-file__title">RWL &amp; LTL Update</div>
           <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
         </div>
-        <input type="file" id="ltlFileInput" accept=".xlsx,.xlsm" />
-        <div id="ltlFileStatus" class="status-line">Not connected.</div>
+        <input type="file" id="ltlFileInput" data-workbook-input="ltl" accept=".xlsx,.xlsm" />
+        <div id="ltlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
       </div>
       <div class="lookup-file">
         <div>
           <div class="lookup-file__title">MountLog</div>
           <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
         </div>
-        <input type="file" id="mountFileInput" accept=".xlsx,.xlsm" />
-        <div id="mountFileStatus" class="status-line">Not connected.</div>
+        <input type="file" id="mountFileInput" data-workbook-input="mount" accept=".xlsx,.xlsm" />
+        <div id="mountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
       </div>
       <div class="lookup-file">
         <div>
           <div class="lookup-file__title">Loan Library CRM Check</div>
           <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
         </div>
-        <input type="file" id="crmFileInput" accept=".xlsx,.xlsm" />
-        <div id="crmFileStatus" class="status-line">Not connected.</div>
+        <input type="file" id="crmFileInput" data-workbook-input="crm" accept=".xlsx,.xlsm" />
+        <div id="crmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
       </div>
     </div>
     <div class="theme-menu" id="themeMenu">

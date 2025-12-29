@@ -698,21 +698,26 @@ const lookupCopyButtons = [
   { id: "copyTableBtn", label: "Copy table mount" },
   { id: "copyRollingBtn", label: "Copy rolling mount" }
 ];
-const DEVICE_LOOKUP_STATUS_IDS = {
-  ltl: "ltlFileStatus",
-  mount: "mountFileStatus",
-  crm: "crmFileStatus"
-};
+const DEVICE_LOOKUP_WORKBOOK_KEYS = ["ltl", "mount", "crm"];
+
+function getWorkbookStatusElements(targetKey) {
+  return Array.from(document.querySelectorAll(`[data-workbook-status="${targetKey}"]`));
+}
+
+function setWorkbookStatusMessage(targetKey, message) {
+  const statuses = getWorkbookStatusElements(targetKey);
+  if (!statuses.length) return;
+  statuses.forEach(status => {
+    status.textContent = message;
+  });
+}
 
 function updateWorkbookStatus(targetKey, { name, saved } = {}) {
-  const statusId = DEVICE_LOOKUP_STATUS_IDS[targetKey];
-  const status = statusId ? document.getElementById(statusId) : null;
-  if (!status) return;
   if (!name) {
-    status.textContent = "Not connected.";
+    setWorkbookStatusMessage(targetKey, "Not connected.");
     return;
   }
-  status.textContent = `Connected: ${name}${saved ? " (saved)" : ""}`;
+  setWorkbookStatusMessage(targetKey, `Connected: ${name}${saved ? " (saved)" : ""}`);
 }
 
 async function persistDeviceLookupWorkbooks() {
@@ -740,7 +745,7 @@ async function loadDeviceLookupWorkbooksFromStorage() {
             ...storedMeta
           };
         }
-        Object.keys(DEVICE_LOOKUP_STATUS_IDS).forEach(key => {
+        DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
           const hasWorkbook = Boolean(deviceLookupWorkbooks[key]);
           const meta = deviceLookupWorkbookMeta[key];
           updateWorkbookStatus(key, {
@@ -835,12 +840,10 @@ async function loadWorkbookFromFile(file) {
   return { sheets };
 }
 
-async function handleWorkbookSelection({ inputId, statusId, targetKey }) {
-  const input = document.getElementById(inputId);
-  const status = document.getElementById(statusId);
+async function handleWorkbookSelection({ input, targetKey }) {
   if (!input?.files?.length) return;
   const file = input.files[0];
-  if (status) status.textContent = "Loading workbook...";
+  setWorkbookStatusMessage(targetKey, "Loading workbook...");
   try {
     const workbook = await loadWorkbookFromFile(file);
     deviceLookupWorkbooks[targetKey] = workbook;
@@ -852,7 +855,7 @@ async function handleWorkbookSelection({ inputId, statusId, targetKey }) {
     updateWorkbookStatus(targetKey, { name: file.name, saved: false });
   } catch (error) {
     console.error(error);
-    if (status) status.textContent = "Unable to read workbook. Try re-selecting the file.";
+    setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
   }
 }
 
@@ -2387,16 +2390,12 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     await runDeviceLookupSearch(raw);
   });
 
-  document.getElementById("ltlFileInput")?.addEventListener("change", () => {
-    void handleWorkbookSelection({ inputId: "ltlFileInput", statusId: "ltlFileStatus", targetKey: "ltl" });
-  });
-
-  document.getElementById("mountFileInput")?.addEventListener("change", () => {
-    void handleWorkbookSelection({ inputId: "mountFileInput", statusId: "mountFileStatus", targetKey: "mount" });
-  });
-
-  document.getElementById("crmFileInput")?.addEventListener("change", () => {
-    void handleWorkbookSelection({ inputId: "crmFileInput", statusId: "crmFileStatus", targetKey: "crm" });
+  document.querySelectorAll("[data-workbook-input]").forEach(input => {
+    input.addEventListener("change", () => {
+      const targetKey = input.dataset.workbookInput;
+      if (!targetKey) return;
+      void handleWorkbookSelection({ input, targetKey });
+    });
   });
 
   [
