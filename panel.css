@@ -78,7 +78,7 @@ body.chaos-transitioning #themeTransitionLayer {
 .landing-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -130,6 +130,9 @@ body.chaos-transitioning #themeTransitionLayer {
 }
 
 .landing-settings-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
