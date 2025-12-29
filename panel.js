@@ -12,6 +12,8 @@ const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
+const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
+const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
@@ -237,13 +239,87 @@ const THEMES = {
       "note-border": "#573245",
       "error-color": "#ff8fab"
     }
+  },
+  chaos: {
+    label: "Chaos Goblin",
+    vars: {
+      "bg-color": "#121212",
+      "text-color": "#e0e0e0",
+      "muted-text": "#d5e9ff",
+      "container-bg": "#1e1e2f",
+      "container-border": "#f9a8d4",
+      "container-shadow": "0 0 20px rgba(249, 168, 212, 0.28)",
+      "accent": "#f9a8d4",
+      "accent-strong": "#7a2a4d",
+      "accent-strong-hover": "#95325f",
+      "input-bg": "#2a2a3a",
+      "input-border": "#555",
+      "note-bg": "#0f1b2b",
+      "note-border": "#2f4b6f",
+      "error-color": "#ff8fab"
+    }
   }
 };
+
+let chaosIntervalId = null;
+let chaosRotationSeconds = DEFAULT_CHAOS_ROTATION_SECONDS;
+let activeThemeId = "ocean";
+let currentChaosThemeId = null;
 
 function setThemeVars(vars) {
   Object.entries(vars).forEach(([key, value]) => {
     document.documentElement.style.setProperty(`--${key}`, value);
   });
+}
+
+function getRandomThemeId() {
+  const availableThemes = Object.keys(THEMES).filter(id => id !== "chaos");
+  if (!availableThemes.length) return "ocean";
+  let next = availableThemes[Math.floor(Math.random() * availableThemes.length)];
+  if (availableThemes.length > 1 && next === currentChaosThemeId) {
+    const currentIndex = availableThemes.indexOf(next);
+    next = availableThemes[(currentIndex + 1) % availableThemes.length];
+  }
+  currentChaosThemeId = next;
+  return next;
+}
+
+function stopChaosRotation() {
+  if (chaosIntervalId) {
+    clearInterval(chaosIntervalId);
+    chaosIntervalId = null;
+  }
+}
+
+function normalizeChaosSeconds(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_CHAOS_ROTATION_SECONDS;
+  }
+  return Math.round(parsed);
+}
+
+function applyRandomChaosTheme() {
+  const nextThemeId = getRandomThemeId();
+  const theme = THEMES[nextThemeId];
+  if (theme) {
+    setThemeVars(theme.vars);
+  }
+}
+
+function startChaosRotation() {
+  stopChaosRotation();
+  applyRandomChaosTheme();
+  chaosIntervalId = setInterval(() => {
+    applyRandomChaosTheme();
+  }, chaosRotationSeconds * 1000);
+}
+
+function updateChaosControlsVisibility(themeId) {
+  const controls = document.getElementById("chaosControls");
+  if (controls) {
+    controls.style.display = themeId === "chaos" ? "flex" : "none";
+  }
 }
 
 function updateThemeSelection(themeId) {
@@ -256,6 +332,8 @@ function updateThemeSelection(themeId) {
     btn.classList.toggle("active", isActive);
     btn.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
+
+  updateChaosControlsVisibility(themeId);
 }
 
 function saveThemePreference(themeId) {
@@ -266,8 +344,24 @@ function saveThemePreference(themeId) {
   localStorage.setItem(THEME_STORAGE_KEY, themeId);
 }
 
+function saveChaosRotationSeconds(seconds) {
+  if (chrome?.storage?.local) {
+    chrome.storage.local.set({ [CHAOS_ROTATION_STORAGE_KEY]: seconds });
+    return;
+  }
+  localStorage.setItem(CHAOS_ROTATION_STORAGE_KEY, String(seconds));
+}
+
 function applyTheme(themeId, { persist = true } = {}) {
   const resolvedTheme = THEMES[themeId] ? themeId : "ocean";
+  activeThemeId = resolvedTheme;
+  if (resolvedTheme === "chaos") {
+    updateThemeSelection(resolvedTheme);
+    startChaosRotation();
+    if (persist) saveThemePreference(resolvedTheme);
+    return;
+  }
+  stopChaosRotation();
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
   updateThemeSelection(resolvedTheme);
@@ -282,6 +376,22 @@ function loadThemePreference() {
     return;
   }
   applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "ocean", { persist: false });
+}
+
+async function initChaosControls() {
+  const chaosInput = document.getElementById("chaosRotationInput");
+  if (!chaosInput) return;
+  const storedSeconds = await getStoredValue(CHAOS_ROTATION_STORAGE_KEY);
+  chaosRotationSeconds = normalizeChaosSeconds(storedSeconds ?? DEFAULT_CHAOS_ROTATION_SECONDS);
+  chaosInput.value = String(chaosRotationSeconds);
+  chaosInput.addEventListener("change", () => {
+    chaosRotationSeconds = normalizeChaosSeconds(chaosInput.value);
+    chaosInput.value = String(chaosRotationSeconds);
+    saveChaosRotationSeconds(chaosRotationSeconds);
+    if (activeThemeId === "chaos") {
+      startChaosRotation();
+    }
+  });
 }
 
 function populateThemeSelect(selectEl) {
@@ -348,6 +458,7 @@ function initThemeControls() {
 }
 
 initThemeControls();
+initChaosControls();
 loadThemePreference();
 initOnboardingForm();
 
