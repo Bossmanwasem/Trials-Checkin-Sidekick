@@ -9,11 +9,12 @@ const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]'
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
+const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "formView", "completeView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -32,11 +33,13 @@ function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
+function showSmartboxRepairView() { showView("smartboxRepairView"); }
 function showInventoryView() { showView("inventoryView"); }
 function showDafView() { showView("dafRecapView"); }
 function showEmailView() { showView("emailView"); }
 
 let hasStartedCheckin = false;
+let smartboxRepairRequired = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 
 const THEMES = {
@@ -591,6 +594,11 @@ function detectDeviceModel(deviceNumberRaw) {
   return "Device";
 }
 
+function isSmartboxRepairModel(deviceNumberRaw) {
+  const modelName = detectDeviceModel(deviceNumberRaw);
+  return modelName.includes("Talk Pad") || modelName.includes("Grid Pad");
+}
+
 /* ---------------- NOTE helpers ---------------- */
 
 function buildVocabLine() {
@@ -1137,6 +1145,7 @@ function resetAllFieldsAndUI() {
 
 async function finishCheckinAndReset() {
   resetAllFieldsAndUI();
+  smartboxRepairRequired = false;
   clearSelectedTrialFiles();
   await clearStoredCheckinData();
   await updateInventorySearchDisplay();
@@ -1177,6 +1186,11 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const note = buildCannedNote();
   await navigator.clipboard.writeText(note);
 
+  const condition = getFormValue("#conditionSelect");
+  smartboxRepairRequired = !isMountOnly
+    && condition === "Needs Repair"
+    && isSmartboxRepairModel(deviceNumber);
+
   // 2.5) Remember identifiers for the inventory page + DAF recap
   await saveLastIdentifiers(getCurrentIdentifiers());
   await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
@@ -1214,6 +1228,20 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 /* ---------------- Start another Checkin ---------------- */
 
 document.getElementById("startAnotherBtn")?.addEventListener("click", () => {
+  if (smartboxRepairRequired) {
+    showSmartboxRepairView();
+    chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
+    return;
+  }
+  chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
+});
+
+document.getElementById("openSmartboxRepairBtn")?.addEventListener("click", () => {
+  chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
+});
+
+document.getElementById("smartboxContinueBtn")?.addEventListener("click", () => {
+  smartboxRepairRequired = false;
   chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
 });
 
