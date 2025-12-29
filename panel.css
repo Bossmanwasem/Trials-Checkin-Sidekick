@@ -510,10 +510,19 @@ input[type="file"] {
   display: grid;
   gap: 12px;
   margin-top: 16px;
+  max-width: 100%;
 }
 
 .device-lookup-view .lookup-result {
   min-height: 120px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.device-lookup-view .lookup-result .note-preview__body {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .device-lookup-view .lookup-result--wide {
