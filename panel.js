@@ -19,7 +19,6 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
   "Return Watchlist": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=aHwhBv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0"
 };
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
-const DEVICE_LOOKUP_CRM_URL = "https://portal.talktometechnologies.com/Admin/ManageInventory.aspx";
 const DEVICE_LOOKUP_VOCAB_URL = "https://talktometechnologies2com.sharepoint.com/:f:/r/sites/VocabCustomization/Shared%20Documents/Vocab%20From%20Trial/2025?csf=1&web=1&e=zq8P6Y";
 
 /* ---------------- Helpers ---------------- */
@@ -680,6 +679,18 @@ const deviceLookupWorkbooks = {
   crm: null
 };
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
+let deviceLookupLastSerial = "";
+let deviceLookupLastCrmId = "";
+const lookupCopyButtons = [
+  { id: "copyDeviceSnBtn", label: "Copy device SN" },
+  { id: "copyCameraSnBtn", label: "Copy camera SNs" },
+  { id: "copyLuminSnBtn", label: "Copy Lumin-I SNs" },
+  { id: "copyEvoSnBtn", label: "Copy Evo SNs" },
+  { id: "copyCrmBtn", label: "Copy CRM #" },
+  { id: "copyClampBtn", label: "Copy clamp mount" },
+  { id: "copyTableBtn", label: "Copy table mount" },
+  { id: "copyRollingBtn", label: "Copy rolling mount" }
+];
 
 function columnLettersToIndex(letters) {
   return letters
@@ -1134,9 +1145,15 @@ function updateLookupResultCard(cardId, contentId, message, status) {
 function updateCopyButton(buttonId, value, label) {
   const button = document.getElementById(buttonId);
   if (!button) return;
+  const hasValue = Boolean(value);
   button.dataset.copyValue = value || "";
-  button.disabled = !value;
-  button.textContent = label;
+  button.disabled = !hasValue;
+  button.style.display = hasValue ? "inline-flex" : "none";
+  button.textContent = hasValue ? `${label}: ${value}` : label;
+}
+
+function resetLookupCopyButtons() {
+  lookupCopyButtons.forEach(({ id, label }) => updateCopyButton(id, "", label));
 }
 
 async function runDeviceLookupSearch(rawInput) {
@@ -1146,19 +1163,14 @@ async function runDeviceLookupSearch(rawInput) {
   const extracted = extractValidSerial(rawInput);
   setText("deviceLookupRaw", rawInput || "—");
   setText("deviceLookupExtracted", extracted ? `✅ ${extracted}` : "❌ Invalid serial scanned");
+  deviceLookupLastSerial = extracted || "";
+  deviceLookupLastCrmId = "";
 
   if (!extracted) {
     updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Invalid serial number detected. Please enter it manually and try again.", "red");
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Report the invalid scan to pre-prep.", "red");
-    updateCopyButton("copyDeviceSnBtn", "", "Copy device SN");
-    updateCopyButton("copyCameraSnBtn", "", "Copy camera SNs");
-    updateCopyButton("copyLuminSnBtn", "", "Copy Lumin-I SNs");
-    updateCopyButton("copyEvoSnBtn", "", "Copy Evo SNs");
-    updateCopyButton("copyCrmBtn", "", "Copy CRM #");
-    updateCopyButton("copyClampBtn", "", "Copy clamp mount");
-    updateCopyButton("copyTableBtn", "", "Copy table mount");
-    updateCopyButton("copyRollingBtn", "", "Copy rolling mount");
+    resetLookupCopyButtons();
     return;
   }
 
@@ -1176,6 +1188,7 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Connect all three workbooks before searching.", "red");
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
+    resetLookupCopyButtons();
     return;
   }
 
@@ -1189,6 +1202,7 @@ async function runDeviceLookupSearch(rawInput) {
   }
 
   const { crmId, error: crmError } = findCrmIdFromSerial(extracted, crmWorkbook);
+  deviceLookupLastCrmId = crmId || "";
   const mountResult = searchMountInventory(extracted, mountWorkbook, crmId || "");
   updateLookupResultCard("lookupMountCard", "lookupMountResult", mountResult.lines.join("\n"), mountResult.status);
 
@@ -2346,7 +2360,21 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", () => {
-    chrome.tabs.create({ url: DEVICE_LOOKUP_CRM_URL });
+    if (!deviceLookupLastSerial) {
+      alert("Search for a device to continue.");
+      return;
+    }
+    if (!deviceLookupLastCrmId) {
+      alert("No CRM ID found for this device.");
+      return;
+    }
+    chrome.tabs.create({
+      url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
+    });
+    hasStartedCheckin = true;
+    showFormView();
+    setValue("deviceNumberInput", deviceLookupLastSerial);
+    updateDeviceRules();
   });
 
   document.getElementById("lookupOpenVocabBtn")?.addEventListener("click", () => {
@@ -2373,6 +2401,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   const activeTab = await getActiveCrmTab();
   await syncViewForTab(activeTab);
+  resetLookupCopyButtons();
 
   chrome.tabs.onActivated.addListener(async ({ tabId }) => {
     const tab = await chrome.tabs.get(tabId).catch(() => null);
