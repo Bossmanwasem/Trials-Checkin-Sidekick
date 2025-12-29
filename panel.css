@@ -315,6 +315,31 @@ button[type="submit"]:hover {
   background: transparent;
 }
 
+.grid-form {
+  margin-top: 14px;
+}
+
+.grid-toggle {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.grid-toggle__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--note-border);
+  background: var(--note-bg);
+  cursor: pointer;
+}
+
+.grid-toggle__option input {
+  accent-color: var(--accent);
+}
+
 .upload-block {
   margin-top: 18px;
   padding: 12px;

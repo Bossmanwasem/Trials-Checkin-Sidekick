@@ -14,7 +14,7 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -31,6 +31,10 @@ function showLandingView() {
 }
 function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
+function showGridView() {
+  showView("gridView");
+  void refreshGridClientData();
+}
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showSmartboxRepairView() { showView("smartboxRepairView"); }
@@ -40,6 +44,7 @@ function showEmailView() { showView("emailView"); }
 
 let hasStartedCheckin = false;
 let smartboxRepairRequired = false;
+let hasStartedGrid = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 
 const THEMES = {
@@ -468,6 +473,13 @@ function applyClientData(data) {
   setValue("crmId", data.crmId);
 }
 
+function applyGridClientData(data) {
+  if (!data) return;
+  setValue("gridFirstName", data.firstName);
+  setValue("gridLastName", data.lastName);
+  setValue("gridCrmId", data.crmId);
+}
+
 /* ---------------- UI helpers ---------------- */
 
 function toggleSection(sectionId) {
@@ -479,6 +491,74 @@ function toggleSection(sectionId) {
 function getFormValue(selector) {
   const el = document.querySelector(selector);
   return (el?.value || "").trim();
+}
+
+/* ---------------- Grid sidekick ---------------- */
+
+const GRID_EMAIL_DOMAIN = "wegotalk.com";
+const GRID_PASSWORD = "Xqxq77##";
+
+function splitNameParts(name) {
+  return sanitizeName(name)
+    .split(/[\s-]+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function buildGridEmail() {
+  const firstName = getFormValue("#gridFirstName");
+  const lastName = getFormValue("#gridLastName");
+  const crmId = getFormValue("#gridCrmId");
+  const type = document.querySelector("input[name='gridType']:checked")?.value || "CL";
+
+  if (!crmId) return "";
+
+  if (type === "CL") {
+    const firstParts = splitNameParts(firstName);
+    const lastParts = splitNameParts(lastName);
+    if (!firstParts.length || !lastParts.length) return "";
+    const first = firstParts.join("");
+    const lastInitial = lastParts[0]?.[0] || "";
+    if (!first || !lastInitial) return "";
+    return `${first}${lastInitial}${crmId}@${GRID_EMAIL_DOMAIN}`.toLowerCase();
+  }
+
+  const initials = [...splitNameParts(firstName), ...splitNameParts(lastName)]
+    .map(part => part[0])
+    .join("");
+  if (!initials) return "";
+  return `${initials}${crmId}@${GRID_EMAIL_DOMAIN}`.toLowerCase();
+}
+
+function updateGridOutput() {
+  const email = buildGridEmail();
+  const output = email ? `Grid: ${email} | ${GRID_PASSWORD}` : "";
+  setValue("gridEmailField", output);
+
+  const copyBtn = document.getElementById("gridCopyBtn");
+  if (copyBtn) {
+    copyBtn.disabled = !output;
+    copyBtn.textContent = output ? "Copy" : "No value";
+  }
+
+  const status = document.getElementById("gridStatus");
+  if (status) {
+    status.textContent = output
+      ? "Grid credentials ready."
+      : "Enter client details and CRM ID to generate the Grid email.";
+  }
+}
+
+async function refreshGridClientData(tabIdOverride = null) {
+  const status = document.getElementById("gridStatus");
+  const res = await fetchClientData(tabIdOverride);
+  if (!res?.data) {
+    if (status) status.textContent = "Open a CRM client record to auto-fill these fields.";
+    updateGridOutput();
+    return;
+  }
+  applyGridClientData(res.data);
+  updateGridOutput();
 }
 
 /* ---------------- Repairs logic ---------------- */
@@ -975,9 +1055,11 @@ async function closeManageInventoryTabs(excludeTabId = null) {
 
 async function syncViewForTab(tab) {
   if (!tab) return;
-  if (!hasStartedCheckin) return;
+  const gridVisible = document.getElementById("gridView")?.style.display === "block";
+  if (!hasStartedCheckin && !gridVisible) return;
 
   if (isDafFormUrl(tab.url)) {
+    if (!hasStartedCheckin) return;
     await renderDafRecap();
     await closeManageInventoryTabs(tab.id);
     showDafView();
@@ -987,6 +1069,7 @@ async function syncViewForTab(tab) {
   if (!isCrmUrl(tab.url)) return;
 
   if (isManageInventoryUrl(tab.url)) {
+    if (!hasStartedCheckin) return;
     showInventoryView();
     await updateInventorySearchDisplay();
     return;
@@ -998,7 +1081,15 @@ async function syncViewForTab(tab) {
   }
 
   const res = await fetchClientData(tab.id);
-  if (res?.data) applyClientData(res.data);
+  if (res?.data) {
+    if (hasStartedCheckin) {
+      applyClientData(res.data);
+    }
+    if (gridVisible) {
+      applyGridClientData(res.data);
+      updateGridOutput();
+    }
+  }
 }
 
 /* ---------------- Trial file zip + upload ---------------- */
@@ -1312,6 +1403,29 @@ document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
   await finishCheckinAndReset();
 });
 
+["gridFirstName", "gridLastName", "gridCrmId"].forEach(id => {
+  document.getElementById(id)?.addEventListener("input", updateGridOutput);
+});
+
+document.querySelectorAll("input[name='gridType']").forEach(el => {
+  el.addEventListener("change", updateGridOutput);
+});
+
+document.getElementById("gridCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#gridEmailField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("gridCopyBtn");
+  const status = document.getElementById("gridStatus");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy";
+    }, 1200);
+  }
+  if (status) status.textContent = "Grid credentials copied to clipboard.";
+});
+
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button.copy-btn");
   if (!btn || !btn.dataset.copyValue) return;
@@ -1358,6 +1472,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     await syncViewForTab(activeTab);
   });
 
+  document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
+    hasStartedGrid = true;
+    showGridView();
+    const activeTab = await getActiveCrmTab();
+    await syncViewForTab(activeTab);
+  });
+
   document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
     showCrmNavigatorView();
   });
@@ -1378,6 +1499,16 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("crmNavigatorReturnBtn")?.addEventListener("click", () => {
     showLandingView();
+  });
+
+  document.getElementById("gridReturnBtn")?.addEventListener("click", () => {
+    hasStartedGrid = false;
+    showLandingView();
+  });
+
+  document.getElementById("gridRefreshBtn")?.addEventListener("click", async () => {
+    const activeTab = await getActiveCrmTab();
+    await refreshGridClientData(activeTab?.id || null);
   });
 
   document.getElementById("returnToLandingBtn")?.addEventListener("click", () => {
