@@ -119,6 +119,13 @@
       <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
         Edit user profile
       </button>
+      <label for="zipFolderInput">Default zip save folder</label>
+      <input type="text" id="zipFolderInput" placeholder="e.g., CRM Sidekick Zips" />
+      <p class="hint-text">Uses a subfolder inside your Downloads directory. Leave blank to use the default downloads folder.</p>
+      <button class="toggle-btn theme-menu__action" id="zipFolderSaveBtn" type="button">
+        Save zip folder
+      </button>
+      <div id="zipFolderStatus" class="status-line">Saving zips to your default Downloads folder.</div>
       <div class="theme-menu__title">Sidekick color themes</div>
       <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
       <div class="theme-options">
