@@ -29,9 +29,14 @@
   <!-- LANDING VIEW -->
   <div class="container landing-view" id="landingView">
     <div class="landing-content">
-      <h1>CRM Sidekick</h1>
+      <div class="landing-header">
+        <h1 class="landing-title">CRM Sidekick</h1>
+        <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
+          <span class="landing-settings-icon" aria-hidden="true">⚙</span>
+          <span>User settings</span>
+        </button>
+      </div>
       <p class="landing-greeting" id="landingGreeting"></p>
-      <p class="landing-quote" id="landingQuote"></p>
       <p class="landing-subtitle">Pick a workflow to get started.</p>
       <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button">
         Check-in Sidekick
@@ -41,10 +46,6 @@
       </button>
     </div>
     <img class="landing-symojo" src="assets/symoji.png" alt="Symojo mascot" />
-    <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
-      <span class="landing-settings-icon" aria-hidden="true">⚙</span>
-      <span>User settings</span>
-    </button>
   </div>
 
   <!-- SETTINGS VIEW -->
