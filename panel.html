@@ -59,6 +59,33 @@
   <div class="container settings-view" id="settingsView" style="display:none;">
     <h1>User Settings &amp; Theme</h1>
     <p class="complete-intro">Update your profile details or select a new Sidekick theme.</p>
+    <div class="note-preview">
+      <div class="note-preview__title">OneDrive workbook connections</div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">RWL &amp; LTL Update</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+        </div>
+        <input type="file" id="ltlFileInput" accept=".xlsx,.xlsm" />
+        <div id="ltlFileStatus" class="status-line">Not connected.</div>
+      </div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">MountLog</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+        </div>
+        <input type="file" id="mountFileInput" accept=".xlsx,.xlsm" />
+        <div id="mountFileStatus" class="status-line">Not connected.</div>
+      </div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">Loan Library CRM Check</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+        </div>
+        <input type="file" id="crmFileInput" accept=".xlsx,.xlsm" />
+        <div id="crmFileStatus" class="status-line">Not connected.</div>
+      </div>
+    </div>
     <div class="theme-menu" id="themeMenu">
       <div class="theme-menu__title">User management</div>
       <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
@@ -145,34 +172,6 @@
   <div class="container device-lookup-view" id="deviceLookupView" style="display:none;">
     <h1>Device Number Lookup Sidekick</h1>
     <p class="complete-intro">Lookup device, mount, and camera info using the OneDrive workbooks.</p>
-
-    <div class="note-preview">
-      <div class="note-preview__title">OneDrive workbook connections</div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">RWL &amp; LTL Update</div>
-          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
-        </div>
-        <input type="file" id="ltlFileInput" accept=".xlsx,.xlsm" />
-        <div id="ltlFileStatus" class="status-line">Not connected.</div>
-      </div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">MountLog</div>
-          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
-        </div>
-        <input type="file" id="mountFileInput" accept=".xlsx,.xlsm" />
-        <div id="mountFileStatus" class="status-line">Not connected.</div>
-      </div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">Loan Library CRM Check</div>
-          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
-        </div>
-        <input type="file" id="crmFileInput" accept=".xlsx,.xlsm" />
-        <div id="crmFileStatus" class="status-line">Not connected.</div>
-      </div>
-    </div>
 
     <form id="deviceLookupForm" class="lookup-form">
       <label for="deviceLookupInput">Device serial number</label>
