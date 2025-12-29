@@ -26,6 +26,28 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   padding: 1em;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+#themeTransitionLayer {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-color);
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.chaos-transitioning #themeTransitionLayer {
+  animation: chaosThemeWipe 0.9s ease forwards;
 }
 
 .container {
@@ -36,6 +58,7 @@ body {
   border-radius: 12px;
   border: 3px solid var(--container-border);
   box-shadow: var(--container-shadow);
+  transition: background-color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
 }
 
 .landing-view {
@@ -78,6 +101,20 @@ body {
   margin: 12px 0 20px;
   color: var(--muted-text);
   opacity: 0.9;
+}
+
+.landing-subtitle,
+.landing-greeting,
+.theme-current,
+.theme-menu__title,
+.chaos-controls label,
+.chaos-hint,
+.status-line,
+.daf-field__label,
+.note-preview__title,
+.grid-toggle__option,
+.theme-option__label {
+  transition: color 0.6s ease;
 }
 
 .landing-greeting {
@@ -186,6 +223,7 @@ textarea {
   background-color: var(--input-bg);
   color: var(--text-color);
   font-size: 14px;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 textarea {
@@ -204,7 +242,7 @@ textarea {
   width: 100%;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 .toggle-btn:hover {
@@ -231,6 +269,7 @@ button[type="submit"] {
   font-size: 16px;
   cursor: pointer;
   margin-top: 18px;
+  transition: background-color 0.6s ease, color 0.6s ease;
 }
 
 button[type="submit"]:hover {
@@ -247,6 +286,7 @@ button[type="submit"]:hover {
   border: 1px solid var(--accent);
   color: #ffffff;
   animation: fadeIn 0.5s ease;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 .repair-buttons {
@@ -263,7 +303,7 @@ button[type="submit"]:hover {
   padding: 10px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 .repair-btn.active {
@@ -291,6 +331,7 @@ button[type="submit"]:hover {
   border: 1px solid var(--note-border);
   border-radius: 8px;
   padding: 12px;
+  transition: background-color 0.6s ease, border-color 0.6s ease;
 }
 
 .copy-row {
@@ -306,6 +347,7 @@ button[type="submit"]:hover {
   color: var(--text-color);
   padding: 8px;
   border-radius: 6px;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 .copy-btn {
@@ -315,7 +357,7 @@ button[type="submit"]:hover {
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 .copy-btn:hover {
@@ -362,6 +404,7 @@ button[type="submit"]:hover {
   border: 1px solid var(--note-border);
   background: var(--note-bg);
   cursor: pointer;
+  transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
 }
 
 .grid-toggle__option input {
@@ -374,6 +417,7 @@ button[type="submit"]:hover {
   border: 1px solid var(--note-border);
   border-radius: 8px;
   background: var(--note-bg);
+  transition: background-color 0.6s ease, border-color 0.6s ease;
 }
 
 input[type="file"] {
@@ -417,6 +461,7 @@ input[type="file"] {
   text-align: left;
   max-height: min(70vh, 420px);
   overflow-y: auto;
+  transition: background-color 0.6s ease, border-color 0.6s ease;
 }
 
 .theme-menu__title {
@@ -455,7 +500,21 @@ input[type="file"] {
   background: transparent;
   color: var(--text-color);
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.6s ease, box-shadow 0.6s ease, color 0.6s ease;
+}
+
+@keyframes chaosThemeWipe {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .theme-option:hover {

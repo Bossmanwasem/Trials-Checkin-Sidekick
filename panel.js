@@ -265,6 +265,17 @@ let chaosIntervalId = null;
 let chaosRotationSeconds = DEFAULT_CHAOS_ROTATION_SECONDS;
 let activeThemeId = "ocean";
 let currentChaosThemeId = null;
+let chaosTransitionTimeoutId = null;
+
+function ensureThemeTransitionLayer() {
+  let layer = document.getElementById("themeTransitionLayer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.id = "themeTransitionLayer";
+    document.body.appendChild(layer);
+  }
+  return layer;
+}
 
 function setThemeVars(vars) {
   Object.entries(vars).forEach(([key, value]) => {
@@ -303,7 +314,7 @@ function applyRandomChaosTheme() {
   const nextThemeId = getRandomThemeId();
   const theme = THEMES[nextThemeId];
   if (theme) {
-    setThemeVars(theme.vars);
+    applyChaosThemeTransition(theme);
   }
 }
 
@@ -313,6 +324,39 @@ function startChaosRotation() {
   chaosIntervalId = setInterval(() => {
     applyRandomChaosTheme();
   }, chaosRotationSeconds * 1000);
+}
+
+function clearChaosTransition() {
+  if (chaosTransitionTimeoutId) {
+    clearTimeout(chaosTransitionTimeoutId);
+    chaosTransitionTimeoutId = null;
+  }
+  document.body?.classList.remove("chaos-transitioning");
+  if (document.body) {
+    document.body.style.backgroundColor = "";
+  }
+}
+
+function applyChaosThemeTransition(theme) {
+  if (!theme) return;
+  const layer = ensureThemeTransitionLayer();
+  const currentBg = getComputedStyle(document.documentElement).getPropertyValue("--bg-color").trim();
+  if (currentBg) {
+    document.body.style.backgroundColor = currentBg;
+  }
+  setThemeVars(theme.vars);
+  layer.style.backgroundColor = theme.vars["bg-color"] || "";
+  document.body.classList.remove("chaos-transitioning");
+  void layer.offsetHeight;
+  document.body.classList.add("chaos-transitioning");
+  if (chaosTransitionTimeoutId) {
+    clearTimeout(chaosTransitionTimeoutId);
+  }
+  chaosTransitionTimeoutId = window.setTimeout(() => {
+    document.body.classList.remove("chaos-transitioning");
+    document.body.style.backgroundColor = "";
+    chaosTransitionTimeoutId = null;
+  }, 900);
 }
 
 function updateChaosControlsVisibility(themeId) {
@@ -362,6 +406,7 @@ function applyTheme(themeId, { persist = true } = {}) {
     return;
   }
   stopChaosRotation();
+  clearChaosTransition();
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
   updateThemeSelection(resolvedTheme);
