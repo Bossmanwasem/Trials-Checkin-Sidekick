@@ -19,7 +19,6 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
   "Return Watchlist": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=aHwhBv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0"
 };
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
-const DEVICE_LOOKUP_VOCAB_URL = "https://talktometechnologies2com.sharepoint.com/:f:/r/sites/VocabCustomization/Shared%20Documents/Vocab%20From%20Trial/2025?csf=1&web=1&e=zq8P6Y";
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 
@@ -1304,7 +1303,7 @@ async function runDeviceLookupSearch(rawInput) {
   const msgRw = "-Please check the Return Watchlist worksheet for your device.\n-When Action Needed is completed delete the row. If unsure reach out to the author of the entry.";
   const msgBoth = "-Please check the LTL Update worksheet and Return Watchlist worksheet for your device.";
   const msgNone = "-No action required.";
-  const msgCopied = "-Click the CRM Inventory button to continue your check-in.\n-Serial number is copied to your clipboard.";
+  const msgCopied = "-Click the Checkin Device button to continue your check-in.\n-Serial number is copied to your clipboard.";
 
   const mountNotes = [];
   const mismatchedMounts = [];
@@ -2442,10 +2441,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showFormView();
     setValue("deviceNumberInput", deviceLookupLastSerial);
     updateDeviceRules();
-  });
-
-  document.getElementById("lookupOpenVocabBtn")?.addEventListener("click", () => {
-    chrome.tabs.create({ url: DEVICE_LOOKUP_VOCAB_URL });
   });
 
   document.getElementById("lookupOpenWorkbookBtn")?.addEventListener("click", () => {
