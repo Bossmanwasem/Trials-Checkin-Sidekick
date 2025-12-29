@@ -13,6 +13,7 @@ const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
+const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=lXPZFv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMH0",
@@ -510,10 +511,57 @@ function initThemeControls() {
   });
 }
 
+const zipFolderInput = document.getElementById("zipFolderInput");
+const zipFolderSaveBtn = document.getElementById("zipFolderSaveBtn");
+const zipFolderStatus = document.getElementById("zipFolderStatus");
+
+function normalizeZipFolder(folder) {
+  return (folder || "")
+    .trim()
+    .replace(/^[/\\]+/, "")
+    .replace(/[/\\]+$/, "");
+}
+
+function updateZipFolderStatus(folder) {
+  if (!zipFolderStatus) return;
+  if (folder) {
+    zipFolderStatus.textContent = `Saving zips to Downloads/${folder}`;
+    return;
+  }
+  zipFolderStatus.textContent = "Saving zips to your default Downloads folder.";
+}
+
+async function saveZipFolderSetting() {
+  if (!zipFolderInput) return;
+  const normalized = normalizeZipFolder(zipFolderInput.value);
+  zipFolderInput.value = normalized;
+  await setStoredValue(ZIP_FOLDER_STORAGE_KEY, normalized);
+  updateZipFolderStatus(normalized);
+}
+
+async function initZipFolderSetting() {
+  if (!zipFolderInput) return;
+  const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+  zipFolderInput.value = storedFolder;
+  updateZipFolderStatus(storedFolder);
+  zipFolderSaveBtn?.addEventListener("click", () => {
+    void saveZipFolderSetting();
+  });
+  zipFolderInput.addEventListener("change", () => {
+    void saveZipFolderSetting();
+  });
+  zipFolderInput.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    void saveZipFolderSetting();
+  });
+}
+
 initThemeControls();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();
+initZipFolderSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -2010,15 +2058,18 @@ async function promptUserDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   try {
     if (chrome?.downloads?.download) {
+      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
       await chrome.downloads.download({
         url,
-        filename,
-        saveAs: true
+        filename: targetFilename,
+        saveAs: !zipFolder
       });
     } else {
       const link = document.createElement("a");
       link.href = url;
-      link.download = filename;
+      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
       link.click();
     }
   } finally {
