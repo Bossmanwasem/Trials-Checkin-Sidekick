@@ -14,9 +14,16 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
+const DEVICE_LOOKUP_SHEET_LINKS = {
+  "LTL Update List": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=lXPZFv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMH0",
+  "Return Watchlist": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=aHwhBv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0"
+};
+const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
+const DEVICE_LOOKUP_CRM_URL = "https://portal.talktometechnologies.com/Admin/ManageInventory.aspx";
+const DEVICE_LOOKUP_VOCAB_URL = "https://talktometechnologies2com.sharepoint.com/:f:/r/sites/VocabCustomization/Shared%20Documents/Vocab%20From%20Trial/2025?csf=1&web=1&e=zq8P6Y";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -33,6 +40,7 @@ function showLandingView() {
 }
 function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
+function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
   void refreshGridClientData();
@@ -647,6 +655,627 @@ function toggleSection(sectionId) {
 function getFormValue(selector) {
   const el = document.querySelector(selector);
   return (el?.value || "").trim();
+}
+
+/* ---------------- Device lookup sidekick ---------------- */
+
+const DEVICE_LOOKUP_SPECIAL_SERIALS = new Set([
+  "DTP10.009",
+  "DTP10.010",
+  "DTP10.011",
+  "TP10.012",
+  "DTP10.012",
+  "TP10.013",
+  "DTP10.013",
+  "TP10.014",
+  "DTP10.014",
+  "TP10.015",
+  "DTP10.015",
+  "DTP10.016"
+]);
+
+const deviceLookupWorkbooks = {
+  ltl: null,
+  mount: null,
+  crm: null
+};
+let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
+
+function columnLettersToIndex(letters) {
+  return letters
+    .toUpperCase()
+    .split("")
+    .reduce((acc, char) => acc * 26 + (char.charCodeAt(0) - 64), 0) - 1;
+}
+
+function parseSharedStrings(xmlText) {
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+  return Array.from(doc.getElementsByTagName("si")).map(item => {
+    const textNodes = Array.from(item.getElementsByTagName("t"));
+    return textNodes.map(node => node.textContent).join("");
+  });
+}
+
+function parseSheet(xmlText, sharedStrings) {
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+  const rows = [];
+  const rowNodes = Array.from(doc.getElementsByTagName("row"));
+  rowNodes.forEach(rowNode => {
+    const rowIndex = parseInt(rowNode.getAttribute("r"), 10);
+    if (!rowIndex) return;
+    const row = rows[rowIndex - 1] || [];
+    const cells = Array.from(rowNode.getElementsByTagName("c"));
+    cells.forEach(cell => {
+      const cellRef = cell.getAttribute("r") || "";
+      const match = cellRef.match(/([A-Z]+)/i);
+      if (!match) return;
+      const colIndex = columnLettersToIndex(match[1]);
+      const cellType = cell.getAttribute("t");
+      let value = "";
+      if (cellType === "s") {
+        const v = cell.getElementsByTagName("v")[0];
+        const idx = v ? parseInt(v.textContent, 10) : null;
+        value = idx !== null && sharedStrings[idx] !== undefined ? sharedStrings[idx] : "";
+      } else if (cellType === "inlineStr") {
+        const tNode = cell.getElementsByTagName("t")[0];
+        value = tNode ? tNode.textContent : "";
+      } else {
+        const v = cell.getElementsByTagName("v")[0];
+        value = v ? v.textContent : "";
+      }
+      row[colIndex] = value;
+    });
+    rows[rowIndex - 1] = row;
+  });
+  return rows;
+}
+
+async function loadWorkbookFromFile(file) {
+  const data = await file.arrayBuffer();
+  const zip = await JSZip.loadAsync(data);
+  const workbookXml = await zip.file("xl/workbook.xml").async("text");
+  const workbookDoc = new DOMParser().parseFromString(workbookXml, "application/xml");
+  const relsXml = await zip.file("xl/_rels/workbook.xml.rels").async("text");
+  const relsDoc = new DOMParser().parseFromString(relsXml, "application/xml");
+  const rels = new Map(
+    Array.from(relsDoc.getElementsByTagName("Relationship")).map(rel => [
+      rel.getAttribute("Id"),
+      rel.getAttribute("Target")
+    ])
+  );
+  const sharedStrings = zip.file("xl/sharedStrings.xml")
+    ? parseSharedStrings(await zip.file("xl/sharedStrings.xml").async("text"))
+    : [];
+  const sheets = {};
+  const sheetNodes = Array.from(workbookDoc.getElementsByTagName("sheet"));
+  for (const sheet of sheetNodes) {
+    const name = sheet.getAttribute("name");
+    const rId = sheet.getAttribute("r:id");
+    if (!name || !rId) continue;
+    const target = rels.get(rId);
+    if (!target) continue;
+    const path = target.startsWith("xl/") ? target : `xl/${target}`;
+    if (!zip.file(path)) continue;
+    const xmlText = await zip.file(path).async("text");
+    sheets[name] = parseSheet(xmlText, sharedStrings);
+  }
+  return { sheets };
+}
+
+async function handleWorkbookSelection({ inputId, statusId, targetKey }) {
+  const input = document.getElementById(inputId);
+  const status = document.getElementById(statusId);
+  if (!input?.files?.length) return;
+  const file = input.files[0];
+  if (status) status.textContent = "Loading workbook...";
+  try {
+    const workbook = await loadWorkbookFromFile(file);
+    deviceLookupWorkbooks[targetKey] = workbook;
+    if (status) status.textContent = `Connected: ${file.name}`;
+  } catch (error) {
+    console.error(error);
+    if (status) status.textContent = "Unable to read workbook. Try re-selecting the file.";
+  }
+}
+
+function normalizeLookupValue(value) {
+  return String(value || "").trim().replace(/[()[\]"']/g, "").toLowerCase();
+}
+
+function extractValidSerial(scanInput) {
+  if (!scanInput) return null;
+  let cleaned = scanInput.replace(/\(01\)\d+/g, "");
+  cleaned = cleaned.replace(/\(21\)/g, "").trim().toUpperCase();
+
+  if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(cleaned)) return cleaned;
+
+  const fourDigitDotPrefixes = ["DTP10", "DTP8"];
+  const sixDigitDotPrefixes = ["DW13", "DW5", "DWM", "DW"];
+  const noDotPrefixes6or7 = ["DGPG", "DTT", "DTZ"];
+  const noDotPrefixes4 = ["Z10D", "Z12D", "Z16D"];
+
+  for (const prefix of fourDigitDotPrefixes) {
+    if (cleaned.startsWith(prefix)) {
+      const digits = cleaned.slice(prefix.length).replace(/\D/g, "");
+      if (/^\d{4}$/.test(digits)) return `${prefix}.${digits}`;
+    }
+  }
+
+  for (const prefix of sixDigitDotPrefixes) {
+    if (cleaned.startsWith(prefix)) {
+      const digits = cleaned.slice(prefix.length).replace(/\D/g, "");
+      if (/^\d{6}$/.test(digits)) return `${prefix}.${digits}`;
+    }
+  }
+
+  for (const prefix of noDotPrefixes6or7) {
+    if (cleaned.startsWith(prefix)) {
+      const digits = cleaned.slice(prefix.length);
+      if (/^\d{6,7}$/.test(digits)) return `${prefix}${digits}`;
+    }
+  }
+
+  const last7 = cleaned.match(/(\d{7})$/);
+  if (last7) {
+    const suffix = last7[1];
+    if (cleaned.includes("5060446901465")) return `DTZ${suffix}`;
+    if (cleaned.includes("5060446901373")) return `DTT${suffix}`;
+  }
+
+  for (const prefix of noDotPrefixes4) {
+    if (cleaned.startsWith(prefix)) {
+      const digits = cleaned.slice(prefix.length);
+      if (/^\d{4}$/.test(digits)) return `${prefix}${digits}`;
+    }
+  }
+
+  return null;
+}
+
+function getSheetRows(workbook, sheetName) {
+  if (!workbook?.sheets?.[sheetName]) return [];
+  return workbook.sheets[sheetName];
+}
+
+function buildHeaderMap(rows) {
+  const headers = rows[0] || [];
+  const map = {};
+  headers.forEach((header, idx) => {
+    if (!header) return;
+    map[String(header).trim()] = idx;
+  });
+  return map;
+}
+
+function searchSerialNumber(serialNumber, workbook) {
+  const matches = [];
+  const sheetsFound = new Set();
+  const serialNorm = normalizeLookupValue(serialNumber);
+  ["LTL Update List", "Return Watchlist"].forEach(sheetName => {
+    const rows = getSheetRows(workbook, sheetName);
+    rows.forEach((row, rowIndex) => {
+      row.forEach(cellValue => {
+        if (!cellValue) return;
+        const cellText = String(cellValue);
+        if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialNumber)) {
+          if (normalizeLookupValue(cellText) === serialNorm) {
+            matches.push({ sheet: sheetName, row: rowIndex + 1 });
+            sheetsFound.add(sheetName);
+          }
+        } else {
+          const parts = cellText.split(/[,\n;/]+/).map(part => normalizeLookupValue(part));
+          if (parts.includes(serialNorm)) {
+            matches.push({ sheet: sheetName, row: rowIndex + 1 });
+            sheetsFound.add(sheetName);
+          }
+        }
+      });
+    });
+  });
+
+  if (matches.length) {
+    const msg = `✅ Found in:\n${matches.map(match => `- Sheet: ${match.sheet}, Row: ${match.row}`).join("\n")}`;
+    return { message: msg, status: "green", sheetsFound: Array.from(sheetsFound) };
+  }
+  return { message: "❌ Serial number not found in Workbook.", status: "red", sheetsFound: [] };
+}
+
+function findCrmIdFromSerial(serialNumber, workbook) {
+  try {
+    const serialNorm = normalizeLookupValue(serialNumber);
+    const devRows = getSheetRows(workbook, "DeviceLog");
+    const devMap = buildHeaderMap(devRows);
+    const devSerialCol = devMap["TTMTSerialNumber"];
+    const devCrmCol = devMap["5 Digit CRM #"];
+    for (let i = devRows.length - 1; i >= 1; i -= 1) {
+      const row = devRows[i];
+      if (!row) continue;
+      if (normalizeLookupValue(row[devSerialCol]) === serialNorm) {
+        const crm = String(row[devCrmCol] || "").trim();
+        if (/^\d{5}$/.test(crm)) return { crmId: crm, error: null };
+      }
+    }
+
+    const oldRows = getSheetRows(workbook, "OldDeviceLog");
+    const oldMap = buildHeaderMap(oldRows);
+    const oldSerialCol = oldMap["TTMT Serial Number"];
+    const oldCrmCol = oldMap["5 Digit CRM #"];
+    for (let i = oldRows.length - 1; i >= 1; i -= 1) {
+      const row = oldRows[i];
+      if (!row) continue;
+      if (normalizeLookupValue(row[oldSerialCol]) === serialNorm) {
+        const crm = String(row[oldCrmCol] || "").trim();
+        if (/^\d{5}$/.test(crm)) return { crmId: crm, error: null };
+      }
+    }
+    return { crmId: "", error: "❌ CRM ID not found" };
+  } catch (error) {
+    return { crmId: null, error: `❌ Error in find_crm_id_from_serial: ${error}` };
+  }
+}
+
+function searchMountInventory(serialNumber, workbook, crmId) {
+  try {
+    const serialNorm = normalizeLookupValue(serialNumber);
+    const mountMap = {
+      "CM inv.": "Clamp Mount",
+      "TM inv.": "Table Mount",
+      "RM inv.": "Rolling Mount"
+    };
+    const clamp = [];
+    const table = [];
+    const rolling = [];
+    let mismatched = false;
+
+    Object.entries(mountMap).forEach(([sheetName, mountType]) => {
+      const rows = getSheetRows(workbook, sheetName);
+      rows.slice(1).forEach(row => {
+        if (!row) return;
+        if (normalizeLookupValue(row[1]) === serialNorm) {
+          const mountSn = String(row[0] || "").trim();
+          const mountCrm = String(row[4] || "").trim();
+          const match = mountCrm === crmId;
+          if (!match) mismatched = true;
+          const mountInfo = { serial: mountSn, type: mountType, match };
+          if (mountType === "Clamp Mount") clamp.push(mountInfo);
+          if (mountType === "Table Mount") table.push(mountInfo);
+          if (mountType === "Rolling Mount") rolling.push(mountInfo);
+        }
+      });
+    });
+
+    const allMounts = [...clamp, ...table, ...rolling];
+    if (!allMounts.length) {
+      return {
+        lines: ["❌ Serial number not found in Mount Inventory."],
+        clamp,
+        table,
+        rolling,
+        mismatched,
+        status: "red"
+      };
+    }
+
+    return {
+      lines: allMounts.map(item => `${item.match ? "✅" : "⚠️"} ${item.type}: ${item.serial}`),
+      clamp,
+      table,
+      rolling,
+      mismatched,
+      status: mismatched ? "yellow" : "green"
+    };
+  } catch (error) {
+    return {
+      lines: [`❌ Error: ${error}`],
+      clamp: [],
+      table: [],
+      rolling: [],
+      mismatched: false,
+      status: "red"
+    };
+  }
+}
+
+function findAttachedCameras(serialNumber, workbook) {
+  try {
+    const serialNorm = normalizeLookupValue(serialNumber);
+    const devRows = getSheetRows(workbook, "DeviceLog");
+    const oldRows = getSheetRows(workbook, "OldDeviceLog");
+    const devMap = buildHeaderMap(devRows);
+    const oldMap = buildHeaderMap(oldRows);
+
+    const devSerialCol = devMap["TTMTSerialNumber"];
+    const devCamCol = devMap["CameraSerialNumber"];
+    const devLuminCol = devMap["Lumin-ISerialNumber"];
+    const devCrmCol = devMap["5 Digit CRM #"];
+    const devIdCol = devMap["ID"];
+
+    const oldSerialCol = oldMap["TTMT Serial Number"];
+    const oldCamCol = oldMap["Camera Serial Number"];
+    const oldLuminCol = oldMap["Lumin-i Serial Number"];
+    const oldCrmCol = oldMap["5 Digit CRM #"];
+    const oldIdCol = oldMap["ID"];
+
+    let crm = null;
+    for (let i = devRows.length - 1; i >= 1; i -= 1) {
+      const row = devRows[i];
+      if (!row) continue;
+      if (normalizeLookupValue(row[devSerialCol]) === serialNorm) {
+        crm = String(row[devCrmCol] || "").trim();
+        break;
+      }
+    }
+    if (!crm) {
+      for (let i = oldRows.length - 1; i >= 1; i -= 1) {
+        const row = oldRows[i];
+        if (!row) continue;
+        if (normalizeLookupValue(row[oldSerialCol]) === serialNorm) {
+          crm = String(row[oldCrmCol] || "").trim();
+          break;
+        }
+      }
+    }
+    if (!crm) return { cameras: [], lumin: [], evo: [], error: null };
+
+    const prefixOf = sn => {
+      if (!sn) return "";
+      const value = String(sn).trim();
+      if (value.includes(".")) return `${value.split(".", 1)[0].toUpperCase()}.`;
+      const match = value.match(/^[A-Za-z]+/);
+      return match ? `${match[0].toUpperCase()}.` : "";
+    };
+
+    let newestCamera = null;
+    let newestLumin = null;
+    let newestEvo = null;
+
+    function ingest(rows, idCol, camCol, luminCol, crmCol, src) {
+      for (let i = rows.length - 1; i >= 1; i -= 1) {
+        const row = rows[i];
+        if (!row || String(row[crmCol] || "").trim() !== crm) continue;
+        const rowId = String(row[idCol] || "").trim();
+
+        const cam = String(row[camCol] || "").trim();
+        if (cam) {
+          const prefix = prefixOf(cam);
+          if (prefix === "GPE." && !newestEvo) {
+            newestEvo = { sn: cam, id: rowId, src, col: "CAM" };
+          } else if (!newestCamera) {
+            newestCamera = { sn: cam, id: rowId, src, col: "CAM" };
+          }
+        }
+
+        const lumin = String(row[luminCol] || "").trim();
+        if (lumin) {
+          const prefix = prefixOf(lumin);
+          if (prefix === "GPE." && !newestEvo) {
+            newestEvo = { sn: lumin, id: rowId, src, col: "LUM" };
+          } else if (prefix === "GPL." && !newestLumin) {
+            newestLumin = { sn: lumin, id: rowId, src, col: "LUM" };
+          }
+        }
+      }
+    }
+
+    ingest(devRows, devIdCol, devCamCol, devLuminCol, devCrmCol, "dev");
+    ingest(oldRows, oldIdCol, oldCamCol, oldLuminCol, oldCrmCol, "old");
+
+    const devRowsForward = devRows.slice(1);
+    const oldRowsForward = oldRows.slice(1);
+
+    const toInt = value => {
+      const parsed = parseInt(value, 10);
+      return Number.isNaN(parsed) ? -1 : parsed;
+    };
+
+    function fwdScanGpv(sn, startId, src) {
+      const sid = toInt(startId);
+      if (src === "dev") {
+        return devRowsForward.some(row => toInt(row[devIdCol]) > sid && String(row[devCamCol] || "") === sn && String(row[devCrmCol] || "") !== crm);
+      }
+      if (oldRowsForward.some(row => toInt(row[oldIdCol]) > sid && String(row[oldCamCol] || "") === sn && String(row[oldCrmCol] || "") !== crm)) return true;
+      return devRowsForward.some(row => String(row[devCamCol] || "") === sn && String(row[devCrmCol] || "") !== crm);
+    }
+
+    function fwdScanLumin(sn, startId, src) {
+      const sid = toInt(startId);
+      if (src === "dev") {
+        return devRowsForward.some(row => toInt(row[devIdCol]) > sid && String(row[devLuminCol] || "") === sn && String(row[devCrmCol] || "") !== crm);
+      }
+      if (oldRowsForward.some(row => toInt(row[oldIdCol]) > sid && String(row[oldLuminCol] || "") === sn && String(row[oldCrmCol] || "") !== crm)) return true;
+      return devRowsForward.some(row => String(row[devLuminCol] || "") === sn && String(row[devCrmCol] || "") !== crm);
+    }
+
+    function fwdScanEvo(sn, startId, src) {
+      const sid = toInt(startId);
+      if (src === "dev") {
+        return devRowsForward.some(row => toInt(row[devIdCol]) > sid && (String(row[devCamCol] || "") === sn || String(row[devLuminCol] || "") === sn) && String(row[devCrmCol] || "") !== crm);
+      }
+      if (oldRowsForward.some(row => toInt(row[oldIdCol]) > sid && (String(row[oldCamCol] || "") === sn || String(row[oldLuminCol] || "") === sn) && String(row[oldCrmCol] || "") !== crm)) return true;
+      return devRowsForward.some(row => (String(row[devCamCol] || "") === sn || String(row[devLuminCol] || "") === sn) && String(row[devCrmCol] || "") !== crm);
+    }
+
+    const cameras = [];
+    const lumin = [];
+    const evo = [];
+
+    if (newestCamera) {
+      const { sn, id, src } = newestCamera;
+      if (sn.toUpperCase().startsWith("GPV.")) {
+        if (!fwdScanGpv(sn, id, src)) cameras.push(sn);
+      } else {
+        cameras.push(sn);
+      }
+    }
+
+    if (newestLumin) {
+      const { sn, id, src } = newestLumin;
+      if (!fwdScanLumin(sn, id, src)) lumin.push(sn);
+    }
+
+    if (newestEvo) {
+      const { sn, id, src } = newestEvo;
+      if (!fwdScanEvo(sn, id, src)) evo.push(sn);
+    }
+
+    return { cameras, lumin, evo, error: null };
+  } catch (error) {
+    return { cameras: [], lumin: [], evo: [], error: `❌ Error in find_attached_cameras: ${error}` };
+  }
+}
+
+function updateLookupResultCard(cardId, contentId, message, status) {
+  const card = document.getElementById(cardId);
+  const content = document.getElementById(contentId);
+  if (content) content.textContent = message || "";
+  if (card) card.setAttribute("data-status", status || "");
+}
+
+function updateCopyButton(buttonId, value, label) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+  button.dataset.copyValue = value || "";
+  button.disabled = !value;
+  button.textContent = label;
+}
+
+async function runDeviceLookupSearch(rawInput) {
+  const lookupCopyStatus = document.getElementById("lookupCopyStatus");
+  if (lookupCopyStatus) lookupCopyStatus.textContent = "";
+
+  const extracted = extractValidSerial(rawInput);
+  setText("deviceLookupRaw", rawInput || "—");
+  setText("deviceLookupExtracted", extracted ? `✅ ${extracted}` : "❌ Invalid serial scanned");
+
+  if (!extracted) {
+    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Invalid serial number detected. Please enter it manually and try again.", "red");
+    updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Report the invalid scan to pre-prep.", "red");
+    updateCopyButton("copyDeviceSnBtn", "", "Copy device SN");
+    updateCopyButton("copyCameraSnBtn", "", "Copy camera SNs");
+    updateCopyButton("copyLuminSnBtn", "", "Copy Lumin-I SNs");
+    updateCopyButton("copyEvoSnBtn", "", "Copy Evo SNs");
+    updateCopyButton("copyCrmBtn", "", "Copy CRM #");
+    updateCopyButton("copyClampBtn", "", "Copy clamp mount");
+    updateCopyButton("copyTableBtn", "", "Copy table mount");
+    updateCopyButton("copyRollingBtn", "", "Copy rolling mount");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(extracted);
+  } catch (error) {
+    console.warn("Unable to copy serial to clipboard.", error);
+  }
+
+  const ltlWorkbook = deviceLookupWorkbooks.ltl;
+  const mountWorkbook = deviceLookupWorkbooks.mount;
+  const crmWorkbook = deviceLookupWorkbooks.crm;
+
+  if (!ltlWorkbook || !mountWorkbook || !crmWorkbook) {
+    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Connect all three workbooks before searching.", "red");
+    updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
+    return;
+  }
+
+  const serialResult = searchSerialNumber(extracted, ltlWorkbook);
+  updateLookupResultCard("lookupSerialCard", "lookupSerialResult", serialResult.message, serialResult.status);
+  deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
+  if (serialResult.sheetsFound.includes("LTL Update List")) {
+    deviceLookupLastSheetLink = DEVICE_LOOKUP_SHEET_LINKS["LTL Update List"] || DEVICE_LOOKUP_EXCEL_WEB_URL;
+  } else if (serialResult.sheetsFound.includes("Return Watchlist")) {
+    deviceLookupLastSheetLink = DEVICE_LOOKUP_SHEET_LINKS["Return Watchlist"] || DEVICE_LOOKUP_EXCEL_WEB_URL;
+  }
+
+  const { crmId, error: crmError } = findCrmIdFromSerial(extracted, crmWorkbook);
+  const mountResult = searchMountInventory(extracted, mountWorkbook, crmId || "");
+  updateLookupResultCard("lookupMountCard", "lookupMountResult", mountResult.lines.join("\n"), mountResult.status);
+
+  const cameraResult = findAttachedCameras(extracted, crmWorkbook);
+  if (cameraResult.error) {
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", cameraResult.error, "red");
+    return;
+  }
+
+  const cameraSerials = [...cameraResult.cameras];
+  const luminSerials = [...cameraResult.lumin];
+  const evoSerials = [...cameraResult.evo];
+
+  const hasMounts = mountResult.clamp.length || mountResult.table.length || mountResult.rolling.length;
+  const foundInLtl = serialResult.sheetsFound.includes("LTL Update List");
+  const foundInRwl = serialResult.sheetsFound.includes("Return Watchlist");
+  const crmFullUrl = crmId ? `https://crm.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
+
+  const deviceInfoParts = [];
+  if (cameraSerials.length) deviceInfoParts.push(`Camera: ${cameraSerials.join(", ")}`);
+  if (luminSerials.length) deviceInfoParts.push(`Lumin-i: ${luminSerials.join(", ")}`);
+  if (evoSerials.length) deviceInfoParts.push(`Evo: ${evoSerials.join(", ")}`);
+  const deviceInfo = deviceInfoParts.length
+    ? `${extracted} with ${deviceInfoParts.join(", ")}. CRM #: ${crmId || "N/A"}`
+    : `${extracted}. CRM #: ${crmId || "N/A"}`;
+
+  const msgStart = `-You have completed a search for: ${deviceInfo}`;
+  const msgLtl = "-Your device was found on the LTL Update worksheet.\n-Please place your device on the top shelf of the rack next to Dave's desk.";
+  const msgRw = "-Please check the Return Watchlist worksheet for your device.\n-When Action Needed is completed delete the row. If unsure reach out to the author of the entry.";
+  const msgBoth = "-Please check the LTL Update worksheet and Return Watchlist worksheet for your device.";
+  const msgNone = "-No action required.";
+  const msgCopied = "-Click the CRM Inventory button to continue your check-in.\n-Serial number is copied to your clipboard.";
+
+  const mountNotes = [];
+  const mismatchedMounts = [];
+  [...mountResult.clamp, ...mountResult.table, ...mountResult.rolling].forEach(item => {
+    if (!item.match) mismatchedMounts.push(`${item.type}: ${item.serial}`);
+  });
+  if (mismatchedMounts.length) {
+    mountNotes.push("-⚠️ Some mounts were found, but their CRM number may not match the device. Please confirm that these mounts belong with this device before completing check-in.");
+  }
+  if (mountResult.clamp.length || mountResult.table.length) {
+    mountNotes.push("-Check the notes in the CRM to see if a table mount and/or clamp mount has been returned. If not, then go find the mount(s) in the unchecked mount container. If still not found, check the disinfection log or message a lead to help look into it further.");
+  }
+  if (mountResult.rolling.length) {
+    mountNotes.push("-Find the rolling mount and move to the checked-in location.");
+  }
+
+  let actionColor = "green";
+  let combinedMsg = msgNone;
+  const mountMessage = mountNotes.length ? `\n\n${mountNotes.join("\n")}` : "";
+
+  if (foundInLtl && foundInRwl) {
+    actionColor = "blue";
+    combinedMsg = `${msgStart}\n\n${msgBoth}${mountMessage}\n\n${msgLtl}`;
+  } else if (foundInLtl) {
+    actionColor = "blue";
+    combinedMsg = `${msgStart}${mountMessage}\n\n${msgLtl}`;
+  } else if (foundInRwl) {
+    actionColor = "yellow";
+    combinedMsg = `${msgStart}\n\n${msgRw}${mountMessage}\n\n${msgCopied}`;
+  } else if (hasMounts) {
+    actionColor = "yellow";
+    combinedMsg = `${msgStart}${mountMessage}\n\n${msgCopied}`;
+  } else {
+    actionColor = "green";
+    combinedMsg = `${msgStart}\n\n${msgNone}\n\n${msgCopied}`;
+  }
+
+  if (crmError) {
+    combinedMsg = `${combinedMsg}\n\n${crmError}`;
+    actionColor = "red";
+  }
+
+  updateLookupResultCard("lookupActionCard", "lookupActionResult", combinedMsg, actionColor);
+  if (crmFullUrl) {
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", `${combinedMsg}\n\n${crmFullUrl}`, actionColor);
+  }
+
+  updateCopyButton("copyDeviceSnBtn", extracted, "Copy device SN");
+  updateCopyButton("copyCameraSnBtn", cameraSerials.join(", "), "Copy camera SNs");
+  updateCopyButton("copyLuminSnBtn", luminSerials.join(", "), "Copy Lumin-I SNs");
+  updateCopyButton("copyEvoSnBtn", evoSerials.join(", "), "Copy Evo SNs");
+  updateCopyButton("copyCrmBtn", crmId || "", "Copy CRM #");
+  updateCopyButton("copyClampBtn", mountResult.clamp.map(item => item.serial).join(", "), "Copy clamp mount");
+  updateCopyButton("copyTableBtn", mountResult.table.map(item => item.serial).join(", "), "Copy table mount");
+  updateCopyButton("copyRollingBtn", mountResult.rolling.map(item => item.serial).join(", "), "Copy rolling mount");
 }
 
 /* ---------------- Grid sidekick ---------------- */
@@ -1639,6 +2268,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showCrmNavigatorView();
   });
 
+  document.getElementById("deviceLookupBtn")?.addEventListener("click", () => {
+    showDeviceLookupView();
+  });
+
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("crmNavigatorInput");
@@ -1655,6 +2288,73 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("crmNavigatorReturnBtn")?.addEventListener("click", () => {
     showLandingView();
+  });
+
+  document.getElementById("deviceLookupReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("deviceLookupForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const input = document.getElementById("deviceLookupInput");
+    const raw = (input?.value || "").trim();
+    if (!raw) {
+      alert("Enter a device serial number to continue.");
+      return;
+    }
+    await runDeviceLookupSearch(raw);
+  });
+
+  document.getElementById("ltlFileInput")?.addEventListener("change", () => {
+    void handleWorkbookSelection({ inputId: "ltlFileInput", statusId: "ltlFileStatus", targetKey: "ltl" });
+  });
+
+  document.getElementById("mountFileInput")?.addEventListener("change", () => {
+    void handleWorkbookSelection({ inputId: "mountFileInput", statusId: "mountFileStatus", targetKey: "mount" });
+  });
+
+  document.getElementById("crmFileInput")?.addEventListener("change", () => {
+    void handleWorkbookSelection({ inputId: "crmFileInput", statusId: "crmFileStatus", targetKey: "crm" });
+  });
+
+  [
+    "copyDeviceSnBtn",
+    "copyCameraSnBtn",
+    "copyLuminSnBtn",
+    "copyEvoSnBtn",
+    "copyCrmBtn",
+    "copyClampBtn",
+    "copyTableBtn",
+    "copyRollingBtn"
+  ].forEach(buttonId => {
+    document.getElementById(buttonId)?.addEventListener("click", async event => {
+      const value = event.currentTarget?.dataset?.copyValue || "";
+      const status = document.getElementById("lookupCopyStatus");
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        if (status) status.textContent = "Copied to clipboard.";
+      } catch (error) {
+        if (status) status.textContent = "Copy failed. Try again.";
+      }
+      if (status) {
+        setTimeout(() => {
+          status.textContent = "";
+        }, 1500);
+      }
+    });
+  });
+
+  document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", () => {
+    chrome.tabs.create({ url: DEVICE_LOOKUP_CRM_URL });
+  });
+
+  document.getElementById("lookupOpenVocabBtn")?.addEventListener("click", () => {
+    chrome.tabs.create({ url: DEVICE_LOOKUP_VOCAB_URL });
+  });
+
+  document.getElementById("lookupOpenWorkbookBtn")?.addEventListener("click", () => {
+    chrome.tabs.create({ url: deviceLookupLastSheetLink || DEVICE_LOOKUP_EXCEL_WEB_URL });
   });
 
   document.getElementById("gridReturnBtn")?.addEventListener("click", () => {
