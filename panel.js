@@ -20,6 +20,8 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
 };
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_VOCAB_URL = "https://talktometechnologies2com.sharepoint.com/:f:/r/sites/VocabCustomization/Shared%20Documents/Vocab%20From%20Trial/2025?csf=1&web=1&e=zq8P6Y";
+const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
+const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
@@ -678,6 +680,11 @@ const deviceLookupWorkbooks = {
   mount: null,
   crm: null
 };
+let deviceLookupWorkbookMeta = {
+  ltl: null,
+  mount: null,
+  crm: null
+};
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
@@ -691,6 +698,61 @@ const lookupCopyButtons = [
   { id: "copyTableBtn", label: "Copy table mount" },
   { id: "copyRollingBtn", label: "Copy rolling mount" }
 ];
+const DEVICE_LOOKUP_STATUS_IDS = {
+  ltl: "ltlFileStatus",
+  mount: "mountFileStatus",
+  crm: "crmFileStatus"
+};
+
+function updateWorkbookStatus(targetKey, { name, saved } = {}) {
+  const statusId = DEVICE_LOOKUP_STATUS_IDS[targetKey];
+  const status = statusId ? document.getElementById(statusId) : null;
+  if (!status) return;
+  if (!name) {
+    status.textContent = "Not connected.";
+    return;
+  }
+  status.textContent = `Connected: ${name}${saved ? " (saved)" : ""}`;
+}
+
+async function persistDeviceLookupWorkbooks() {
+  await chrome.storage.local.set({
+    [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY]: deviceLookupWorkbooks,
+    [DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY]: deviceLookupWorkbookMeta
+  });
+}
+
+async function loadDeviceLookupWorkbooksFromStorage() {
+  return new Promise(resolve => {
+    chrome.storage.local.get(
+      [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY, DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY],
+      res => {
+        const storedWorkbooks = res?.[DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY];
+        const storedMeta = res?.[DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY];
+        if (storedWorkbooks) {
+          deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
+          deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
+          deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
+        }
+        if (storedMeta) {
+          deviceLookupWorkbookMeta = {
+            ...deviceLookupWorkbookMeta,
+            ...storedMeta
+          };
+        }
+        Object.keys(DEVICE_LOOKUP_STATUS_IDS).forEach(key => {
+          const hasWorkbook = Boolean(deviceLookupWorkbooks[key]);
+          const meta = deviceLookupWorkbookMeta[key];
+          updateWorkbookStatus(key, {
+            name: hasWorkbook ? (meta?.name || "Saved workbook") : "",
+            saved: hasWorkbook
+          });
+        });
+        resolve();
+      }
+    );
+  });
+}
 
 function columnLettersToIndex(letters) {
   return letters
@@ -782,7 +844,12 @@ async function handleWorkbookSelection({ inputId, statusId, targetKey }) {
   try {
     const workbook = await loadWorkbookFromFile(file);
     deviceLookupWorkbooks[targetKey] = workbook;
-    if (status) status.textContent = `Connected: ${file.name}`;
+    deviceLookupWorkbookMeta[targetKey] = {
+      name: file.name,
+      savedAt: new Date().toISOString()
+    };
+    await persistDeviceLookupWorkbooks();
+    updateWorkbookStatus(targetKey, { name: file.name, saved: false });
   } catch (error) {
     console.error(error);
     if (status) status.textContent = "Unable to read workbook. Try re-selecting the file.";
@@ -2257,6 +2324,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
 (async function init() {
   watchIdentifierInputs();
+  await loadDeviceLookupWorkbooksFromStorage();
   const profile = await getUserProfile();
   if (profile) {
     showLandingView();
