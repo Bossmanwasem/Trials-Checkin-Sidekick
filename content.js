@@ -85,8 +85,6 @@ const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div'
 ];
-const OUTREACH_NOTES_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_gvwNotes"]/tbody';
-const OUTREACH_FIVE_REGEX = /outreach\s*(?:sl\s*)?#?\s*5\b/i;
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -178,17 +176,6 @@ function selectClosestConsultantFromListBox(listBox, targetName) {
   best.click();
   dispatchChangeEvents(best);
   return true;
-}
-
-function checkForOutreachFive() {
-  const tbody = getElementByXPath(OUTREACH_NOTES_XPATH);
-  if (!tbody) {
-    return { ok: false, found: false, message: "Notes table not found on the CRM page." };
-  }
-
-  const text = tbody.textContent || "";
-  const found = OUTREACH_FIVE_REGEX.test(text);
-  return { ok: true, found };
 }
 
 /* ---------------- Existing CRM Data Grab ---------------- */
@@ -361,11 +348,6 @@ if (runtime?.onMessage?.addListener) {
   runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "GET_CLIENT_DATA") {
       sendResponse({ ok: true, data: collectClientData() });
-      return true;
-    }
-
-    if (msg.type === "CHECK_OUTREACH_FIVE") {
-      sendResponse(checkForOutreachFive());
       return true;
     }
 
