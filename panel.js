@@ -32,7 +32,7 @@ const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -60,6 +60,15 @@ function showSmartboxRepairView() { showView("smartboxRepairView"); }
 function showInventoryView() { showView("inventoryView"); }
 function showDafView() { showView("dafRecapView"); }
 function showEmailView() { showView("emailView"); }
+function showAppOverridesView() { showView("appOverridesView"); }
+
+function setCollapsibleState(key, expanded) {
+  const toggle = document.querySelector(`[data-collapsible="${key}"]`);
+  const content = document.querySelector(`[data-collapsible-content="${key}"]`);
+  if (!toggle || !content) return;
+  toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+  content.hidden = !expanded;
+}
 
 let hasStartedCheckin = false;
 let smartboxRepairRequired = false;
@@ -2710,6 +2719,15 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showOnboardingView();
   }
 
+  document.querySelectorAll("[data-collapsible]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.collapsible;
+      if (!key) return;
+      const isExpanded = btn.getAttribute("aria-expanded") === "true";
+      setCollapsibleState(key, !isExpanded);
+    });
+  });
+
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
     hasStartedCheckin = true;
     showFormView();
@@ -2750,6 +2768,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     chrome.tabs.create({ url: QA_FORM_URL });
   });
 
+  document.getElementById("appOverridesBtn")?.addEventListener("click", () => {
+    showAppOverridesView();
+  });
+
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("crmNavigatorInput");
@@ -2769,6 +2791,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("deviceLookupReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("appOverridesReturnBtn")?.addEventListener("click", () => {
     showLandingView();
   });
 

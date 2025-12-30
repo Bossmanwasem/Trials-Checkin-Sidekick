@@ -93,21 +93,40 @@
         </div>
       </div>
       <p class="landing-subtitle">Pick a workflow to get started.</p>
-      <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button">
-        Check-in Sidekick
-      </button>
+      <div class="landing-section">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false">
+          Check-in Tools
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="checkin-tools" hidden>
+          <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button">
+            Check-in Sidekick
+          </button>
+          <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button">
+            Device Number Lookup Sidekick
+          </button>
+        </div>
+      </div>
       <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button">
         Grid Sidekick
       </button>
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
         CRM Navigator
       </button>
-      <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button">
-        Device Number Lookup Sidekick
-      </button>
-      <button id="qaFormBtn" class="toggle-btn landing-btn" type="button">
-        QA form
-      </button>
+      <div class="landing-section">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false">
+          Trials Links
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="trials-links" hidden>
+          <button id="qaFormBtn" class="toggle-btn landing-btn" type="button">
+            QA Form
+          </button>
+          <button id="appOverridesBtn" class="toggle-btn landing-btn" type="button">
+            APP Overrides
+          </button>
+        </div>
+      </div>
     </div>
     <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
       <span class="landing-settings-icon" aria-hidden="true">⚙</span>
@@ -301,6 +320,23 @@
 
     <div class="crm-nav-footer">
       <button id="deviceLookupReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+  </div>
+
+  <!-- APP OVERRIDES VIEW -->
+  <div class="container app-overrides-view" id="appOverridesView" style="display:none;">
+    <h1>APP Overrides</h1>
+    <p class="complete-intro">Quick reference for app override credentials and paths.</p>
+    <div class="note-preview">
+      <div class="note-preview__title">Overrides</div>
+      <div class="note-preview__body">
+        <p><strong>Touchchat:</strong> 72584556</p>
+        <p><strong>P2G:</strong> vygh-phi-rhy-mo</p>
+        <p><strong>Lamp:</strong> IOS &rarr; LAMP &rarr; Settings</p>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="appOverridesReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
     </div>
   </div>
 
