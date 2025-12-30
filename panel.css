@@ -262,6 +262,16 @@ body.chaos-transitioning #themeTransitionLayer {
   flex-direction: column;
   gap: 8px;
   margin-top: 4px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+.landing-section__content .toggle-btn {
+  margin-top: 0;
 }
 
 .landing-settings-btn {
