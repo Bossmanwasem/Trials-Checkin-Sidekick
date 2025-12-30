@@ -14,6 +14,7 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
 const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
+const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=lXPZFv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMH0",
@@ -630,9 +631,57 @@ function updateLandingGreeting(profile) {
   setText("landingGreeting", greeting);
 }
 
+function getDefaultDailyCounters() {
+  return {
+    checkins: 0,
+    qas: 0,
+    preps: 0
+  };
+}
+
+async function getDailyCounters() {
+  const stored = await getStoredValue(DAILY_COUNTER_STORAGE_KEY);
+  return {
+    ...getDefaultDailyCounters(),
+    ...(stored || {})
+  };
+}
+
+async function setDailyCounters(counters) {
+  await setStoredValue(DAILY_COUNTER_STORAGE_KEY, counters);
+}
+
+function updateDailyCounterDisplay(counters) {
+  setText("dailyCheckinsCount", String(counters.checkins ?? 0));
+  setText("dailyQasCount", String(counters.qas ?? 0));
+  setText("dailyPrepsCount", String(counters.preps ?? 0));
+}
+
+async function refreshDailyCounters() {
+  const counters = await getDailyCounters();
+  updateDailyCounterDisplay(counters);
+  return counters;
+}
+
+async function incrementDailyCounter(key) {
+  const counters = await getDailyCounters();
+  const nextValue = (counters[key] ?? 0) + 1;
+  const updated = { ...counters, [key]: nextValue };
+  await setDailyCounters(updated);
+  updateDailyCounterDisplay(updated);
+  return updated;
+}
+
+async function clearDailyCounters() {
+  const reset = getDefaultDailyCounters();
+  await setDailyCounters(reset);
+  updateDailyCounterDisplay(reset);
+}
+
 async function refreshLandingView() {
   const profile = await getUserProfile();
   updateLandingGreeting(profile);
+  await refreshDailyCounters();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -2146,14 +2195,18 @@ function resetAllFieldsAndUI() {
   setInventoryNextStepVisibility(false);
 }
 
-async function finishCheckinAndReset() {
+async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   resetAllFieldsAndUI();
   smartboxRepairRequired = false;
   clearSelectedTrialFiles();
   await clearStoredCheckinData();
   await updateInventorySearchDisplay();
   await renderDafRecap();
-  showFormView();
+  if (returnToLanding) {
+    showLandingView();
+  } else {
+    showFormView();
+  }
 }
 
 /* ---------------- Submit: Check-in Device ---------------- */
@@ -2312,7 +2365,8 @@ document.getElementById("copyEmailSubjectBtn")?.addEventListener("click", async 
 });
 
 document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
-  await finishCheckinAndReset();
+  await incrementDailyCounter("checkins");
+  await finishCheckinAndReset({ returnToLanding: true });
 });
 
 ["gridFirstName", "gridLastName", "gridCrmId"].forEach(id => {
@@ -2383,6 +2437,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showFormView();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
+  });
+
+  document.getElementById("clearDailyCountersBtn")?.addEventListener("click", async () => {
+    await clearDailyCounters();
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
