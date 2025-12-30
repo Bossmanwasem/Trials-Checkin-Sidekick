@@ -748,20 +748,39 @@ function isQaFormPage() {
 }
 
 function initQaFormCounterTracking() {
-  const qaSubmitXPath = '//*[@id="form-main-content1"]/div/div/div[2]/div[3]/div/button[2]';
-  waitForElementByXPath(qaSubmitXPath, { timeoutMs: 15000 })
-    .then(button => {
-      if (!button || button.dataset.qaCounterBound === "true") return;
-      button.dataset.qaCounterBound = "true";
-      button.addEventListener("click", () => {
-        incrementDailyCounter("qas").catch(err => {
-          console.error("Failed to increment QA counter", err);
-        });
-      });
-    })
-    .catch(() => {
-      // Ignore if the QA form button isn't found on this page.
+  let hasIncremented = false;
+  const incrementOnce = () => {
+    if (hasIncremented) return;
+    hasIncremented = true;
+    incrementDailyCounter("qas").catch(err => {
+      console.error("Failed to increment QA counter", err);
     });
+  };
+
+  const isQaSubmitButton = button => {
+    if (!button) return false;
+    const dataAutomation = (button.getAttribute("data-automation-id") || "").toLowerCase();
+    const ariaLabel = (button.getAttribute("aria-label") || "").toLowerCase();
+    const text = (button.textContent || "").trim().toLowerCase();
+    if (dataAutomation === "submitbutton" || dataAutomation === "submit") return true;
+    if (ariaLabel.includes("submit")) return true;
+    if (button.type === "submit") return true;
+    return text.includes("submit");
+  };
+
+  document.addEventListener("submit", event => {
+    if (event.target?.closest("form")) {
+      incrementOnce();
+    }
+  }, true);
+
+  document.addEventListener("click", event => {
+    const button = event.target?.closest("button");
+    if (!button) return;
+    if (isQaSubmitButton(button)) {
+      incrementOnce();
+    }
+  }, true);
 }
 
 if (isQaFormPage()) {
