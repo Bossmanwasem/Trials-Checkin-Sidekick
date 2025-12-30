@@ -270,6 +270,10 @@ body.chaos-transitioning #themeTransitionLayer {
   box-sizing: border-box;
 }
 
+.landing-section__content[hidden] {
+  display: none;
+}
+
 .landing-section__content .toggle-btn {
   margin-top: 0;
 }
