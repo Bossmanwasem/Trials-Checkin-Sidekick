@@ -1832,21 +1832,10 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
   return { subject, body: lines.join("\n"), to, from };
 }
 
-function buildClassicOutlookComposeUrl({ subject, body, to = "" }) {
-  const params = new URLSearchParams();
-  if (subject) params.set("subject", subject);
-  if (body) params.set("body", body);
-  if (to) params.set("to", to);
-  const query = params.toString();
-  return `outlook://compose${query ? `?${query}` : ""}`;
-}
-
 async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
   const crmLink = buildCrmLink(data);
   const payload = buildOutlookEmailPayload(data, { crmLink });
-  setValue("emailFromField", payload.from);
-  setValue("emailToField", payload.to);
   setValue("emailSubjectField", payload.subject);
   setText("emailBodyPreview", payload.body);
   setText("emailStatus", "");
@@ -2314,39 +2303,12 @@ document.getElementById("copyEmailBodyBtn")?.addEventListener("click", async () 
   if (status) status.textContent = "Email body copied to clipboard.";
 });
 
-document.getElementById("copyEmailFromBtn")?.addEventListener("click", async () => {
-  const payload = await renderOutlookEmailPreview();
-  if (!payload?.from) return;
-  await navigator.clipboard.writeText(payload.from);
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "From address copied to clipboard.";
-});
-
-document.getElementById("copyEmailToBtn")?.addEventListener("click", async () => {
-  const payload = await renderOutlookEmailPreview();
-  if (!payload?.to) return;
-  await navigator.clipboard.writeText(payload.to);
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "To address copied to clipboard.";
-});
-
 document.getElementById("copyEmailSubjectBtn")?.addEventListener("click", async () => {
   const payload = await renderOutlookEmailPreview();
   if (!payload?.subject) return;
   await navigator.clipboard.writeText(payload.subject);
   const status = document.getElementById("emailStatus");
   if (status) status.textContent = "Email subject copied to clipboard.";
-});
-
-document.getElementById("openClassicOutlookBtn")?.addEventListener("click", async () => {
-  const payload = await renderOutlookEmailPreview();
-  const url = buildClassicOutlookComposeUrl(payload);
-  chrome.tabs.create({ url, active: false }, (tab) => {
-    if (!tab?.id) return;
-    setTimeout(() => chrome.tabs.remove(tab.id), 1500);
-  });
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Opening Outlook (classic) app compose window.";
 });
 
 document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
