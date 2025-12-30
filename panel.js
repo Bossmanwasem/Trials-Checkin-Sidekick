@@ -673,6 +673,16 @@ async function incrementDailyCounter(key) {
   return updated;
 }
 
+async function adjustDailyCounter(key, delta) {
+  const counters = await getDailyCounters();
+  const current = counters[key] ?? 0;
+  const nextValue = Math.max(0, current + delta);
+  const updated = { ...counters, [key]: nextValue };
+  await setDailyCounters(updated);
+  updateDailyCounterDisplay(updated);
+  return updated;
+}
+
 async function clearDailyCounters() {
   const reset = getDefaultDailyCounters();
   await setDailyCounters(reset);
@@ -715,6 +725,16 @@ async function getActiveDafTabId() {
     url: "*://talktometechnologies2com.sharepoint.com/*listforms.aspx*"
   });
   return tabs?.[0]?.id || null;
+}
+
+async function closeCheckinTabs() {
+  const [crmTabId, dafTabId] = await Promise.all([
+    getActiveCrmTabId(),
+    getActiveDafTabId()
+  ]);
+  const tabIds = Array.from(new Set([crmTabId, dafTabId].filter(Boolean)));
+  if (!tabIds.length) return;
+  await chrome.tabs.remove(tabIds);
 }
 
 async function fetchClientData(tabIdOverride = null) {
@@ -2284,7 +2304,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
 /* ---------------- Start another Checkin ---------------- */
 
-document.getElementById("startAnotherBtn")?.addEventListener("click", () => {
+document.getElementById("startAnotherBtn")?.addEventListener("click", async () => {
+  await closeCheckinTabs();
   if (smartboxRepairRequired) {
     showSmartboxRepairView();
     chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
@@ -2442,6 +2463,15 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("clearDailyCountersBtn")?.addEventListener("click", async () => {
     await clearDailyCounters();
+  });
+
+  document.querySelectorAll("[data-counter][data-delta]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const counterKey = btn.dataset.counter;
+      const delta = Number.parseInt(btn.dataset.delta || "0", 10);
+      if (!counterKey || Number.isNaN(delta)) return;
+      await adjustDailyCounter(counterKey, delta);
+    });
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {

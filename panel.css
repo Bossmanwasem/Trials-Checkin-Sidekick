@@ -189,10 +189,34 @@ body.chaos-transitioning #themeTransitionLayer {
 }
 
 .daily-counter__value {
-  display: block;
+  display: inline-flex;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-color);
+}
+
+.daily-counter__controls {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.daily-counter__btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-color);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.daily-counter__btn:hover {
+  border-color: var(--accent);
 }
 
 .landing-btn {
