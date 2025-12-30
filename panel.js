@@ -19,6 +19,8 @@ const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
 const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
+const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
+const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -522,6 +524,11 @@ const zipFolderSaveBtn = document.getElementById("zipFolderSaveBtn");
 const zipFolderStatus = document.getElementById("zipFolderStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
+const trialFilesInput = document.getElementById("trialFilesInput");
+const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn");
+const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
+const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
+const trialFilesStatus = document.getElementById("trialFilesStatus");
 
 function normalizeZipFolder(folder) {
   return (folder || "")
@@ -621,10 +628,10 @@ async function getCleanupFolderName() {
   return await getStoredValue(CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY);
 }
 
-async function verifyCleanupFolderPermission(handle) {
+async function verifyFolderPermission(handle, mode = "read") {
   if (!handle) return false;
   if (typeof handle.queryPermission !== "function") return true;
-  const options = { mode: "readwrite" };
+  const options = { mode };
   let permission = await handle.queryPermission(options);
   if (permission === "granted") return true;
   permission = await handle.requestPermission(options);
@@ -666,7 +673,7 @@ async function runCleanupFolderFlow({ promptIfMissing = false } = {}) {
     handle = await pickCleanupFolder();
   }
   if (!handle) return false;
-  const permitted = await verifyCleanupFolderPermission(handle);
+  const permitted = await verifyFolderPermission(handle, "readwrite");
   if (!permitted) return false;
   await clearCleanupFolderContents(handle);
   return true;
@@ -681,12 +688,114 @@ async function initCleanupFolderSetting() {
   });
 }
 
+function updateTrialFilesFolderStatus(name, messageOverride = null) {
+  if (!trialFilesFolderStatus) return;
+  if (messageOverride) {
+    trialFilesFolderStatus.textContent = messageOverride;
+    return;
+  }
+  if (name) {
+    trialFilesFolderStatus.textContent = `Using "${name}" for trial file zips.`;
+    return;
+  }
+  trialFilesFolderStatus.textContent = "No trial files folder selected yet.";
+}
+
+async function setTrialFilesFolderName(name) {
+  await setStoredValue(TRIAL_FILES_FOLDER_NAME_STORAGE_KEY, name || "");
+  updateTrialFilesFolderStatus(name);
+}
+
+async function getTrialFilesFolderName() {
+  return await getStoredValue(TRIAL_FILES_FOLDER_NAME_STORAGE_KEY);
+}
+
+async function saveTrialFilesFolderHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, TRIAL_FILES_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadTrialFilesFolderHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(TRIAL_FILES_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getTrialFilesFromFolder(handle) {
+  const files = [];
+  for await (const entry of handle.values()) {
+    if (entry.kind !== "file") continue;
+    const file = await entry.getFile();
+    files.push(file);
+  }
+  return files.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOverride = null } = {}) {
+  let handle = handleOverride ?? await loadTrialFilesFolderHandle().catch(() => null);
+  if (!handle && promptIfMissing) {
+    handle = await pickTrialFilesFolder();
+  }
+  if (!handle) return false;
+  const permitted = await verifyFolderPermission(handle, "read");
+  const storedName = await getTrialFilesFolderName();
+  if (!permitted) {
+    updateTrialFilesFolderStatus(storedName, "Folder access blocked. Click Refresh to re-authorize.");
+    return false;
+  }
+  const files = await getTrialFilesFromFolder(handle);
+  if (trialFilesInput) trialFilesInput.value = "";
+  setSelectedTrialFiles(files, storedName
+    ? `Using "${storedName}" (${files.length} file(s)) for the zip.`
+    : `${files.length} file(s) ready to zip.`);
+  return true;
+}
+
+async function pickTrialFilesFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return null;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "read" });
+  } catch {
+    return null;
+  }
+  if (!handle) return null;
+  await saveTrialFilesFolderHandle(handle);
+  await setTrialFilesFolderName(handle.name || "Selected folder");
+  await refreshTrialFilesFromFolder({ handleOverride: handle });
+  return handle;
+}
+
+async function initTrialFilesFolderSetting() {
+  const storedName = await getTrialFilesFolderName();
+  updateTrialFilesFolderStatus(storedName);
+  trialFilesFolderPickBtn?.addEventListener("click", async () => {
+    await pickTrialFilesFolder();
+  });
+  trialFilesFolderRefreshBtn?.addEventListener("click", async () => {
+    await refreshTrialFilesFromFolder({ promptIfMissing: true });
+  });
+}
+
 initThemeControls();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();
 initZipFolderSetting();
 initCleanupFolderSetting();
+initTrialFilesFolderSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -2203,8 +2312,6 @@ async function syncViewForTab(tab) {
 
 /* ---------------- Trial file zip + upload ---------------- */
 
-const trialFilesInput = document.getElementById("trialFilesInput");
-const trialFilesStatus = document.getElementById("trialFilesStatus");
 const selectedTrialFiles = [];
 const uploadPrompt = document.getElementById("uploadPrompt");
 const uploadPromptText = document.getElementById("uploadPromptText");
@@ -2217,10 +2324,21 @@ function updateTrialFilesStatus(message, isError = false) {
   trialFilesStatus.classList.toggle("error-text", isError);
 }
 
-function clearSelectedTrialFiles(messageOverride = null) {
+function setSelectedTrialFiles(files, messageOverride = null) {
   selectedTrialFiles.length = 0;
+  if (files?.length) {
+    selectedTrialFiles.push(...files);
+  }
+  if (!selectedTrialFiles.length) {
+    updateTrialFilesStatus(messageOverride || "No files selected.");
+    return;
+  }
+  updateTrialFilesStatus(messageOverride || `${selectedTrialFiles.length} file(s) ready to zip.`);
+}
+
+function clearSelectedTrialFiles(messageOverride = null) {
+  setSelectedTrialFiles([], messageOverride);
   if (trialFilesInput) trialFilesInput.value = "";
-  updateTrialFilesStatus(messageOverride || "No files selected.");
 }
 
 function getVocabTypesFromFiles(files) {
@@ -2271,13 +2389,10 @@ async function promptUserDownload(blob, filename) {
 }
 
 trialFilesInput?.addEventListener("change", () => {
-  selectedTrialFiles.length = 0;
-  selectedTrialFiles.push(...(trialFilesInput.files ? Array.from(trialFilesInput.files) : []));
-  if (!selectedTrialFiles.length) {
-    updateTrialFilesStatus("No files selected.");
+  const files = trialFilesInput.files ? Array.from(trialFilesInput.files) : [];
+  setSelectedTrialFiles(files);
+  if (!files.length) {
     hideUploadPrompt();
-  } else {
-    updateTrialFilesStatus(`${selectedTrialFiles.length} file(s) ready to zip.`);
   }
 });
 
@@ -2370,6 +2485,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
+  if (!trialFilesInput?.files?.length) {
+    await refreshTrialFilesFromFolder();
+  }
   if (selectedTrialFiles.length) {
     if (typeof JSZip === "undefined") {
       alert("JSZip failed to load. Please reload the panel before submitting.");
@@ -2595,6 +2713,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
     hasStartedCheckin = true;
     showFormView();
+    await refreshTrialFilesFromFolder();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
   });

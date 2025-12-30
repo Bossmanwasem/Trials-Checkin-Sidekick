@@ -439,9 +439,20 @@
       <!-- Trial files -->
       <div class="upload-block">
         <label>Trial Vocab/Export Files</label>
+        <button class="toggle-btn" id="trialFilesFolderPickBtn" type="button">
+          Choose trial files folder
+        </button>
+        <button class="toggle-btn" id="trialFilesFolderRefreshBtn" type="button">
+          Refresh folder files
+        </button>
+        <div id="trialFilesFolderStatus" class="status-line">No trial files folder selected yet.</div>
+        <div class="hint-text">
+          The Sidekick will pull every file from the selected folder when you click Next Step.
+        </div>
         <input type="file" id="trialFilesInput" multiple />
         <div class="hint-text">
-          Select the Grid, Saltillo, and P2G exports you want zipped. We'll prompt you to save the zip when you click Next Step.
+          Select the Grid, Saltillo, and P2G exports you want zipped if you don't use a folder.
+          We'll prompt you to save the zip when you click Next Step.
         </div>
         <div id="trialFilesStatus" class="status-line">No files selected.</div>
       </div>
