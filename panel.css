@@ -235,6 +235,35 @@ body.chaos-transitioning #themeTransitionLayer {
   font-weight: 600;
 }
 
+.landing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.landing-section__chevron {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.landing-section__toggle[aria-expanded="true"] .landing-section__chevron {
+  transform: rotate(180deg);
+}
+
+.landing-section__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .landing-settings-btn {
   position: absolute;
   right: 12px;
