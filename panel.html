@@ -506,8 +506,24 @@
   <div class="container" id="emailView" style="display:none;">
     <h1>Final Step</h1>
     <p class="complete-intro">
-      Open Outlook and send the email from Trials Ops to Trials. Copy the email body below and paste it into your message.
+      Open Outlook (classic) and send the email from Trials Ops to Trials. The subject and body stay the same.
     </p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">From</div>
+      <div class="copy-row">
+        <input type="text" id="emailFromField" class="copy-field" readonly />
+        <button id="copyEmailFromBtn" class="copy-btn" type="button">Copy from</button>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">To</div>
+      <div class="copy-row">
+        <input type="text" id="emailToField" class="copy-field" readonly />
+        <button id="copyEmailToBtn" class="copy-btn" type="button">Copy to</button>
+      </div>
+    </div>
 
     <div class="note-preview">
       <div class="note-preview__title">Email subject</div>
@@ -525,6 +541,10 @@
 
     <button id="copyEmailBodyBtn" class="toggle-btn" type="button" style="margin-top:16px;">
       Copy email body
+    </button>
+
+    <button id="openClassicOutlookBtn" class="toggle-btn" type="button" style="margin-top:10px;">
+      Open Outlook (classic)
     </button>
 
     <button id="emailDoneBtn" class="toggle-btn" type="button" style="margin-top:10px;">
