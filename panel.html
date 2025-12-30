@@ -76,11 +76,19 @@
           </div>
           <div class="daily-counter__item">
             <span class="daily-counter__label">QA's</span>
-            <span class="daily-counter__value" id="dailyQasCount">0</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="-1" aria-label="Decrease QA count">-</button>
+              <span class="daily-counter__value" id="dailyQasCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="1" aria-label="Increase QA count">+</button>
+            </div>
           </div>
           <div class="daily-counter__item">
             <span class="daily-counter__label">Preps</span>
-            <span class="daily-counter__value" id="dailyPrepsCount">0</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="-1" aria-label="Decrease prep count">-</button>
+              <span class="daily-counter__value" id="dailyPrepsCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="1" aria-label="Increase prep count">+</button>
+            </div>
           </div>
         </div>
       </div>
