@@ -1832,14 +1832,6 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
   return { subject, body: lines.join("\n"), to, from };
 }
 
-function buildOutlookComposeUrl({ subject, body, to = "" }) {
-  const params = new URLSearchParams();
-  if (subject) params.set("subject", subject);
-  if (body) params.set("body", body);
-  const query = params.toString();
-  return `mailto:${encodeURIComponent(to)}${query ? `?${query}` : ""}`;
-}
-
 function buildClassicOutlookComposeUrl({ subject, body, to = "" }) {
   const params = new URLSearchParams();
   if (subject) params.set("subject", subject);
@@ -2349,9 +2341,12 @@ document.getElementById("copyEmailSubjectBtn")?.addEventListener("click", async 
 document.getElementById("openClassicOutlookBtn")?.addEventListener("click", async () => {
   const payload = await renderOutlookEmailPreview();
   const url = buildClassicOutlookComposeUrl(payload);
-  chrome.tabs.create({ url });
+  chrome.tabs.create({ url, active: false }, (tab) => {
+    if (!tab?.id) return;
+    setTimeout(() => chrome.tabs.remove(tab.id), 1500);
+  });
   const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Opening Outlook (classic) compose window.";
+  if (status) status.textContent = "Opening Outlook (classic) app compose window.";
 });
 
 document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
