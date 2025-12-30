@@ -15,6 +15,10 @@ const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
 const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
+const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
+const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
+const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
+const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -516,6 +520,8 @@ function initThemeControls() {
 const zipFolderInput = document.getElementById("zipFolderInput");
 const zipFolderSaveBtn = document.getElementById("zipFolderSaveBtn");
 const zipFolderStatus = document.getElementById("zipFolderStatus");
+const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
+const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
 
 function normalizeZipFolder(folder) {
   return (folder || "")
@@ -559,11 +565,128 @@ async function initZipFolderSetting() {
   });
 }
 
+function openCleanupHandleDb() {
+  return new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      reject(new Error("IndexedDB not available."));
+      return;
+    }
+    const request = indexedDB.open(CHECKIN_CLEANUP_HANDLE_DB, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(CHECKIN_CLEANUP_HANDLE_STORE)) {
+        db.createObjectStore(CHECKIN_CLEANUP_HANDLE_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveCleanupFolderHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, CHECKIN_CLEANUP_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadCleanupFolderHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(CHECKIN_CLEANUP_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function updateCleanupFolderStatus(name) {
+  if (!cleanupFolderStatus) return;
+  if (name) {
+    cleanupFolderStatus.textContent = `Clearing "${name}" when starting another check-in.`;
+    return;
+  }
+  cleanupFolderStatus.textContent = "No cleanup folder selected yet.";
+}
+
+async function setCleanupFolderName(name) {
+  await setStoredValue(CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY, name || "");
+  updateCleanupFolderStatus(name);
+}
+
+async function getCleanupFolderName() {
+  return await getStoredValue(CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY);
+}
+
+async function verifyCleanupFolderPermission(handle) {
+  if (!handle) return false;
+  if (typeof handle.queryPermission !== "function") return true;
+  const options = { mode: "readwrite" };
+  let permission = await handle.queryPermission(options);
+  if (permission === "granted") return true;
+  permission = await handle.requestPermission(options);
+  return permission === "granted";
+}
+
+async function pickCleanupFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return null;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  } catch {
+    return null;
+  }
+  if (!handle) return null;
+  await saveCleanupFolderHandle(handle);
+  await setCleanupFolderName(handle.name || "Selected folder");
+  return handle;
+}
+
+async function clearCleanupFolderContents(handle) {
+  if (!handle) return false;
+  for await (const [name, entry] of handle.entries()) {
+    if (entry.kind === "directory") {
+      await handle.removeEntry(name, { recursive: true });
+    } else {
+      await handle.removeEntry(name);
+    }
+  }
+  return true;
+}
+
+async function runCleanupFolderFlow({ promptIfMissing = false } = {}) {
+  let handle = await loadCleanupFolderHandle().catch(() => null);
+  if (!handle && promptIfMissing) {
+    handle = await pickCleanupFolder();
+  }
+  if (!handle) return false;
+  const permitted = await verifyCleanupFolderPermission(handle);
+  if (!permitted) return false;
+  await clearCleanupFolderContents(handle);
+  return true;
+}
+
+async function initCleanupFolderSetting() {
+  if (!cleanupFolderPickBtn) return;
+  const storedName = await getCleanupFolderName();
+  updateCleanupFolderStatus(storedName);
+  cleanupFolderPickBtn.addEventListener("click", async () => {
+    await pickCleanupFolder();
+  });
+}
+
 initThemeControls();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();
 initZipFolderSetting();
+initCleanupFolderSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -2387,6 +2510,14 @@ document.getElementById("copyEmailSubjectBtn")?.addEventListener("click", async 
 });
 
 document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
+  const status = document.getElementById("emailStatus");
+  if (status) status.textContent = "Clearing your check-in cleanup folder...";
+  const cleaned = await runCleanupFolderFlow({ promptIfMissing: true });
+  if (status) {
+    status.textContent = cleaned
+      ? "Cleanup folder cleared. Starting a new check-in..."
+      : "Cleanup folder not cleared.";
+  }
   await incrementDailyCounter("checkins");
   await finishCheckinAndReset({ returnToLanding: true });
 });
