@@ -81,6 +81,7 @@ function resolveInputTarget(el) {
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
+const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div'
@@ -88,6 +89,53 @@ const DAF_CONSULTANT_LISTBOX_XPATHS = [
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
+}
+
+function getStoredValue(key) {
+  return new Promise(resolve => {
+    if (chrome?.storage?.local) {
+      chrome.storage.local.get(key, res => resolve(res?.[key] ?? null));
+      return;
+    }
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      resolve(null);
+      return;
+    }
+    try {
+      resolve(JSON.parse(raw));
+    } catch {
+      resolve(raw);
+    }
+  });
+}
+
+function setStoredValue(key, value) {
+  return new Promise(resolve => {
+    if (chrome?.storage?.local) {
+      chrome.storage.local.set({ [key]: value }, () => resolve());
+      return;
+    }
+    localStorage.setItem(key, JSON.stringify(value));
+    resolve();
+  });
+}
+
+function getDefaultDailyCounters() {
+  return {
+    checkins: 0,
+    qas: 0,
+    preps: 0
+  };
+}
+
+async function incrementDailyCounter(key) {
+  const stored = await getStoredValue(DAILY_COUNTER_STORAGE_KEY);
+  const counters = { ...getDefaultDailyCounters(), ...(stored || {}) };
+  const nextValue = (counters[key] ?? 0) + 1;
+  const updated = { ...counters, [key]: nextValue };
+  await setStoredValue(DAILY_COUNTER_STORAGE_KEY, updated);
+  return updated;
 }
 
 function safeTrimLower(str) {
@@ -693,4 +741,29 @@ async function fillDafFormFromStorage() {
 
 if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
+}
+
+function isQaFormPage() {
+  return window.location.hostname === "forms.office.com";
+}
+
+function initQaFormCounterTracking() {
+  const qaSubmitXPath = '//*[@id="form-main-content1"]/div/div/div[2]/div[3]/div/button[2]';
+  waitForElementByXPath(qaSubmitXPath, { timeoutMs: 15000 })
+    .then(button => {
+      if (!button || button.dataset.qaCounterBound === "true") return;
+      button.dataset.qaCounterBound = "true";
+      button.addEventListener("click", () => {
+        incrementDailyCounter("qas").catch(err => {
+          console.error("Failed to increment QA counter", err);
+        });
+      });
+    })
+    .catch(() => {
+      // Ignore if the QA form button isn't found on this page.
+    });
+}
+
+if (isQaFormPage()) {
+  initQaFormCounterTracking();
 }

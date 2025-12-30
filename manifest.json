@@ -6,7 +6,8 @@
   "permissions": ["sidePanel", "activeTab", "tabs", "scripting", "downloads", "storage"],
   "host_permissions": [
     "https://portal.talktometechnologies.com/*",
-    "https://talktometechnologies2com.sharepoint.com/*"
+    "https://talktometechnologies2com.sharepoint.com/*",
+    "https://forms.office.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -33,7 +34,8 @@
     {
       "matches": [
         "https://portal.talktometechnologies.com/*",
-        "https://talktometechnologies2com.sharepoint.com/*"
+        "https://talktometechnologies2com.sharepoint.com/*",
+        "https://forms.office.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
