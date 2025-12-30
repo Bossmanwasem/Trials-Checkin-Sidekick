@@ -755,6 +755,12 @@ function updateLandingGreeting(profile) {
   setText("landingGreeting", greeting);
 }
 
+function updateLandingVersion() {
+  const manifest = chrome?.runtime?.getManifest?.();
+  const version = manifest?.version;
+  setText("landingVersion", version ? `Version ${version}` : "");
+}
+
 function getDefaultDailyCounters() {
   return {
     checkins: 0,
@@ -815,6 +821,7 @@ async function clearDailyCounters() {
 async function refreshLandingView() {
   const profile = await getUserProfile();
   updateLandingGreeting(profile);
+  updateLandingVersion();
   await refreshDailyCounters();
 }
 
