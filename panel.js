@@ -30,6 +30,7 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
+const QA_COUNTER_POLL_INTERVAL_MS = 30000;
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
@@ -46,6 +47,7 @@ function showOnboardingView() { showView("onboardingView"); }
 function showLandingView() {
   showView("landingView");
   void refreshLandingView();
+  startQaCounterPolling();
 }
 function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
@@ -1052,12 +1054,22 @@ function updateDailyCounterDisplay(counters) {
 }
 
 async function refreshDailyCounters() {
+  await syncDashboardWorkbookFromInput();
   const counters = await getDailyCounters();
   const qas = await getDashboardQaCount();
   const updated = { ...counters, qas };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
   return updated;
+}
+
+function startQaCounterPolling() {
+  if (qaCounterPollId) return;
+  qaCounterPollId = setInterval(() => {
+    const landingView = document.getElementById("landingView");
+    if (landingView?.style.display === "none") return;
+    void refreshDailyCounters();
+  }, QA_COUNTER_POLL_INTERVAL_MS);
 }
 
 async function incrementDailyCounter(key) {
@@ -1212,6 +1224,7 @@ let deviceLookupWorkbookMeta = {
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
+let qaCounterPollId = null;
 const lookupCopyButtons = [
   { id: "copyDeviceSnBtn", label: "Copy device SN" },
   { id: "copyCameraSnBtn", label: "Copy camera SNs" },
@@ -1374,7 +1387,9 @@ async function handleWorkbookSelection({ input, targetKey }) {
     deviceLookupWorkbooks[targetKey] = workbook;
     deviceLookupWorkbookMeta[targetKey] = {
       name: file.name,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
+      lastModified: file.lastModified,
+      size: file.size
     };
     await persistDeviceLookupWorkbooks();
     updateWorkbookStatus(targetKey, { name: file.name, saved: false });
@@ -1384,6 +1399,36 @@ async function handleWorkbookSelection({ input, targetKey }) {
   } catch (error) {
     console.error(error);
     setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
+  }
+}
+
+async function syncDashboardWorkbookFromInput() {
+  const input = document.querySelector('[data-workbook-input="dashboard"]');
+  const file = input?.files?.[0];
+  if (!file) return false;
+  const currentMeta = deviceLookupWorkbookMeta.dashboard || {};
+  const isSameFile = currentMeta.name === file.name &&
+    currentMeta.lastModified === file.lastModified &&
+    currentMeta.size === file.size;
+  if (isSameFile && deviceLookupWorkbooks.dashboard) return false;
+  setWorkbookStatusMessage("dashboard", "Refreshing workbook...");
+  try {
+    const workbook = await loadWorkbookFromFile(file);
+    deviceLookupWorkbooks.dashboard = workbook;
+    deviceLookupWorkbookMeta.dashboard = {
+      ...currentMeta,
+      name: file.name,
+      savedAt: new Date().toISOString(),
+      lastModified: file.lastModified,
+      size: file.size
+    };
+    await persistDeviceLookupWorkbooks();
+    updateWorkbookStatus("dashboard", { name: file.name, saved: false });
+    return true;
+  } catch (error) {
+    console.error(error);
+    setWorkbookStatusMessage("dashboard", "Unable to refresh workbook. Re-select the file.");
+    return false;
   }
 }
 
