@@ -51,14 +51,6 @@
           <input type="file" id="onboardingCrmFileInput" data-workbook-input="crm" accept=".xlsx,.xlsm" />
           <div id="onboardingCrmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
         </div>
-        <div class="lookup-file">
-          <div>
-            <div class="lookup-file__title">Trials Dashboard 2024</div>
-            <p class="hint-text">Expected: OneDrive - Talk to Me Technologies\Trials SharePoint (Do not email) - Trials Operations\Trials Dashboard 2024.xlsm</p>
-          </div>
-          <input type="file" id="onboardingDashboardFileInput" data-workbook-input="dashboard" accept=".xlsx,.xlsm" />
-          <div id="onboardingDashboardFileStatus" data-workbook-status="dashboard" class="status-line">Not connected.</div>
-        </div>
       </div>
 
       <button type="submit">Save &amp; Continue</button>
@@ -177,21 +169,13 @@
         <input type="file" id="crmFileInput" data-workbook-input="crm" accept=".xlsx,.xlsm" />
         <div id="crmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
       </div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">Trials Dashboard 2024</div>
-          <p class="hint-text">Expected: OneDrive - Talk to Me Technologies\Trials SharePoint (Do not email) - Trials Operations\Trials Dashboard 2024.xlsm</p>
-        </div>
-        <input type="file" id="dashboardFileInput" data-workbook-input="dashboard" accept=".xlsx,.xlsm" />
-        <div id="dashboardFileStatus" data-workbook-status="dashboard" class="status-line">Not connected.</div>
-      </div>
     </div>
     <div class="theme-menu" id="themeMenu">
       <div class="theme-menu__title">User management</div>
       <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
         Edit user profile
       </button>
-      <label for="userInitialsSettingInput">Initials for QA counter</label>
+      <label for="userInitialsSettingInput">Initials</label>
       <input type="text" id="userInitialsSettingInput" autocomplete="off" />
       <button class="toggle-btn theme-menu__action" id="userInitialsSaveBtn" type="button">
         Save initials

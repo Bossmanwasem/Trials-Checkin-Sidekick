@@ -30,7 +30,6 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
-const QA_COUNTER_POLL_INTERVAL_MS = 30000;
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
@@ -47,7 +46,6 @@ function showOnboardingView() { showView("onboardingView"); }
 function showLandingView() {
   showView("landingView");
   void refreshLandingView();
-  startQaCounterPolling();
 }
 function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
@@ -956,93 +954,6 @@ async function getDailyCounters() {
   };
 }
 
-function getDashboardSheetRows(workbook) {
-  const sheets = workbook?.sheets || {};
-  const sheetNames = Object.keys(sheets);
-  if (!sheetNames.length) return null;
-  const preferred = sheetNames.find(name => name.toLowerCase().includes("dashboard")) || sheetNames[0];
-  return sheets[preferred] || null;
-}
-
-function parseDateFromCell(value) {
-  if (value === null || value === undefined || value === "") return null;
-  if (value instanceof Date) return value;
-  const trimmed = String(value).trim();
-  if (!trimmed) return null;
-  const numeric = Number(trimmed);
-  if (!Number.isNaN(numeric) && Number.isFinite(numeric)) {
-    if (numeric > 30000 && numeric < 60000) {
-      return new Date((numeric - 25569) * 86400 * 1000);
-    }
-  }
-  const parsed = new Date(trimmed);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function isSameLocalDate(dateA, dateB) {
-  return dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate();
-}
-
-function getQaEditDateColumnIndex(rows) {
-  if (!rows?.length) return null;
-  const header = rows[0] || [];
-  const matches = [
-    "edit date",
-    "qa edit",
-    "qa date",
-    "last edit",
-    "last updated",
-    "updated"
-  ];
-  for (let i = 0; i < header.length; i += 1) {
-    const label = String(header[i] ?? "").trim().toLowerCase();
-    if (!label) continue;
-    if (matches.some(match => label.includes(match))) {
-      return i;
-    }
-  }
-  return columnLettersToIndex("K");
-}
-
-function countInitialsInColumn(rows, initials, columnIndex, dateColumnIndex, targetDate = new Date()) {
-  if (!rows?.length) return 0;
-  const normalized = normalizeInitials(initials);
-  if (!normalized) return 0;
-  let total = 0;
-  for (let i = 1; i < rows.length; i += 1) {
-    const cellValue = rows[i]?.[columnIndex];
-    if (!cellValue) continue;
-    const normalizedCell = String(cellValue).trim().toUpperCase();
-    if (!normalizedCell.includes(normalized)) continue;
-    if (dateColumnIndex !== null && dateColumnIndex !== undefined) {
-      const dateValue = rows[i]?.[dateColumnIndex];
-      const parsedDate = parseDateFromCell(dateValue);
-      if (!parsedDate || !isSameLocalDate(parsedDate, targetDate)) continue;
-    }
-    total += 1;
-  }
-  return total;
-}
-
-async function getDashboardQaCount() {
-  const profile = await getUserProfile();
-  const initials = normalizeInitials(profile?.initials);
-  if (!initials) return 0;
-  const dashboardWorkbook = deviceLookupWorkbooks.dashboard;
-  const rows = getDashboardSheetRows(dashboardWorkbook);
-  if (!rows) return 0;
-  const editDateColumnIndex = getQaEditDateColumnIndex(rows);
-  return countInitialsInColumn(
-    rows,
-    initials,
-    columnLettersToIndex("J"),
-    editDateColumnIndex,
-    new Date()
-  );
-}
-
 async function setDailyCounters(counters) {
   await setStoredValue(DAILY_COUNTER_STORAGE_KEY, counters);
 }
@@ -1054,28 +965,12 @@ function updateDailyCounterDisplay(counters) {
 }
 
 async function refreshDailyCounters() {
-  await syncDashboardWorkbookFromInput();
   const counters = await getDailyCounters();
-  const qas = await getDashboardQaCount();
-  const updated = { ...counters, qas };
-  await setDailyCounters(updated);
-  updateDailyCounterDisplay(updated);
-  return updated;
-}
-
-function startQaCounterPolling() {
-  if (qaCounterPollId) return;
-  qaCounterPollId = setInterval(() => {
-    const landingView = document.getElementById("landingView");
-    if (landingView?.style.display === "none") return;
-    void refreshDailyCounters();
-  }, QA_COUNTER_POLL_INTERVAL_MS);
+  updateDailyCounterDisplay(counters);
+  return counters;
 }
 
 async function incrementDailyCounter(key) {
-  if (key === "qas") {
-    return await refreshDailyCounters();
-  }
   const counters = await getDailyCounters();
   const nextValue = (counters[key] ?? 0) + 1;
   const updated = { ...counters, [key]: nextValue };
@@ -1085,9 +980,6 @@ async function incrementDailyCounter(key) {
 }
 
 async function adjustDailyCounter(key, delta) {
-  if (key === "qas") {
-    return await refreshDailyCounters();
-  }
   const counters = await getDailyCounters();
   const current = counters[key] ?? 0;
   const nextValue = Math.max(0, current + delta);
@@ -1099,10 +991,8 @@ async function adjustDailyCounter(key, delta) {
 
 async function clearDailyCounters() {
   const reset = getDefaultDailyCounters();
-  const qas = await getDashboardQaCount();
-  const updated = { ...reset, qas };
-  await setDailyCounters(updated);
-  updateDailyCounterDisplay(updated);
+  await setDailyCounters(reset);
+  updateDailyCounterDisplay(reset);
 }
 
 async function refreshLandingView() {
@@ -1212,19 +1102,16 @@ const DEVICE_LOOKUP_SPECIAL_SERIALS = new Set([
 const deviceLookupWorkbooks = {
   ltl: null,
   mount: null,
-  crm: null,
-  dashboard: null
+  crm: null
 };
 let deviceLookupWorkbookMeta = {
   ltl: null,
   mount: null,
-  crm: null,
-  dashboard: null
+  crm: null
 };
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
-let qaCounterPollId = null;
 const lookupCopyButtons = [
   { id: "copyDeviceSnBtn", label: "Copy device SN" },
   { id: "copyCameraSnBtn", label: "Copy camera SNs" },
@@ -1235,7 +1122,7 @@ const lookupCopyButtons = [
   { id: "copyTableBtn", label: "Copy table mount" },
   { id: "copyRollingBtn", label: "Copy rolling mount" }
 ];
-const DEVICE_LOOKUP_WORKBOOK_KEYS = ["ltl", "mount", "crm", "dashboard"];
+const DEVICE_LOOKUP_WORKBOOK_KEYS = ["ltl", "mount", "crm"];
 
 function getWorkbookStatusElements(targetKey) {
   return Array.from(document.querySelectorAll(`[data-workbook-status="${targetKey}"]`));
@@ -1275,7 +1162,6 @@ async function loadDeviceLookupWorkbooksFromStorage() {
           deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
           deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
           deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
-          deviceLookupWorkbooks.dashboard = storedWorkbooks.dashboard || null;
         }
         if (storedMeta) {
           deviceLookupWorkbookMeta = {
@@ -1393,42 +1279,9 @@ async function handleWorkbookSelection({ input, targetKey }) {
     };
     await persistDeviceLookupWorkbooks();
     updateWorkbookStatus(targetKey, { name: file.name, saved: false });
-    if (targetKey === "dashboard") {
-      await refreshDailyCounters();
-    }
   } catch (error) {
     console.error(error);
     setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
-  }
-}
-
-async function syncDashboardWorkbookFromInput() {
-  const input = document.querySelector('[data-workbook-input="dashboard"]');
-  const file = input?.files?.[0];
-  if (!file) return false;
-  const currentMeta = deviceLookupWorkbookMeta.dashboard || {};
-  const isSameFile = currentMeta.name === file.name &&
-    currentMeta.lastModified === file.lastModified &&
-    currentMeta.size === file.size;
-  if (isSameFile && deviceLookupWorkbooks.dashboard) return false;
-  setWorkbookStatusMessage("dashboard", "Refreshing workbook...");
-  try {
-    const workbook = await loadWorkbookFromFile(file);
-    deviceLookupWorkbooks.dashboard = workbook;
-    deviceLookupWorkbookMeta.dashboard = {
-      ...currentMeta,
-      name: file.name,
-      savedAt: new Date().toISOString(),
-      lastModified: file.lastModified,
-      size: file.size
-    };
-    await persistDeviceLookupWorkbooks();
-    updateWorkbookStatus("dashboard", { name: file.name, saved: false });
-    return true;
-  } catch (error) {
-    console.error(error);
-    setWorkbookStatusMessage("dashboard", "Unable to refresh workbook. Re-select the file.");
-    return false;
   }
 }
 
