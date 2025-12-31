@@ -480,7 +480,6 @@ async function initOnboardingForm() {
   const form = document.getElementById("onboardingForm");
   const firstNameInput = document.getElementById("userFirstName");
   const lastNameInput = document.getElementById("userLastName");
-  const initialsInput = document.getElementById("userInitials");
   const themeSelect = document.getElementById("onboardingThemeSelect");
 
   populateThemeSelect(themeSelect);
@@ -493,7 +492,6 @@ async function initOnboardingForm() {
   if (existingProfile) {
     if (firstNameInput) firstNameInput.value = existingProfile.firstName || "";
     if (lastNameInput) lastNameInput.value = existingProfile.lastName || "";
-    if (initialsInput) initialsInput.value = existingProfile.initials || "";
   }
 
   if (!form) return;
@@ -501,15 +499,14 @@ async function initOnboardingForm() {
     event.preventDefault();
     const firstName = (firstNameInput?.value || "").trim();
     const lastName = (lastNameInput?.value || "").trim();
-    const initials = normalizeInitials(initialsInput?.value || "");
     const themeId = themeSelect?.value || "ocean";
 
-    if (!firstName || !lastName || !initials) {
-      alert("Please enter your first name, last name, and initials.");
+    if (!firstName || !lastName) {
+      alert("Please enter your first name and last name.");
       return;
     }
 
-    await saveUserProfile({ firstName, lastName, initials });
+    await saveUserProfile({ firstName, lastName });
     await refreshDailyCounters();
     applyTheme(themeId);
     showLandingView();
@@ -541,9 +538,6 @@ function initThemeControls() {
 const zipFolderInput = document.getElementById("zipFolderInput");
 const zipFolderSaveBtn = document.getElementById("zipFolderSaveBtn");
 const zipFolderStatus = document.getElementById("zipFolderStatus");
-const userInitialsSettingInput = document.getElementById("userInitialsSettingInput");
-const userInitialsSaveBtn = document.getElementById("userInitialsSaveBtn");
-const userInitialsStatus = document.getElementById("userInitialsStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
 const trialFilesInput = document.getElementById("trialFilesInput");
@@ -591,47 +585,6 @@ async function initZipFolderSetting() {
     if (event.key !== "Enter") return;
     event.preventDefault();
     void saveZipFolderSetting();
-  });
-}
-
-function updateInitialsStatus(initials) {
-  if (!userInitialsStatus) return;
-  if (initials) {
-    userInitialsStatus.textContent = `Initials saved: ${initials}`;
-    return;
-  }
-  userInitialsStatus.textContent = "No initials saved yet.";
-}
-
-async function saveInitialsSetting() {
-  if (!userInitialsSettingInput) return;
-  const initials = normalizeInitials(userInitialsSettingInput.value);
-  userInitialsSettingInput.value = initials;
-  const profile = await getUserProfile();
-  await saveUserProfile({
-    ...(profile || {}),
-    initials
-  });
-  updateInitialsStatus(initials);
-  await refreshDailyCounters();
-}
-
-async function initInitialsSetting() {
-  if (!userInitialsSettingInput) return;
-  const profile = await getUserProfile();
-  const initials = normalizeInitials(profile?.initials);
-  userInitialsSettingInput.value = initials;
-  updateInitialsStatus(initials);
-  userInitialsSaveBtn?.addEventListener("click", () => {
-    void saveInitialsSetting();
-  });
-  userInitialsSettingInput.addEventListener("change", () => {
-    void saveInitialsSetting();
-  });
-  userInitialsSettingInput.addEventListener("keydown", event => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    void saveInitialsSetting();
   });
 }
 
@@ -857,7 +810,6 @@ initChaosControls();
 loadThemePreference();
 initOnboardingForm();
 initZipFolderSetting();
-initInitialsSetting();
 initCleanupFolderSetting();
 initTrialFilesFolderSetting();
 
@@ -882,10 +834,6 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
-}
-
-function normalizeInitials(initials) {
-  return (initials || "").trim().toUpperCase();
 }
 
 function getStoredValue(key) {
