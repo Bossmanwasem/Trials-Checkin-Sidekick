@@ -1043,12 +1043,14 @@ const DEVICE_LOOKUP_SPECIAL_SERIALS = new Set([
 const deviceLookupWorkbooks = {
   ltl: null,
   mount: null,
-  crm: null
+  crm: null,
+  dashboard: null
 };
 let deviceLookupWorkbookMeta = {
   ltl: null,
   mount: null,
-  crm: null
+  crm: null,
+  dashboard: null
 };
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
@@ -1063,7 +1065,7 @@ const lookupCopyButtons = [
   { id: "copyTableBtn", label: "Copy table mount" },
   { id: "copyRollingBtn", label: "Copy rolling mount" }
 ];
-const DEVICE_LOOKUP_WORKBOOK_KEYS = ["ltl", "mount", "crm"];
+const DEVICE_LOOKUP_WORKBOOK_KEYS = ["ltl", "mount", "crm", "dashboard"];
 
 function getWorkbookStatusElements(targetKey) {
   return Array.from(document.querySelectorAll(`[data-workbook-status="${targetKey}"]`));
@@ -1103,6 +1105,7 @@ async function loadDeviceLookupWorkbooksFromStorage() {
           deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
           deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
           deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
+          deviceLookupWorkbooks.dashboard = storedWorkbooks.dashboard || null;
         }
         if (storedMeta) {
           deviceLookupWorkbookMeta = {
