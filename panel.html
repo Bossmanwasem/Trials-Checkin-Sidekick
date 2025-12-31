@@ -11,13 +11,16 @@
   <!-- ONBOARDING VIEW -->
   <div class="container onboarding-view" id="onboardingView" style="display:none;">
     <h1>Welcome to CRM Sidekick</h1>
-    <p class="complete-intro">Tell us your name, choose your starting color theme, and connect your device lookup workbooks.</p>
+    <p class="complete-intro">Tell us your name, initials, choose your starting color theme, and connect your device lookup workbooks.</p>
     <form id="onboardingForm">
       <label for="userFirstName">First name</label>
       <input type="text" id="userFirstName" autocomplete="given-name" required />
 
       <label for="userLastName">Last name</label>
       <input type="text" id="userLastName" autocomplete="family-name" required />
+
+      <label for="userInitials">Initials</label>
+      <input type="text" id="userInitials" autocomplete="off" required />
 
       <label for="onboardingThemeSelect">Starting color theme</label>
       <select id="onboardingThemeSelect" required></select>
@@ -188,6 +191,12 @@
       <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
         Edit user profile
       </button>
+      <label for="userInitialsSettingInput">Initials for QA counter</label>
+      <input type="text" id="userInitialsSettingInput" autocomplete="off" />
+      <button class="toggle-btn theme-menu__action" id="userInitialsSaveBtn" type="button">
+        Save initials
+      </button>
+      <div id="userInitialsStatus" class="status-line">No initials saved yet.</div>
       <label for="zipFolderInput">Default zip save folder</label>
       <input type="text" id="zipFolderInput" placeholder="e.g., CRM Sidekick Zips" />
       <p class="hint-text">Uses a subfolder inside your Downloads directory. Leave blank to use the default downloads folder.</p>

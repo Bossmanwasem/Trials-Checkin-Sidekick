@@ -480,6 +480,7 @@ async function initOnboardingForm() {
   const form = document.getElementById("onboardingForm");
   const firstNameInput = document.getElementById("userFirstName");
   const lastNameInput = document.getElementById("userLastName");
+  const initialsInput = document.getElementById("userInitials");
   const themeSelect = document.getElementById("onboardingThemeSelect");
 
   populateThemeSelect(themeSelect);
@@ -488,19 +489,28 @@ async function initOnboardingForm() {
     themeSelect.value = storedTheme;
   }
 
+  const existingProfile = await getUserProfile();
+  if (existingProfile) {
+    if (firstNameInput) firstNameInput.value = existingProfile.firstName || "";
+    if (lastNameInput) lastNameInput.value = existingProfile.lastName || "";
+    if (initialsInput) initialsInput.value = existingProfile.initials || "";
+  }
+
   if (!form) return;
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const firstName = (firstNameInput?.value || "").trim();
     const lastName = (lastNameInput?.value || "").trim();
+    const initials = normalizeInitials(initialsInput?.value || "");
     const themeId = themeSelect?.value || "ocean";
 
-    if (!firstName || !lastName) {
-      alert("Please enter your first and last name.");
+    if (!firstName || !lastName || !initials) {
+      alert("Please enter your first name, last name, and initials.");
       return;
     }
 
-    await saveUserProfile({ firstName, lastName });
+    await saveUserProfile({ firstName, lastName, initials });
+    await refreshDailyCounters();
     applyTheme(themeId);
     showLandingView();
   });
@@ -531,6 +541,9 @@ function initThemeControls() {
 const zipFolderInput = document.getElementById("zipFolderInput");
 const zipFolderSaveBtn = document.getElementById("zipFolderSaveBtn");
 const zipFolderStatus = document.getElementById("zipFolderStatus");
+const userInitialsSettingInput = document.getElementById("userInitialsSettingInput");
+const userInitialsSaveBtn = document.getElementById("userInitialsSaveBtn");
+const userInitialsStatus = document.getElementById("userInitialsStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
 const trialFilesInput = document.getElementById("trialFilesInput");
@@ -578,6 +591,47 @@ async function initZipFolderSetting() {
     if (event.key !== "Enter") return;
     event.preventDefault();
     void saveZipFolderSetting();
+  });
+}
+
+function updateInitialsStatus(initials) {
+  if (!userInitialsStatus) return;
+  if (initials) {
+    userInitialsStatus.textContent = `Initials saved: ${initials}`;
+    return;
+  }
+  userInitialsStatus.textContent = "No initials saved yet.";
+}
+
+async function saveInitialsSetting() {
+  if (!userInitialsSettingInput) return;
+  const initials = normalizeInitials(userInitialsSettingInput.value);
+  userInitialsSettingInput.value = initials;
+  const profile = await getUserProfile();
+  await saveUserProfile({
+    ...(profile || {}),
+    initials
+  });
+  updateInitialsStatus(initials);
+  await refreshDailyCounters();
+}
+
+async function initInitialsSetting() {
+  if (!userInitialsSettingInput) return;
+  const profile = await getUserProfile();
+  const initials = normalizeInitials(profile?.initials);
+  userInitialsSettingInput.value = initials;
+  updateInitialsStatus(initials);
+  userInitialsSaveBtn?.addEventListener("click", () => {
+    void saveInitialsSetting();
+  });
+  userInitialsSettingInput.addEventListener("change", () => {
+    void saveInitialsSetting();
+  });
+  userInitialsSettingInput.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    void saveInitialsSetting();
   });
 }
 
@@ -803,6 +857,7 @@ initChaosControls();
 loadThemePreference();
 initOnboardingForm();
 initZipFolderSetting();
+initInitialsSetting();
 initCleanupFolderSetting();
 initTrialFilesFolderSetting();
 
@@ -827,6 +882,10 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
+}
+
+function normalizeInitials(initials) {
+  return (initials || "").trim().toUpperCase();
 }
 
 function getStoredValue(key) {
@@ -895,6 +954,40 @@ async function getDailyCounters() {
   };
 }
 
+function getDashboardSheetRows(workbook) {
+  const sheets = workbook?.sheets || {};
+  const sheetNames = Object.keys(sheets);
+  if (!sheetNames.length) return null;
+  const preferred = sheetNames.find(name => name.toLowerCase().includes("dashboard")) || sheetNames[0];
+  return sheets[preferred] || null;
+}
+
+function countInitialsInColumn(rows, initials, columnIndex) {
+  if (!rows?.length) return 0;
+  const normalized = normalizeInitials(initials);
+  if (!normalized) return 0;
+  let total = 0;
+  for (let i = 1; i < rows.length; i += 1) {
+    const cellValue = rows[i]?.[columnIndex];
+    if (!cellValue) continue;
+    const normalizedCell = String(cellValue).trim().toUpperCase();
+    if (normalizedCell.includes(normalized)) {
+      total += 1;
+    }
+  }
+  return total;
+}
+
+async function getDashboardQaCount() {
+  const profile = await getUserProfile();
+  const initials = normalizeInitials(profile?.initials);
+  if (!initials) return 0;
+  const dashboardWorkbook = deviceLookupWorkbooks.dashboard;
+  const rows = getDashboardSheetRows(dashboardWorkbook);
+  if (!rows) return 0;
+  return countInitialsInColumn(rows, initials, columnLettersToIndex("J"));
+}
+
 async function setDailyCounters(counters) {
   await setStoredValue(DAILY_COUNTER_STORAGE_KEY, counters);
 }
@@ -907,11 +1000,17 @@ function updateDailyCounterDisplay(counters) {
 
 async function refreshDailyCounters() {
   const counters = await getDailyCounters();
-  updateDailyCounterDisplay(counters);
-  return counters;
+  const qas = await getDashboardQaCount();
+  const updated = { ...counters, qas };
+  await setDailyCounters(updated);
+  updateDailyCounterDisplay(updated);
+  return updated;
 }
 
 async function incrementDailyCounter(key) {
+  if (key === "qas") {
+    return await refreshDailyCounters();
+  }
   const counters = await getDailyCounters();
   const nextValue = (counters[key] ?? 0) + 1;
   const updated = { ...counters, [key]: nextValue };
@@ -921,6 +1020,9 @@ async function incrementDailyCounter(key) {
 }
 
 async function adjustDailyCounter(key, delta) {
+  if (key === "qas") {
+    return await refreshDailyCounters();
+  }
   const counters = await getDailyCounters();
   const current = counters[key] ?? 0;
   const nextValue = Math.max(0, current + delta);
@@ -932,8 +1034,10 @@ async function adjustDailyCounter(key, delta) {
 
 async function clearDailyCounters() {
   const reset = getDefaultDailyCounters();
-  await setDailyCounters(reset);
-  updateDailyCounterDisplay(reset);
+  const qas = await getDashboardQaCount();
+  const updated = { ...reset, qas };
+  await setDailyCounters(updated);
+  updateDailyCounterDisplay(updated);
 }
 
 async function refreshLandingView() {
@@ -1221,6 +1325,9 @@ async function handleWorkbookSelection({ input, targetKey }) {
     };
     await persistDeviceLookupWorkbooks();
     updateWorkbookStatus(targetKey, { name: file.name, saved: false });
+    if (targetKey === "dashboard") {
+      await refreshDailyCounters();
+    }
   } catch (error) {
     console.error(error);
     setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
