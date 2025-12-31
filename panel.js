@@ -962,7 +962,49 @@ function getDashboardSheetRows(workbook) {
   return sheets[preferred] || null;
 }
 
-function countInitialsInColumn(rows, initials, columnIndex) {
+function parseDateFromCell(value) {
+  if (value === null || value === undefined || value === "") return null;
+  if (value instanceof Date) return value;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const numeric = Number(trimmed);
+  if (!Number.isNaN(numeric) && Number.isFinite(numeric)) {
+    if (numeric > 30000 && numeric < 60000) {
+      return new Date((numeric - 25569) * 86400 * 1000);
+    }
+  }
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isSameLocalDate(dateA, dateB) {
+  return dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate();
+}
+
+function getQaEditDateColumnIndex(rows) {
+  if (!rows?.length) return null;
+  const header = rows[0] || [];
+  const matches = [
+    "edit date",
+    "qa edit",
+    "qa date",
+    "last edit",
+    "last updated",
+    "updated"
+  ];
+  for (let i = 0; i < header.length; i += 1) {
+    const label = String(header[i] ?? "").trim().toLowerCase();
+    if (!label) continue;
+    if (matches.some(match => label.includes(match))) {
+      return i;
+    }
+  }
+  return columnLettersToIndex("K");
+}
+
+function countInitialsInColumn(rows, initials, columnIndex, dateColumnIndex, targetDate = new Date()) {
   if (!rows?.length) return 0;
   const normalized = normalizeInitials(initials);
   if (!normalized) return 0;
@@ -971,9 +1013,13 @@ function countInitialsInColumn(rows, initials, columnIndex) {
     const cellValue = rows[i]?.[columnIndex];
     if (!cellValue) continue;
     const normalizedCell = String(cellValue).trim().toUpperCase();
-    if (normalizedCell.includes(normalized)) {
-      total += 1;
+    if (!normalizedCell.includes(normalized)) continue;
+    if (dateColumnIndex !== null && dateColumnIndex !== undefined) {
+      const dateValue = rows[i]?.[dateColumnIndex];
+      const parsedDate = parseDateFromCell(dateValue);
+      if (!parsedDate || !isSameLocalDate(parsedDate, targetDate)) continue;
     }
+    total += 1;
   }
   return total;
 }
@@ -985,7 +1031,14 @@ async function getDashboardQaCount() {
   const dashboardWorkbook = deviceLookupWorkbooks.dashboard;
   const rows = getDashboardSheetRows(dashboardWorkbook);
   if (!rows) return 0;
-  return countInitialsInColumn(rows, initials, columnLettersToIndex("J"));
+  const editDateColumnIndex = getQaEditDateColumnIndex(rows);
+  return countInitialsInColumn(
+    rows,
+    initials,
+    columnLettersToIndex("J"),
+    editDateColumnIndex,
+    new Date()
+  );
 }
 
 async function setDailyCounters(counters) {
