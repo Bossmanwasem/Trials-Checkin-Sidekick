@@ -82,6 +82,7 @@ function resolveInputTarget(el) {
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
+const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div'
@@ -129,7 +130,15 @@ function getDefaultDailyCounters() {
   };
 }
 
+async function getDailyCounterEnabled() {
+  const stored = await getStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return true;
+  return Boolean(stored);
+}
+
 async function incrementDailyCounter(key) {
+  const enabled = await getDailyCounterEnabled();
+  if (!enabled) return null;
   const stored = await getStoredValue(DAILY_COUNTER_STORAGE_KEY);
   const counters = { ...getDefaultDailyCounters(), ...(stored || {}) };
   const nextValue = (counters[key] ?? 0) + 1;
