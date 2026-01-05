@@ -22,6 +22,7 @@ const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
+const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=lXPZFv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMH0",
@@ -481,6 +482,7 @@ async function initOnboardingForm() {
   const firstNameInput = document.getElementById("userFirstName");
   const lastNameInput = document.getElementById("userLastName");
   const themeSelect = document.getElementById("onboardingThemeSelect");
+  const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
 
   populateThemeSelect(themeSelect);
   const storedTheme = await getStoredValue(THEME_STORAGE_KEY);
@@ -493,6 +495,9 @@ async function initOnboardingForm() {
     if (firstNameInput) firstNameInput.value = existingProfile.firstName || "";
     if (lastNameInput) lastNameInput.value = existingProfile.lastName || "";
   }
+  if (dailyCounterToggle) {
+    dailyCounterToggle.checked = await getDailyCounterEnabled();
+  }
 
   if (!form) return;
   form.addEventListener("submit", async event => {
@@ -500,6 +505,7 @@ async function initOnboardingForm() {
     const firstName = (firstNameInput?.value || "").trim();
     const lastName = (lastNameInput?.value || "").trim();
     const themeId = themeSelect?.value || "ocean";
+    const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
 
     if (!firstName || !lastName) {
       alert("Please enter your first name and last name.");
@@ -507,9 +513,19 @@ async function initOnboardingForm() {
     }
 
     await saveUserProfile({ firstName, lastName });
-    await refreshDailyCounters();
+    await setDailyCounterEnabled(dailyCounterEnabled);
     applyTheme(themeId);
     showLandingView();
+  });
+}
+
+async function initDailyCounterSetting() {
+  const toggle = document.getElementById("dailyCounterToggle");
+  if (!toggle) return;
+  toggle.checked = await getDailyCounterEnabled();
+  toggle.addEventListener("change", async () => {
+    await setDailyCounterEnabled(toggle.checked);
+    await updateDailyCounterVisibility();
   });
 }
 
@@ -809,6 +825,7 @@ initThemeControls();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();
+initDailyCounterSetting();
 initZipFolderSetting();
 initCleanupFolderSetting();
 initTrialFilesFolderSetting();
@@ -894,6 +911,16 @@ function getDefaultDailyCounters() {
   };
 }
 
+async function getDailyCounterEnabled() {
+  const stored = await getStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return true;
+  return Boolean(stored);
+}
+
+async function setDailyCounterEnabled(enabled) {
+  await setStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
 async function getDailyCounters() {
   const stored = await getStoredValue(DAILY_COUNTER_STORAGE_KEY);
   return {
@@ -916,6 +943,16 @@ async function refreshDailyCounters() {
   const counters = await getDailyCounters();
   updateDailyCounterDisplay(counters);
   return counters;
+}
+
+async function updateDailyCounterVisibility() {
+  const enabled = await getDailyCounterEnabled();
+  const section = document.getElementById("dailyCounterSection");
+  if (section) section.style.display = enabled ? "" : "none";
+  if (enabled) {
+    await refreshDailyCounters();
+  }
+  return enabled;
 }
 
 async function incrementDailyCounter(key) {
@@ -947,7 +984,7 @@ async function refreshLandingView() {
   const profile = await getUserProfile();
   updateLandingGreeting(profile);
   updateLandingVersion();
-  await refreshDailyCounters();
+  await updateDailyCounterVisibility();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */

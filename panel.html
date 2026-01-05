@@ -23,6 +23,11 @@
       <label for="onboardingThemeSelect">Starting color theme</label>
       <select id="onboardingThemeSelect" required></select>
 
+      <label class="checkbox-row" for="onboardingDailyCounterToggle">
+        <input type="checkbox" id="onboardingDailyCounterToggle" />
+        Show daily task counter on the landing page
+      </label>
+
       <div class="note-preview">
         <div class="note-preview__title">OneDrive workbook connections</div>
         <div class="lookup-file">
@@ -63,7 +68,7 @@
       </div>
       <img class="landing-symojo" src="assets/sparknsymoji.png" alt="Spark mascot" />
       <p class="landing-greeting" id="landingGreeting"></p>
-      <div class="daily-counter" aria-label="Daily task counter">
+      <div class="daily-counter" id="dailyCounterSection" aria-label="Daily task counter">
         <div class="daily-counter__header">
           <span>Daily task counter</span>
           <button id="clearDailyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear daily counters">
@@ -173,6 +178,10 @@
       <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
         Edit user profile
       </button>
+      <label class="checkbox-row" for="dailyCounterToggle">
+        <input type="checkbox" id="dailyCounterToggle" />
+        Show daily task counter on the landing page
+      </label>
       <label for="zipFolderInput">Default zip save folder</label>
       <input type="text" id="zipFolderInput" placeholder="e.g., CRM Sidekick Zips" />
       <p class="hint-text">Uses a subfolder inside your Downloads directory. Leave blank to use the default downloads folder.</p>
