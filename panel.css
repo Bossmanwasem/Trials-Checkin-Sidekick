@@ -492,6 +492,14 @@ button[type="submit"]:hover {
   margin-top: 10px;
 }
 
+.copy-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  margin-top: 10px;
+}
+
 .copy-field {
   flex: 1;
   background: var(--container-bg);

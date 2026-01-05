@@ -1775,18 +1775,23 @@ function buildGridEmail() {
 
 function updateGridOutput() {
   const email = buildGridEmail();
-  const output = email ? `Grid: ${email} | ${GRID_PASSWORD}` : "";
-  setValue("gridEmailField", output);
+  setValue("gridEmailField", email);
+  setValue("gridPasswordField", GRID_PASSWORD);
 
-  const copyBtn = document.getElementById("gridCopyBtn");
-  if (copyBtn) {
-    copyBtn.disabled = !output;
-    copyBtn.textContent = output ? "Copy" : "No value";
+  const emailCopyBtn = document.getElementById("gridEmailCopyBtn");
+  if (emailCopyBtn) {
+    emailCopyBtn.disabled = !email;
+    emailCopyBtn.textContent = email ? "Copy" : "No value";
+  }
+
+  const passwordCopyBtn = document.getElementById("gridPasswordCopyBtn");
+  if (passwordCopyBtn) {
+    passwordCopyBtn.textContent = "Copy";
   }
 
   const status = document.getElementById("gridStatus");
   if (status) {
-    status.textContent = output
+    status.textContent = email
       ? "Grid credentials ready."
       : "Enter client details and CRM ID to generate the Grid email.";
   }
@@ -2673,11 +2678,11 @@ document.querySelectorAll("input[name='gridType']").forEach(el => {
   el.addEventListener("change", updateGridOutput);
 });
 
-document.getElementById("gridCopyBtn")?.addEventListener("click", async () => {
+document.getElementById("gridEmailCopyBtn")?.addEventListener("click", async () => {
   const value = getFormValue("#gridEmailField");
   if (!value) return;
   await navigator.clipboard.writeText(value);
-  const btn = document.getElementById("gridCopyBtn");
+  const btn = document.getElementById("gridEmailCopyBtn");
   const status = document.getElementById("gridStatus");
   if (btn) {
     btn.textContent = "Copied!";
@@ -2685,7 +2690,22 @@ document.getElementById("gridCopyBtn")?.addEventListener("click", async () => {
       btn.textContent = "Copy";
     }, 1200);
   }
-  if (status) status.textContent = "Grid credentials copied to clipboard.";
+  if (status) status.textContent = "Grid email copied to clipboard.";
+});
+
+document.getElementById("gridPasswordCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#gridPasswordField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("gridPasswordCopyBtn");
+  const status = document.getElementById("gridStatus");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy";
+    }, 1200);
+  }
+  if (status) status.textContent = "Grid password copied to clipboard.";
 });
 
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
