@@ -1775,8 +1775,10 @@ function buildGridEmail() {
 
 function updateGridOutput() {
   const email = buildGridEmail();
+  const crmInfo = email ? `Grid: ${email} | ${GRID_PASSWORD}` : "";
   setValue("gridEmailField", email);
   setValue("gridPasswordField", GRID_PASSWORD);
+  setValue("gridCrmInfoField", crmInfo);
 
   const emailCopyBtn = document.getElementById("gridEmailCopyBtn");
   if (emailCopyBtn) {
@@ -1787,6 +1789,12 @@ function updateGridOutput() {
   const passwordCopyBtn = document.getElementById("gridPasswordCopyBtn");
   if (passwordCopyBtn) {
     passwordCopyBtn.textContent = "Copy";
+  }
+
+  const crmInfoCopyBtn = document.getElementById("gridCrmInfoCopyBtn");
+  if (crmInfoCopyBtn) {
+    crmInfoCopyBtn.disabled = !crmInfo;
+    crmInfoCopyBtn.textContent = crmInfo ? "Copy" : "No value";
   }
 
   const status = document.getElementById("gridStatus");
@@ -2706,6 +2714,21 @@ document.getElementById("gridPasswordCopyBtn")?.addEventListener("click", async 
     }, 1200);
   }
   if (status) status.textContent = "Grid password copied to clipboard.";
+});
+
+document.getElementById("gridCrmInfoCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#gridCrmInfoField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("gridCrmInfoCopyBtn");
+  const status = document.getElementById("gridStatus");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy";
+    }, 1200);
+  }
+  if (status) status.textContent = "CRM Grid info copied to clipboard.";
 });
 
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
