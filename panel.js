@@ -1351,7 +1351,7 @@ function searchSerialNumber(serialNumber, workbook) {
   const sheetsFound = new Set();
   const seenMatches = new Set();
   const serialNorm = normalizeLookupValue(serialNumber);
-  const splitCandidates = cellText => cellText.split(/[,\n;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
+  const splitCandidates = cellText => cellText.split(/[,\s;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
   const addMatch = (sheetName, rowIndex) => {
     const key = `${sheetName}:${rowIndex}`;
     if (seenMatches.has(key)) return;
