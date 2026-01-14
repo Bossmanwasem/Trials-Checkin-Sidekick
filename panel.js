@@ -1187,10 +1187,12 @@ function parseSheet(xmlText, sharedStrings) {
   const doc = new DOMParser().parseFromString(xmlText, "application/xml");
   const rows = [];
   const rowNodes = Array.from(doc.getElementsByTagName("row"));
-  rowNodes.forEach(rowNode => {
-    const rowIndex = parseInt(rowNode.getAttribute("r"), 10);
-    if (!rowIndex) return;
-    const row = rows[rowIndex - 1] || [];
+  rowNodes.forEach((rowNode, rowPosition) => {
+    const rowAttr = rowNode.getAttribute("r");
+    const rowIndex = parseInt(rowAttr, 10);
+    const effectiveRowIndex = Number.isNaN(rowIndex) ? rowPosition + 1 : rowIndex;
+    if (!effectiveRowIndex) return;
+    const row = rows[effectiveRowIndex - 1] || [];
     const cells = Array.from(rowNode.getElementsByTagName("c"));
     cells.forEach(cell => {
       const cellRef = cell.getAttribute("r") || "";
@@ -1212,7 +1214,7 @@ function parseSheet(xmlText, sharedStrings) {
       }
       row[colIndex] = value;
     });
-    rows[rowIndex - 1] = row;
+    rows[effectiveRowIndex - 1] = row;
   });
   return rows;
 }
