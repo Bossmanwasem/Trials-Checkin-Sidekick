@@ -1136,27 +1136,38 @@ async function persistDeviceLookupWorkbooks() {
   });
 }
 
-async function loadDeviceLookupWorkbooksFromStorage() {
+async function loadDeviceLookupWorkbooksFromStorage({ forceRefresh = false } = {}) {
   return new Promise(resolve => {
     chrome.storage.local.get(
       [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY, DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY],
       res => {
         const storedWorkbooks = res?.[DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY];
         const storedMeta = res?.[DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY];
-        if (storedWorkbooks) {
-          deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
-          deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
-          deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
-        }
         if (storedMeta) {
           deviceLookupWorkbookMeta = {
             ...deviceLookupWorkbookMeta,
             ...storedMeta
           };
         }
+        if (!forceRefresh && storedWorkbooks) {
+          deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
+          deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
+          deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
+        } else {
+          deviceLookupWorkbooks.ltl = null;
+          deviceLookupWorkbooks.mount = null;
+          deviceLookupWorkbooks.crm = null;
+          if (storedWorkbooks) {
+            chrome.storage.local.remove(DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY);
+          }
+        }
         DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
           const hasWorkbook = Boolean(deviceLookupWorkbooks[key]);
           const meta = deviceLookupWorkbookMeta[key];
+          if (forceRefresh && meta && !hasWorkbook) {
+            setWorkbookStatusMessage(key, `Reconnect to refresh: ${meta?.name || "Saved workbook"}.`);
+            return;
+          }
           updateWorkbookStatus(key, {
             name: hasWorkbook ? (meta?.name || "Saved workbook") : "",
             saved: hasWorkbook
@@ -2832,7 +2843,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
 (async function init() {
   watchIdentifierInputs();
-  await loadDeviceLookupWorkbooksFromStorage();
+  await loadDeviceLookupWorkbooksFromStorage({ forceRefresh: true });
   const profile = await getUserProfile();
   if (profile) {
     showLandingView();
