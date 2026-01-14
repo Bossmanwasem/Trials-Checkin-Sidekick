@@ -21,6 +21,11 @@ const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
+const WORKBOOK_HANDLE_KEYS = {
+  ltl: "deviceLookupWorkbookLtl",
+  mount: "deviceLookupWorkbookMount",
+  crm: "deviceLookupWorkbookCrm"
+};
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
@@ -658,7 +663,7 @@ async function getCleanupFolderName() {
   return await getStoredValue(CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY);
 }
 
-async function verifyFolderPermission(handle, mode = "read") {
+async function verifyHandlePermission(handle, mode = "read") {
   if (!handle) return false;
   if (typeof handle.queryPermission !== "function") return true;
   const options = { mode };
@@ -703,7 +708,7 @@ async function runCleanupFolderFlow({ promptIfMissing = false } = {}) {
     handle = await pickCleanupFolder();
   }
   if (!handle) return false;
-  const permitted = await verifyFolderPermission(handle, "readwrite");
+  const permitted = await verifyHandlePermission(handle, "readwrite");
   if (!permitted) return false;
   await clearCleanupFolderContents(handle);
   return true;
@@ -716,6 +721,54 @@ async function initCleanupFolderSetting() {
   cleanupFolderPickBtn.addEventListener("click", async () => {
     await pickCleanupFolder();
   });
+}
+
+async function saveWorkbookHandle(targetKey, handle) {
+  const storageKey = WORKBOOK_HANDLE_KEYS[targetKey];
+  if (!storageKey) return;
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, storageKey);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadWorkbookHandle(targetKey) {
+  const storageKey = WORKBOOK_HANDLE_KEYS[targetKey];
+  if (!storageKey) return null;
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(storageKey);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function connectWorkbookHandle(targetKey, handle) {
+  if (!handle) return false;
+  const fileName = handle.name || "";
+  const permitted = await verifyHandlePermission(handle, "read");
+  if (!permitted) {
+    const message = fileName
+      ? `Saved workbook "${fileName}" needs permission. Click Select workbook to re-authorize.`
+      : "Saved workbook needs permission. Click Select workbook to re-authorize.";
+    setWorkbookStatusMessage(targetKey, message);
+    deviceLookupWorkbookFiles[targetKey] = null;
+    return false;
+  }
+  const file = await handle.getFile();
+  deviceLookupWorkbookFiles[targetKey] = file;
+  updateWorkbookStatus(targetKey, { name: file.name || fileName });
+  return true;
+}
+
+async function hydrateWorkbookHandle(targetKey) {
+  const handle = await loadWorkbookHandle(targetKey).catch(() => null);
+  if (!handle) return false;
+  return await connectWorkbookHandle(targetKey, handle);
 }
 
 function updateTrialFilesFolderStatus(name, messageOverride = null) {
@@ -776,7 +829,7 @@ async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOver
     handle = await pickTrialFilesFolder();
   }
   if (!handle) return false;
-  const permitted = await verifyFolderPermission(handle, "read");
+  const permitted = await verifyHandlePermission(handle, "read");
   const storedName = await getTrialFilesFolderName();
   if (!permitted) {
     updateTrialFilesFolderStatus(storedName, "Folder access blocked. Click Refresh to re-authorize.");
@@ -1222,6 +1275,54 @@ async function handleWorkbookSelection({ input, targetKey }) {
     console.error(error);
     setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
   }
+}
+
+async function pickWorkbookHandle(targetKey) {
+  if (typeof window.showOpenFilePicker !== "function") {
+    alert("File picking isn't supported in this browser.");
+    return;
+  }
+  let handle;
+  try {
+    const [picked] = await window.showOpenFilePicker({
+      multiple: false,
+      types: [
+        {
+          description: "Excel Workbooks",
+          accept: {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+            "application/vnd.ms-excel.sheet.macroEnabled.12": [".xlsm"]
+          }
+        }
+      ]
+    });
+    handle = picked;
+  } catch {
+    return;
+  }
+  if (!handle) return;
+  await saveWorkbookHandle(targetKey, handle);
+  await connectWorkbookHandle(targetKey, handle);
+}
+
+function initWorkbookPickerUi() {
+  const supportsHandlePicker = typeof window.showOpenFilePicker === "function";
+  document.querySelectorAll("[data-workbook-picker]").forEach(button => {
+    if (!supportsHandlePicker) {
+      button.style.display = "none";
+      return;
+    }
+    button.style.display = "inline-flex";
+    button.addEventListener("click", async () => {
+      const targetKey = button.dataset.workbookPicker;
+      if (!targetKey) return;
+      await pickWorkbookHandle(targetKey);
+    });
+  });
+
+  document.querySelectorAll("[data-workbook-input]").forEach(input => {
+    input.style.display = supportsHandlePicker ? "none" : "block";
+  });
 }
 
 function normalizeLookupValue(value) {
@@ -2799,6 +2900,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 (async function init() {
   watchIdentifierInputs();
   resetDeviceLookupWorkbookStatus();
+  initWorkbookPickerUi();
+  await Promise.all(DEVICE_LOOKUP_WORKBOOK_KEYS.map(key => hydrateWorkbookHandle(key)));
   const profile = await getUserProfile();
   if (profile) {
     showLandingView();
