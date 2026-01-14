@@ -751,6 +751,7 @@ async function loadWorkbookHandle(targetKey) {
 async function connectWorkbookHandle(targetKey, handle, { prompt = true } = {}) {
   if (!handle) return false;
   const fileName = handle.name || "";
+  deviceLookupWorkbookHandles[targetKey] = handle;
   const permitted = await verifyHandlePermission(handle, "read", { prompt });
   if (!permitted) {
     const message = fileName
@@ -1140,6 +1141,11 @@ const deviceLookupWorkbookFiles = {
   mount: null,
   crm: null
 };
+const deviceLookupWorkbookHandles = {
+  ltl: null,
+  mount: null,
+  crm: null
+};
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
@@ -1179,6 +1185,32 @@ function resetDeviceLookupWorkbookStatus() {
   DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
     updateWorkbookStatus(key, { name: deviceLookupWorkbookFiles[key]?.name || "" });
   });
+}
+
+async function getWorkbookFileForLookup(targetKey) {
+  const handle = deviceLookupWorkbookHandles[targetKey];
+  if (handle) {
+    const permitted = await verifyHandlePermission(handle, "read", { prompt: false });
+    if (!permitted) {
+      const fileName = handle.name || deviceLookupWorkbookFiles[targetKey]?.name || "";
+      const message = fileName
+        ? `Saved workbook "${fileName}" needs permission. Click Select workbook to re-authorize.`
+        : "Saved workbook needs permission. Click Select workbook to re-authorize.";
+      setWorkbookStatusMessage(targetKey, message);
+      return null;
+    }
+    try {
+      const file = await handle.getFile();
+      deviceLookupWorkbookFiles[targetKey] = file;
+      updateWorkbookStatus(targetKey, { name: file.name || handle.name });
+      return file;
+    } catch (error) {
+      console.error(error);
+      setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
+      return null;
+    }
+  }
+  return deviceLookupWorkbookFiles[targetKey] || null;
 }
 
 function columnLettersToIndex(letters) {
@@ -1269,6 +1301,7 @@ async function handleWorkbookSelection({ input, targetKey }) {
   if (!input?.files?.length) return;
   const file = input.files[0];
   try {
+    deviceLookupWorkbookHandles[targetKey] = null;
     deviceLookupWorkbookFiles[targetKey] = file;
     updateWorkbookStatus(targetKey, { name: file.name });
   } catch (error) {
@@ -1737,8 +1770,11 @@ async function runDeviceLookupSearch(rawInput) {
     console.warn("Unable to copy serial to clipboard.", error);
   }
 
-  const missingFiles = DEVICE_LOOKUP_WORKBOOK_KEYS.filter(key => !deviceLookupWorkbookFiles[key]);
-  if (missingFiles.length) {
+  const [ltlFile, mountFile, crmFile] = await Promise.all(
+    DEVICE_LOOKUP_WORKBOOK_KEYS.map(key => getWorkbookFileForLookup(key))
+  );
+  const missingFiles = [ltlFile, mountFile, crmFile].some(file => !file);
+  if (missingFiles) {
     updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Connect all three workbooks before searching.", "red");
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
@@ -1751,9 +1787,9 @@ async function runDeviceLookupSearch(rawInput) {
   let crmWorkbook = null;
   try {
     [ltlWorkbook, mountWorkbook, crmWorkbook] = await Promise.all([
-      loadWorkbookFromFile(deviceLookupWorkbookFiles.ltl),
-      loadWorkbookFromFile(deviceLookupWorkbookFiles.mount),
-      loadWorkbookFromFile(deviceLookupWorkbookFiles.crm)
+      loadWorkbookFromFile(ltlFile),
+      loadWorkbookFromFile(mountFile),
+      loadWorkbookFromFile(crmFile)
     ]);
   } catch (error) {
     console.error(error);
