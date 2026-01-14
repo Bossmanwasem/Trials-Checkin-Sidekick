@@ -31,6 +31,7 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
+const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
@@ -642,6 +643,30 @@ async function loadCleanupFolderHandle() {
   });
 }
 
+function getDeviceLookupHandleKey(targetKey) {
+  return `${DEVICE_LOOKUP_HANDLE_KEY_PREFIX}:${targetKey}`;
+}
+
+async function saveDeviceLookupWorkbookHandle(targetKey, handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, getDeviceLookupHandleKey(targetKey));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadDeviceLookupWorkbookHandle(targetKey) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(getDeviceLookupHandleKey(targetKey));
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 function updateCleanupFolderStatus(name) {
   if (!cleanupFolderStatus) return;
   if (name) {
@@ -661,6 +686,16 @@ async function getCleanupFolderName() {
 }
 
 async function verifyFolderPermission(handle, mode = "read") {
+  if (!handle) return false;
+  if (typeof handle.queryPermission !== "function") return true;
+  const options = { mode };
+  let permission = await handle.queryPermission(options);
+  if (permission === "granted") return true;
+  permission = await handle.requestPermission(options);
+  return permission === "granted";
+}
+
+async function verifyFilePermission(handle, mode = "read") {
   if (!handle) return false;
   if (typeof handle.queryPermission !== "function") return true;
   const options = { mode };
@@ -1131,41 +1166,29 @@ function updateWorkbookStatus(targetKey, { name, saved } = {}) {
 
 async function persistDeviceLookupWorkbooks() {
   await chrome.storage.local.set({
-    [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY]: deviceLookupWorkbooks,
     [DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY]: deviceLookupWorkbookMeta
   });
+  await chrome.storage.local.remove(DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY);
 }
 
 async function loadDeviceLookupWorkbooksFromStorage() {
-  return new Promise(resolve => {
-    chrome.storage.local.get(
-      [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY, DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY],
-      res => {
-        const storedWorkbooks = res?.[DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY];
-        const storedMeta = res?.[DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY];
-        if (storedWorkbooks) {
-          deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
-          deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
-          deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
-        }
-        if (storedMeta) {
-          deviceLookupWorkbookMeta = {
-            ...deviceLookupWorkbookMeta,
-            ...storedMeta
-          };
-        }
-        DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
-          const hasWorkbook = Boolean(deviceLookupWorkbooks[key]);
-          const meta = deviceLookupWorkbookMeta[key];
-          updateWorkbookStatus(key, {
-            name: hasWorkbook ? (meta?.name || "Saved workbook") : "",
-            saved: hasWorkbook
-          });
-        });
-        resolve();
-      }
-    );
-  });
+  const res = await chrome.storage.local.get([DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY]);
+  const storedMeta = res?.[DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY];
+  if (storedMeta) {
+    deviceLookupWorkbookMeta = {
+      ...deviceLookupWorkbookMeta,
+      ...storedMeta
+    };
+  }
+  await chrome.storage.local.remove(DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY);
+  await Promise.all(DEVICE_LOOKUP_WORKBOOK_KEYS.map(async key => {
+    const handle = await loadDeviceLookupWorkbookHandle(key).catch(() => null);
+    const meta = deviceLookupWorkbookMeta[key];
+    updateWorkbookStatus(key, {
+      name: handle ? (meta?.name || "Saved workbook") : "",
+      saved: Boolean(handle)
+    });
+  }));
 }
 
 function columnLettersToIndex(letters) {
@@ -1249,10 +1272,68 @@ async function loadWorkbookFromFile(file) {
   return { sheets };
 }
 
-async function handleWorkbookSelection({ input, targetKey }) {
-  if (!input?.files?.length) return;
-  const file = input.files[0];
-  setWorkbookStatusMessage(targetKey, "Loading workbook...");
+async function pickDeviceLookupWorkbook(targetKey) {
+  if (typeof window.showOpenFilePicker !== "function") {
+    alert("File picking isn't supported in this browser.");
+    return null;
+  }
+  let handles;
+  try {
+    handles = await window.showOpenFilePicker({
+      multiple: false,
+      types: [{
+        description: "Excel workbook",
+        accept: {
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+          "application/vnd.ms-excel.sheet.macroEnabled.12": [".xlsm"]
+        }
+      }]
+    });
+  } catch {
+    return null;
+  }
+  const handle = handles?.[0];
+  if (!handle) return null;
+  await saveDeviceLookupWorkbookHandle(targetKey, handle);
+  return handle;
+}
+
+async function refreshDeviceLookupWorkbookFromHandle(targetKey, { handleOverride = null, force = false } = {}) {
+  const handle = handleOverride ?? await loadDeviceLookupWorkbookHandle(targetKey).catch(() => null);
+  if (!handle) {
+    updateWorkbookStatus(targetKey, { name: "", saved: false });
+    return false;
+  }
+  const permitted = await verifyFilePermission(handle, "read");
+  const meta = deviceLookupWorkbookMeta[targetKey];
+  if (!permitted) {
+    setWorkbookStatusMessage(targetKey, "Workbook access blocked. Click Connect to re-authorize.");
+    updateWorkbookStatus(targetKey, { name: meta?.name || "", saved: true });
+    return false;
+  }
+  let file;
+  try {
+    file = await handle.getFile();
+  } catch (error) {
+    console.error(error);
+    setWorkbookStatusMessage(targetKey, "Unable to open workbook. Click Connect to re-authorize.");
+    return false;
+  }
+  const hasCache = Boolean(deviceLookupWorkbooks[targetKey]);
+  const hasMeta = Boolean(meta);
+  const changed = force
+    || !hasCache
+    || !hasMeta
+    || meta.lastModified !== file.lastModified
+    || meta.size !== file.size
+    || meta.name !== file.name;
+
+  if (!changed) {
+    updateWorkbookStatus(targetKey, { name: meta?.name || file.name, saved: true });
+    return true;
+  }
+
+  setWorkbookStatusMessage(targetKey, "Refreshing workbook...");
   try {
     const workbook = await loadWorkbookFromFile(file);
     deviceLookupWorkbooks[targetKey] = workbook;
@@ -1263,20 +1344,29 @@ async function handleWorkbookSelection({ input, targetKey }) {
       size: file.size
     };
     await persistDeviceLookupWorkbooks();
-    updateWorkbookStatus(targetKey, { name: file.name, saved: false });
+    updateWorkbookStatus(targetKey, { name: file.name, saved: true });
+    return true;
   } catch (error) {
     console.error(error);
-    setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
+    setWorkbookStatusMessage(targetKey, "Unable to read workbook. Click Connect to re-authorize.");
+    return false;
   }
 }
 
-async function refreshDeviceLookupWorkbooksFromInputs() {
-  const inputs = Array.from(document.querySelectorAll("[data-workbook-input]"));
+async function connectDeviceLookupWorkbook(targetKey) {
+  setWorkbookStatusMessage(targetKey, "Waiting for workbook selection...");
+  const handle = await pickDeviceLookupWorkbook(targetKey);
+  if (!handle) {
+    await refreshDeviceLookupWorkbookFromHandle(targetKey);
+    return;
+  }
+  setWorkbookStatusMessage(targetKey, "Loading workbook...");
+  await refreshDeviceLookupWorkbookFromHandle(targetKey, { handleOverride: handle, force: true });
+}
+
+async function refreshDeviceLookupWorkbooksFromHandles({ force = false } = {}) {
   for (const targetKey of DEVICE_LOOKUP_WORKBOOK_KEYS) {
-    const input = inputs.find(el => el.dataset.workbookInput === targetKey && el.files?.length);
-    if (!input) continue;
-    setWorkbookStatusMessage(targetKey, "Refreshing workbook...");
-    await handleWorkbookSelection({ input, targetKey });
+    await refreshDeviceLookupWorkbookFromHandle(targetKey, { force });
   }
 }
 
@@ -1650,6 +1740,8 @@ function resetLookupCopyButtons() {
 async function runDeviceLookupSearch(rawInput) {
   const lookupCopyStatus = document.getElementById("lookupCopyStatus");
   if (lookupCopyStatus) lookupCopyStatus.textContent = "";
+
+  await refreshDeviceLookupWorkbooksFromHandles();
 
   const extracted = extractValidSerial(rawInput);
   setText("deviceLookupRaw", rawInput || "—");
@@ -2861,7 +2953,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
     showDeviceLookupView();
-    await refreshDeviceLookupWorkbooksFromInputs();
+    await refreshDeviceLookupWorkbooksFromHandles();
   });
 
   document.getElementById("qaFormBtn")?.addEventListener("click", () => {
@@ -2909,11 +3001,11 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     await runDeviceLookupSearch(raw);
   });
 
-  document.querySelectorAll("[data-workbook-input]").forEach(input => {
-    input.addEventListener("change", () => {
-      const targetKey = input.dataset.workbookInput;
+  document.querySelectorAll("[data-workbook-connect]").forEach(button => {
+    button.addEventListener("click", () => {
+      const targetKey = button.dataset.workbookConnect;
       if (!targetKey) return;
-      void handleWorkbookSelection({ input, targetKey });
+      void connectDeviceLookupWorkbook(targetKey);
     });
   });
 
