@@ -1376,17 +1376,12 @@ function searchSerialNumber(serialNumber, workbook) {
     const rows = getSheetRows(workbook, sheetName);
     for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
       const row = rows[rowIndex];
-      const rowNumber = rowIndex + 1;
-      checkCell(sheetName, rowNumber, row?.[3]);
-    }
-    rows.forEach((row, rowIndex) => {
-      if (!row) return;
+      if (!row) continue;
       const rowNumber = rowIndex + 1;
       for (let colIndex = 0; colIndex < row.length; colIndex += 1) {
-        if (colIndex === 3) continue;
         checkCell(sheetName, rowNumber, row[colIndex]);
       }
-    });
+    }
   });
 
   if (matches.length) {
