@@ -2843,7 +2843,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
 (async function init() {
   watchIdentifierInputs();
-  await loadDeviceLookupWorkbooksFromStorage({ forceRefresh: true });
+  await loadDeviceLookupWorkbooksFromStorage();
   const profile = await getUserProfile();
   if (profile) {
     showLandingView();
