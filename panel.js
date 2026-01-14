@@ -1270,6 +1270,16 @@ async function handleWorkbookSelection({ input, targetKey }) {
   }
 }
 
+async function refreshDeviceLookupWorkbooksFromInputs() {
+  const inputs = Array.from(document.querySelectorAll("[data-workbook-input]"));
+  for (const targetKey of DEVICE_LOOKUP_WORKBOOK_KEYS) {
+    const input = inputs.find(el => el.dataset.workbookInput === targetKey && el.files?.length);
+    if (!input) continue;
+    setWorkbookStatusMessage(targetKey, "Refreshing workbook...");
+    await handleWorkbookSelection({ input, targetKey });
+  }
+}
+
 function normalizeLookupValue(value) {
   return String(value || "").trim().replace(/[()[\]"']/g, "").toLowerCase();
 }
@@ -2849,8 +2859,9 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showCrmNavigatorView();
   });
 
-  document.getElementById("deviceLookupBtn")?.addEventListener("click", () => {
+  document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
     showDeviceLookupView();
+    await refreshDeviceLookupWorkbooksFromInputs();
   });
 
   document.getElementById("qaFormBtn")?.addEventListener("click", () => {
