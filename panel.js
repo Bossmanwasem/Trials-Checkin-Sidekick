@@ -663,12 +663,13 @@ async function getCleanupFolderName() {
   return await getStoredValue(CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY);
 }
 
-async function verifyHandlePermission(handle, mode = "read") {
+async function verifyHandlePermission(handle, mode = "read", { prompt = true } = {}) {
   if (!handle) return false;
   if (typeof handle.queryPermission !== "function") return true;
   const options = { mode };
   let permission = await handle.queryPermission(options);
   if (permission === "granted") return true;
+  if (!prompt || typeof handle.requestPermission !== "function") return false;
   permission = await handle.requestPermission(options);
   return permission === "granted";
 }
@@ -747,16 +748,15 @@ async function loadWorkbookHandle(targetKey) {
   });
 }
 
-async function connectWorkbookHandle(targetKey, handle) {
+async function connectWorkbookHandle(targetKey, handle, { prompt = true } = {}) {
   if (!handle) return false;
   const fileName = handle.name || "";
-  const permitted = await verifyHandlePermission(handle, "read");
+  const permitted = await verifyHandlePermission(handle, "read", { prompt });
   if (!permitted) {
     const message = fileName
       ? `Saved workbook "${fileName}" needs permission. Click Select workbook to re-authorize.`
       : "Saved workbook needs permission. Click Select workbook to re-authorize.";
     setWorkbookStatusMessage(targetKey, message);
-    deviceLookupWorkbookFiles[targetKey] = null;
     return false;
   }
   const file = await handle.getFile();
@@ -768,7 +768,7 @@ async function connectWorkbookHandle(targetKey, handle) {
 async function hydrateWorkbookHandle(targetKey) {
   const handle = await loadWorkbookHandle(targetKey).catch(() => null);
   if (!handle) return false;
-  return await connectWorkbookHandle(targetKey, handle);
+  return await connectWorkbookHandle(targetKey, handle, { prompt: false });
 }
 
 function updateTrialFilesFolderStatus(name, messageOverride = null) {
