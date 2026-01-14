@@ -29,8 +29,6 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
   "Return Watchlist": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=aHwhBv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0"
 };
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
-const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
-const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
@@ -1084,12 +1082,7 @@ const DEVICE_LOOKUP_SPECIAL_SERIALS = new Set([
   "DTP10.016"
 ]);
 
-const deviceLookupWorkbooks = {
-  ltl: null,
-  mount: null,
-  crm: null
-};
-let deviceLookupWorkbookMeta = {
+const deviceLookupWorkbookFiles = {
   ltl: null,
   mount: null,
   crm: null
@@ -1121,61 +1114,17 @@ function setWorkbookStatusMessage(targetKey, message) {
   });
 }
 
-function updateWorkbookStatus(targetKey, { name, saved } = {}) {
+function updateWorkbookStatus(targetKey, { name } = {}) {
   if (!name) {
     setWorkbookStatusMessage(targetKey, "Not connected.");
     return;
   }
-  setWorkbookStatusMessage(targetKey, `Connected: ${name}${saved ? " (saved)" : ""}`);
+  setWorkbookStatusMessage(targetKey, `Connected: ${name}`);
 }
 
-async function persistDeviceLookupWorkbooks() {
-  await chrome.storage.local.set({
-    [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY]: deviceLookupWorkbooks,
-    [DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY]: deviceLookupWorkbookMeta
-  });
-}
-
-async function loadDeviceLookupWorkbooksFromStorage({ forceRefresh = false } = {}) {
-  return new Promise(resolve => {
-    chrome.storage.local.get(
-      [DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY, DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY],
-      res => {
-        const storedWorkbooks = res?.[DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY];
-        const storedMeta = res?.[DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY];
-        if (storedMeta) {
-          deviceLookupWorkbookMeta = {
-            ...deviceLookupWorkbookMeta,
-            ...storedMeta
-          };
-        }
-        if (!forceRefresh && storedWorkbooks) {
-          deviceLookupWorkbooks.ltl = storedWorkbooks.ltl || null;
-          deviceLookupWorkbooks.mount = storedWorkbooks.mount || null;
-          deviceLookupWorkbooks.crm = storedWorkbooks.crm || null;
-        } else {
-          deviceLookupWorkbooks.ltl = null;
-          deviceLookupWorkbooks.mount = null;
-          deviceLookupWorkbooks.crm = null;
-          if (storedWorkbooks) {
-            chrome.storage.local.remove(DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY);
-          }
-        }
-        DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
-          const hasWorkbook = Boolean(deviceLookupWorkbooks[key]);
-          const meta = deviceLookupWorkbookMeta[key];
-          if (forceRefresh && meta && !hasWorkbook) {
-            setWorkbookStatusMessage(key, `Reconnect to refresh: ${meta?.name || "Saved workbook"}.`);
-            return;
-          }
-          updateWorkbookStatus(key, {
-            name: hasWorkbook ? (meta?.name || "Saved workbook") : "",
-            saved: hasWorkbook
-          });
-        });
-        resolve();
-      }
-    );
+function resetDeviceLookupWorkbookStatus() {
+  DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
+    updateWorkbookStatus(key, { name: deviceLookupWorkbookFiles[key]?.name || "" });
   });
 }
 
@@ -1266,18 +1215,9 @@ async function loadWorkbookFromFile(file) {
 async function handleWorkbookSelection({ input, targetKey }) {
   if (!input?.files?.length) return;
   const file = input.files[0];
-  setWorkbookStatusMessage(targetKey, "Loading workbook...");
   try {
-    const workbook = await loadWorkbookFromFile(file);
-    deviceLookupWorkbooks[targetKey] = workbook;
-    deviceLookupWorkbookMeta[targetKey] = {
-      name: file.name,
-      savedAt: new Date().toISOString(),
-      lastModified: file.lastModified,
-      size: file.size
-    };
-    await persistDeviceLookupWorkbooks();
-    updateWorkbookStatus(targetKey, { name: file.name, saved: false });
+    deviceLookupWorkbookFiles[targetKey] = file;
+    updateWorkbookStatus(targetKey, { name: file.name });
   } catch (error) {
     console.error(error);
     setWorkbookStatusMessage(targetKey, "Unable to read workbook. Try re-selecting the file.");
@@ -1696,14 +1636,29 @@ async function runDeviceLookupSearch(rawInput) {
     console.warn("Unable to copy serial to clipboard.", error);
   }
 
-  const ltlWorkbook = deviceLookupWorkbooks.ltl;
-  const mountWorkbook = deviceLookupWorkbooks.mount;
-  const crmWorkbook = deviceLookupWorkbooks.crm;
-
-  if (!ltlWorkbook || !mountWorkbook || !crmWorkbook) {
+  const missingFiles = DEVICE_LOOKUP_WORKBOOK_KEYS.filter(key => !deviceLookupWorkbookFiles[key]);
+  if (missingFiles.length) {
     updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Connect all three workbooks before searching.", "red");
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
+    resetLookupCopyButtons();
+    return;
+  }
+
+  let ltlWorkbook = null;
+  let mountWorkbook = null;
+  let crmWorkbook = null;
+  try {
+    [ltlWorkbook, mountWorkbook, crmWorkbook] = await Promise.all([
+      loadWorkbookFromFile(deviceLookupWorkbookFiles.ltl),
+      loadWorkbookFromFile(deviceLookupWorkbookFiles.mount),
+      loadWorkbookFromFile(deviceLookupWorkbookFiles.crm)
+    ]);
+  } catch (error) {
+    console.error(error);
+    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Unable to read workbook data. Try re-selecting the files.", "red");
+    updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Workbook refresh failed. Reconnect the OneDrive files and try again.", "red");
     resetLookupCopyButtons();
     return;
   }
@@ -2843,7 +2798,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
 (async function init() {
   watchIdentifierInputs();
-  await loadDeviceLookupWorkbooksFromStorage();
+  resetDeviceLookupWorkbookStatus();
   const profile = await getUserProfile();
   if (profile) {
     showLandingView();
