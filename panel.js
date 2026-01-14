@@ -24,11 +24,18 @@ const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
+const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
-  "LTL Update List": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=lXPZFv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMH0",
-  "Return Watchlist": "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/Shared%20Documents/Trials%20Operations/Python/RWL%20and%20LTL%20Update.xlsx?d=w657e4c75fdb44009955790aab8db29f2&csf=1&web=1&e=aHwhBv&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0"
+  "LTL Update List": DEVICE_LOOKUP_EXCEL_WEB_URL,
+  "Return Watchlist": DEVICE_LOOKUP_EXCEL_WEB_URL
 };
-const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
+const MOUNT_LOG_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7BEA51CF43-05AC-492F-B9E5-5AC8573EF54C%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
+const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7BB8051643-3F1F-4B3B-858C-2F63A9D55E9E%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
+const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
+  ltl: DEVICE_LOOKUP_EXCEL_WEB_URL,
+  mount: MOUNT_LOG_EXCEL_WEB_URL,
+  crm: LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL
+};
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
@@ -3006,6 +3013,16 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       const targetKey = button.dataset.workbookConnect;
       if (!targetKey) return;
       void connectDeviceLookupWorkbook(targetKey);
+    });
+  });
+
+  document.querySelectorAll("[data-workbook-open]").forEach(button => {
+    button.addEventListener("click", () => {
+      const targetKey = button.dataset.workbookOpen;
+      if (!targetKey) return;
+      const url = DEVICE_LOOKUP_WORKBOOK_WEB_URLS[targetKey];
+      if (!url) return;
+      chrome.tabs.create({ url });
     });
   });
 
