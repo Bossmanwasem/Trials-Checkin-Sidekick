@@ -1193,6 +1193,7 @@ function parseSheet(xmlText, sharedStrings) {
     const effectiveRowIndex = Number.isNaN(rowIndex) ? rowPosition + 1 : rowIndex;
     if (!effectiveRowIndex) return;
     const row = rows[effectiveRowIndex - 1] || [];
+    row.__rowNumber = effectiveRowIndex;
     const cells = Array.from(rowNode.getElementsByTagName("c"));
     cells.forEach(cell => {
       const cellRef = cell.getAttribute("r") || "";
@@ -1362,7 +1363,12 @@ function searchSerialNumber(serialNumber, workbook) {
     if (!cellText) return;
     const text = String(cellText);
     if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialNumber)) {
-      if (normalizeLookupValue(text) === serialNorm) {
+      const normalized = normalizeLookupValue(text);
+      if (normalized === serialNorm) {
+        addMatch(sheetName, rowIndex);
+      }
+      const parts = splitCandidates(text);
+      if (parts.includes(serialNorm)) {
         addMatch(sheetName, rowIndex);
       }
       return;
@@ -1377,7 +1383,7 @@ function searchSerialNumber(serialNumber, workbook) {
     for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
       const row = rows[rowIndex];
       if (!row) continue;
-      const rowNumber = rowIndex + 1;
+      const rowNumber = row?.__rowNumber || rowIndex + 1;
       for (let colIndex = 0; colIndex < row.length; colIndex += 1) {
         checkCell(sheetName, rowNumber, row[colIndex]);
       }
