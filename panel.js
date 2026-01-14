@@ -1271,7 +1271,11 @@ async function handleWorkbookSelection({ input, targetKey }) {
 }
 
 function normalizeLookupValue(value) {
-  return String(value || "").trim().replace(/[()[\]"']/g, "").toLowerCase();
+  return String(value || "")
+    .replace(/\u00a0/g, " ")
+    .trim()
+    .replace(/[()[\]"']/g, "")
+    .toLowerCase();
 }
 
 function extractValidSerial(scanInput) {
@@ -1343,6 +1347,7 @@ function searchSerialNumber(serialNumber, workbook) {
   const matches = [];
   const sheetsFound = new Set();
   const serialNorm = normalizeLookupValue(serialNumber);
+  const splitCandidates = cellText => cellText.split(/[\s,\n;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
   ["LTL Update List", "Return Watchlist"].forEach(sheetName => {
     const rows = getSheetRows(workbook, sheetName);
     rows.forEach((row, rowIndex) => {
@@ -1355,7 +1360,7 @@ function searchSerialNumber(serialNumber, workbook) {
             sheetsFound.add(sheetName);
           }
         } else {
-          const parts = cellText.split(/[,\n;/]+/).map(part => normalizeLookupValue(part));
+          const parts = splitCandidates(cellText);
           if (parts.includes(serialNorm)) {
             matches.push({ sheet: sheetName, row: rowIndex + 1 });
             sheetsFound.add(sheetName);
