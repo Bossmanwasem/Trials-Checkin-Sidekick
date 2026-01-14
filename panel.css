@@ -649,7 +649,8 @@ input[type="file"] {
 }
 
 .device-lookup-view .lookup-file,
-.settings-view .lookup-file {
+.settings-view .lookup-file,
+.onboarding-view .lookup-file {
   display: grid;
   gap: 6px;
   padding: 10px 0;
@@ -657,12 +658,14 @@ input[type="file"] {
 }
 
 .device-lookup-view .lookup-file:last-of-type,
-.settings-view .lookup-file:last-of-type {
+.settings-view .lookup-file:last-of-type,
+.onboarding-view .lookup-file:last-of-type {
   border-bottom: none;
 }
 
 .device-lookup-view .lookup-file__title,
-.settings-view .lookup-file__title {
+.settings-view .lookup-file__title,
+.onboarding-view .lookup-file__title {
   font-weight: 600;
 }
 
