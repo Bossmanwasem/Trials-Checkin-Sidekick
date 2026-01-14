@@ -1351,7 +1351,7 @@ function searchSerialNumber(serialNumber, workbook) {
   const sheetsFound = new Set();
   const seenMatches = new Set();
   const serialNorm = normalizeLookupValue(serialNumber);
-  const splitCandidates = cellText => cellText.split(/[\s,\n;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
+  const splitCandidates = cellText => cellText.split(/[,\n;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
   const addMatch = (sheetName, rowIndex) => {
     const key = `${sheetName}:${rowIndex}`;
     if (seenMatches.has(key)) return;
@@ -1365,10 +1365,6 @@ function searchSerialNumber(serialNumber, workbook) {
     if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialNumber)) {
       const normalized = normalizeLookupValue(text);
       if (normalized === serialNorm) {
-        addMatch(sheetName, rowIndex);
-      }
-      const parts = splitCandidates(text);
-      if (parts.includes(serialNorm)) {
         addMatch(sheetName, rowIndex);
       }
       return;
