@@ -1348,27 +1348,44 @@ function buildHeaderMap(rows) {
 function searchSerialNumber(serialNumber, workbook) {
   const matches = [];
   const sheetsFound = new Set();
+  const seenMatches = new Set();
   const serialNorm = normalizeLookupValue(serialNumber);
   const splitCandidates = cellText => cellText.split(/[\s,\n;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
+  const addMatch = (sheetName, rowIndex) => {
+    const key = `${sheetName}:${rowIndex}`;
+    if (seenMatches.has(key)) return;
+    matches.push({ sheet: sheetName, row: rowIndex });
+    sheetsFound.add(sheetName);
+    seenMatches.add(key);
+  };
+  const checkCell = (sheetName, rowIndex, cellText) => {
+    if (!cellText) return;
+    const text = String(cellText);
+    if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialNumber)) {
+      if (normalizeLookupValue(text) === serialNorm) {
+        addMatch(sheetName, rowIndex);
+      }
+      return;
+    }
+    const parts = splitCandidates(text);
+    if (parts.includes(serialNorm)) {
+      addMatch(sheetName, rowIndex);
+    }
+  };
   ["LTL Update List", "Return Watchlist"].forEach(sheetName => {
     const rows = getSheetRows(workbook, sheetName);
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+      const row = rows[rowIndex];
+      const rowNumber = rowIndex + 1;
+      checkCell(sheetName, rowNumber, row?.[3]);
+    }
     rows.forEach((row, rowIndex) => {
-      row.forEach(cellValue => {
-        if (!cellValue) return;
-        const cellText = String(cellValue);
-        if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialNumber)) {
-          if (normalizeLookupValue(cellText) === serialNorm) {
-            matches.push({ sheet: sheetName, row: rowIndex + 1 });
-            sheetsFound.add(sheetName);
-          }
-        } else {
-          const parts = splitCandidates(cellText);
-          if (parts.includes(serialNorm)) {
-            matches.push({ sheet: sheetName, row: rowIndex + 1 });
-            sheetsFound.add(sheetName);
-          }
-        }
-      });
+      if (!row) return;
+      const rowNumber = rowIndex + 1;
+      for (let colIndex = 0; colIndex < row.length; colIndex += 1) {
+        if (colIndex === 3) continue;
+        checkCell(sheetName, rowNumber, row[colIndex]);
+      }
     });
   });
 
