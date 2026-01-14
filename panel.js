@@ -1351,7 +1351,8 @@ function searchSerialNumber(serialNumber, workbook) {
   const sheetsFound = new Set();
   const seenMatches = new Set();
   const serialNorm = normalizeLookupValue(serialNumber);
-  const splitCandidates = cellText => cellText.split(/[,\s;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
+  const serialUpper = String(serialNumber || "").toUpperCase();
+  const splitCandidates = cellText => cellText.split(/[,\n;/]+/).map(part => normalizeLookupValue(part)).filter(Boolean);
   const addMatch = (sheetName, rowIndex) => {
     const key = `${sheetName}:${rowIndex}`;
     if (seenMatches.has(key)) return;
@@ -1362,7 +1363,7 @@ function searchSerialNumber(serialNumber, workbook) {
   const checkCell = (sheetName, rowIndex, cellText) => {
     if (!cellText) return;
     const text = String(cellText);
-    if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialNumber)) {
+    if (DEVICE_LOOKUP_SPECIAL_SERIALS.has(serialUpper)) {
       const normalized = normalizeLookupValue(text);
       if (normalized === serialNorm) {
         addMatch(sheetName, rowIndex);
@@ -1427,8 +1428,10 @@ function findCrmIdFromSerial(serialNumber, workbook) {
   }
 }
 
-function searchMountInventory(serialNumber, workbook, crmId) {
+function searchMountInventory(serialNumber, mountWorkbook, crmWorkbook) {
   try {
+    const { crmId } = findCrmIdFromSerial(serialNumber, crmWorkbook);
+    const normalizedCrmId = crmId || "";
     const serialNorm = normalizeLookupValue(serialNumber);
     const mountMap = {
       "CM inv.": "Clamp Mount",
@@ -1441,13 +1444,13 @@ function searchMountInventory(serialNumber, workbook, crmId) {
     let mismatched = false;
 
     Object.entries(mountMap).forEach(([sheetName, mountType]) => {
-      const rows = getSheetRows(workbook, sheetName);
+      const rows = getSheetRows(mountWorkbook, sheetName);
       rows.slice(1).forEach(row => {
         if (!row) return;
         if (normalizeLookupValue(row[1]) === serialNorm) {
           const mountSn = String(row[0] || "").trim();
           const mountCrm = String(row[4] || "").trim();
-          const match = mountCrm === crmId;
+          const match = mountCrm === normalizedCrmId;
           if (!match) mismatched = true;
           const mountInfo = { serial: mountSn, type: mountType, match };
           if (mountType === "Clamp Mount") clamp.push(mountInfo);
@@ -1470,7 +1473,7 @@ function searchMountInventory(serialNumber, workbook, crmId) {
     }
 
     return {
-      lines: allMounts.map(item => `${item.match ? "✅" : "⚠️"} ${item.type}: ${item.serial}`),
+      lines: allMounts.map(item => `-${item.type}: ${item.serial}`),
       clamp,
       table,
       rolling,
@@ -1669,9 +1672,9 @@ async function runDeviceLookupSearch(rawInput) {
   deviceLookupLastCrmId = "";
 
   if (!extracted) {
-    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Invalid serial number detected. Please enter it manually and try again.", "red");
+    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "", "");
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
-    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Report the invalid scan to pre-prep.", "red");
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Invalid serial number detected.\nPlease enter it manually.\nReport to pre-prep.", "red");
     resetLookupCopyButtons();
     return;
   }
@@ -1703,16 +1706,10 @@ async function runDeviceLookupSearch(rawInput) {
     deviceLookupLastSheetLink = DEVICE_LOOKUP_SHEET_LINKS["Return Watchlist"] || DEVICE_LOOKUP_EXCEL_WEB_URL;
   }
 
-  const { crmId, error: crmError } = findCrmIdFromSerial(extracted, crmWorkbook);
-  deviceLookupLastCrmId = crmId || "";
-  const mountResult = searchMountInventory(extracted, mountWorkbook, crmId || "");
+  const mountResult = searchMountInventory(extracted, mountWorkbook, crmWorkbook);
   updateLookupResultCard("lookupMountCard", "lookupMountResult", mountResult.lines.join("\n"), mountResult.status);
 
   const cameraResult = findAttachedCameras(extracted, crmWorkbook);
-  if (cameraResult.error) {
-    updateLookupResultCard("lookupActionCard", "lookupActionResult", cameraResult.error, "red");
-    return;
-  }
 
   const cameraSerials = [...cameraResult.cameras];
   const luminSerials = [...cameraResult.lumin];
@@ -1721,22 +1718,32 @@ async function runDeviceLookupSearch(rawInput) {
   const hasMounts = mountResult.clamp.length || mountResult.table.length || mountResult.rolling.length;
   const foundInLtl = serialResult.sheetsFound.includes("LTL Update List");
   const foundInRwl = serialResult.sheetsFound.includes("Return Watchlist");
-  const crmFullUrl = crmId ? `https://crm.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
+
+  let crmId = null;
+  let crmError = null;
+  if ((foundInRwl && !foundInLtl) || (!foundInLtl && !foundInRwl)) {
+    ({ crmId, error: crmError } = findCrmIdFromSerial(extracted, crmWorkbook));
+  }
+  deviceLookupLastCrmId = crmId || "";
 
   const deviceInfoParts = [];
-  if (cameraSerials.length) deviceInfoParts.push(`Camera: ${cameraSerials.join(", ")}`);
+  if (cameraSerials.length) {
+    const cameraLabel = cameraSerials[0]?.toLowerCase().startsWith("gpv.") ? "Vida" : "Camera";
+    deviceInfoParts.push(`${cameraLabel}: ${cameraSerials.join(", ")}`);
+  }
   if (luminSerials.length) deviceInfoParts.push(`Lumin-i: ${luminSerials.join(", ")}`);
   if (evoSerials.length) deviceInfoParts.push(`Evo: ${evoSerials.join(", ")}`);
+  const crmLabel = crmId ?? "None";
   const deviceInfo = deviceInfoParts.length
-    ? `${extracted} with ${deviceInfoParts.join(", ")}. CRM #: ${crmId || "N/A"}`
-    : `${extracted}. CRM #: ${crmId || "N/A"}`;
+    ? `${extracted} with ${deviceInfoParts.join(", ")}. CRM #: ${crmLabel}`
+    : `${extracted}. CRM #: ${crmLabel}`;
 
   const msgStart = `-You have completed a search for: ${deviceInfo}`;
   const msgLtl = "-Your device was found on the LTL Update worksheet.\n-Please place your device on the top shelf of the rack next to Dave's desk.";
   const msgRw = "-Please check the Return Watchlist worksheet for your device.\n-When Action Needed is completed delete the row. If unsure reach out to the author of the entry.";
   const msgBoth = "-Please check the LTL Update worksheet and Return Watchlist worksheet for your device.";
   const msgNone = "-No action required.";
-  const msgCopied = "-Click the Checkin Device button to continue your check-in.\n-Serial number is copied to your clipboard.";
+  const msgCopied = "-Click the CRM Inventory button to continue your check-in.\n-Serial number is copied to your clipboard.";
 
   const mountNotes = [];
   const mismatchedMounts = [];
@@ -1755,34 +1762,38 @@ async function runDeviceLookupSearch(rawInput) {
 
   let actionColor = "green";
   let combinedMsg = msgNone;
-  const mountMessage = mountNotes.length ? `\n\n${mountNotes.join("\n")}` : "";
+  const msgMount = mountNotes.length ? mountNotes.join("\n") : "";
 
   if (foundInLtl && foundInRwl) {
     actionColor = "blue";
-    combinedMsg = `${msgStart}\n\n${msgBoth}${mountMessage}\n\n${msgLtl}`;
+    combinedMsg = hasMounts
+      ? `${msgStart}\n\n${msgBoth}\n\n${msgMount}\n\n${msgLtl}`
+      : `${msgStart}\n\n${msgBoth}\n\n${msgLtl}`;
   } else if (foundInLtl) {
     actionColor = "blue";
-    combinedMsg = `${msgStart}${mountMessage}\n\n${msgLtl}`;
+    combinedMsg = hasMounts
+      ? `${msgStart}\n\n${msgMount}\n\n${msgLtl}`
+      : `${msgStart}\n\n${msgLtl}`;
   } else if (foundInRwl) {
     actionColor = "yellow";
-    combinedMsg = `${msgStart}\n\n${msgRw}${mountMessage}\n\n${msgCopied}`;
+    combinedMsg = hasMounts
+      ? `${msgStart}\n\n${msgRw}\n\n${msgMount}\n\n${msgCopied}`
+      : `${msgStart}\n\n${msgRw}\n\n${msgCopied}`;
   } else if (hasMounts) {
     actionColor = "yellow";
-    combinedMsg = `${msgStart}${mountMessage}\n\n${msgCopied}`;
+    combinedMsg = `${msgStart}\n\n${msgMount}\n\n${msgCopied}`;
   } else {
     actionColor = "green";
     combinedMsg = `${msgStart}\n\n${msgNone}\n\n${msgCopied}`;
   }
 
-  if (crmError) {
-    combinedMsg = `${combinedMsg}\n\n${crmError}`;
-    actionColor = "red";
+  if (cameraResult.error || crmError) {
+    const errorNote = [cameraResult.error, crmError].filter(Boolean).join("\n");
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", errorNote, "red");
+    return;
   }
 
   updateLookupResultCard("lookupActionCard", "lookupActionResult", combinedMsg, actionColor);
-  if (crmFullUrl) {
-    updateLookupResultCard("lookupActionCard", "lookupActionResult", `${combinedMsg}\n\n${crmFullUrl}`, actionColor);
-  }
 
   updateCopyButton("copyDeviceSnBtn", extracted, "Copy device SN");
   updateCopyButton("copyCameraSnBtn", cameraSerials.join(", "), "Copy camera SNs");
@@ -2956,21 +2967,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", () => {
-    if (!deviceLookupLastSerial) {
-      alert("Search for a device to continue.");
-      return;
-    }
-    if (!deviceLookupLastCrmId) {
-      alert("No CRM ID found for this device.");
-      return;
-    }
-    chrome.tabs.create({
-      url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
-    });
-    hasStartedCheckin = true;
-    showFormView();
-    setValue("deviceNumberInput", deviceLookupLastSerial);
-    updateDeviceRules();
+    chrome.tabs.create({ url: "https://portal.talktometechnologies.com/Admin/ManageInventory.aspx" });
   });
 
   document.getElementById("lookupOpenWorkbookBtn")?.addEventListener("click", () => {
