@@ -754,10 +754,12 @@ async function connectWorkbookHandle(targetKey, handle, { prompt = true } = {}) 
   deviceLookupWorkbookHandles[targetKey] = handle;
   const permitted = await verifyHandlePermission(handle, "read", { prompt });
   if (!permitted) {
-    const message = fileName
-      ? `Saved workbook "${fileName}" needs permission. Click Select workbook to re-authorize.`
-      : "Saved workbook needs permission. Click Select workbook to re-authorize.";
-    setWorkbookStatusMessage(targetKey, message);
+    if (prompt) {
+      const message = fileName
+        ? `Saved workbook "${fileName}" needs permission. Click Select workbook to re-authorize.`
+        : "Saved workbook needs permission. Click Select workbook to re-authorize.";
+      setWorkbookStatusMessage(targetKey, message);
+    }
     return false;
   }
   const file = await handle.getFile();
@@ -824,16 +826,22 @@ async function getTrialFilesFromFolder(handle) {
   return files.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOverride = null } = {}) {
+async function refreshTrialFilesFromFolder({
+  promptIfMissing = false,
+  handleOverride = null,
+  promptForPermission = false
+} = {}) {
   let handle = handleOverride ?? await loadTrialFilesFolderHandle().catch(() => null);
   if (!handle && promptIfMissing) {
     handle = await pickTrialFilesFolder();
   }
   if (!handle) return false;
-  const permitted = await verifyHandlePermission(handle, "read");
+  const permitted = await verifyHandlePermission(handle, "read", { prompt: promptForPermission });
   const storedName = await getTrialFilesFolderName();
   if (!permitted) {
-    updateTrialFilesFolderStatus(storedName, "Folder access blocked. Click Refresh to re-authorize.");
+    if (promptForPermission) {
+      updateTrialFilesFolderStatus(storedName, "Folder access blocked. Click Refresh to re-authorize.");
+    }
     return false;
   }
   const files = await getTrialFilesFromFolder(handle);
@@ -869,7 +877,7 @@ async function initTrialFilesFolderSetting() {
     await pickTrialFilesFolder();
   });
   trialFilesFolderRefreshBtn?.addEventListener("click", async () => {
-    await refreshTrialFilesFromFolder({ promptIfMissing: true });
+    await refreshTrialFilesFromFolder({ promptIfMissing: true, promptForPermission: true });
   });
 }
 
