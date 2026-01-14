@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Check-in Panel</title>
+  <link rel="stylesheet" href="panel.css" />
+  <script src="libs/jszip.min.js"></script>
+</head>
+<body>
+
+  <!-- ONBOARDING VIEW -->
+  <div class="container onboarding-view" id="onboardingView" style="display:none;">
+    <h1>Welcome to CRM Sidekick</h1>
+    <p class="complete-intro">Tell us your name, choose your starting color theme, and connect your device lookup workbooks.</p>
+    <form id="onboardingForm">
+      <label for="userFirstName">First name</label>
+      <input type="text" id="userFirstName" autocomplete="given-name" required />
+
+      <label for="userLastName">Last name</label>
+      <input type="text" id="userLastName" autocomplete="family-name" required />
+
+
+      <label for="onboardingThemeSelect">Starting color theme</label>
+      <select id="onboardingThemeSelect" required></select>
+
+      <label class="checkbox-row" for="onboardingDailyCounterToggle">
+        <input type="checkbox" id="onboardingDailyCounterToggle" />
+        Show daily task counter on the landing page
+      </label>
+
+      <div class="note-preview">
+        <div class="note-preview__title">OneDrive workbook connections</div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">RWL &amp; LTL Update</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+          </div>
+          <input type="file" id="onboardingLtlFileInput" data-workbook-input="ltl" accept=".xlsx,.xlsm" />
+          <div id="onboardingLtlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">MountLog</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+          </div>
+          <input type="file" id="onboardingMountFileInput" data-workbook-input="mount" accept=".xlsx,.xlsm" />
+          <div id="onboardingMountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">Loan Library CRM Check</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+          </div>
+          <input type="file" id="onboardingCrmFileInput" data-workbook-input="crm" accept=".xlsx,.xlsm" />
+          <div id="onboardingCrmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
+        </div>
+      </div>
+
+      <button type="submit">Save &amp; Continue</button>
+    </form>
+  </div>
+
+  <!-- LANDING VIEW -->
+  <div class="container landing-view" id="landingView">
+    <div class="landing-content">
+      <div class="landing-header">
+        <h1 class="landing-title">CRM Sidekick</h1>
+      </div>
+      <img class="landing-symojo" src="assets/sparknsymoji.png" alt="Spark mascot" />
+      <p class="landing-greeting" id="landingGreeting"></p>
+      <div class="daily-counter" id="dailyCounterSection" aria-label="Daily task counter">
+        <div class="daily-counter__header">
+          <span>Daily task counter</span>
+          <button id="clearDailyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear daily counters">
+            Clear
+          </button>
+        </div>
+        <div class="daily-counter__grid">
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">Checkins</span>
+            <span class="daily-counter__value" id="dailyCheckinsCount">0</span>
+          </div>
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">QA's</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="-1" aria-label="Decrease QA count">-</button>
+              <span class="daily-counter__value" id="dailyQasCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="1" aria-label="Increase QA count">+</button>
+            </div>
+          </div>
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">Preps</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="-1" aria-label="Decrease prep count">-</button>
+              <span class="daily-counter__value" id="dailyPrepsCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="1" aria-label="Increase prep count">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="landing-subtitle">Pick a workflow to get started.</p>
+      <div class="landing-section">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false">
+          Check-in Tools
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="checkin-tools" hidden>
+          <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button">
+            Device Number Lookup Sidekick
+          </button>
+          <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button">
+            Check-in Sidekick
+          </button>
+        </div>
+      </div>
+      <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button">
+        Grid Sidekick
+      </button>
+      <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
+        CRM Navigator
+      </button>
+      <div class="landing-section">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false">
+          Trials Links
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="trials-links" hidden>
+          <button id="qaFormBtn" class="toggle-btn landing-btn" type="button">
+            QA Form
+          </button>
+          <button id="appOverridesBtn" class="toggle-btn landing-btn" type="button">
+            APP Overrides
+          </button>
+        </div>
+      </div>
+    </div>
+    <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
+      <span class="landing-settings-icon" aria-hidden="true">⚙</span>
+      <span>User settings</span>
+    </button>
+    <div class="landing-version" id="landingVersion"></div>
+    <img class="landing-corner-symojo" src="assets/symoji.png" alt="Symoji mascot" />
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="container settings-view" id="settingsView" style="display:none;">
+    <h1>User Settings &amp; Theme</h1>
+    <p class="complete-intro">Update your profile details or select a new Sidekick theme.</p>
+    <div class="note-preview">
+      <div class="note-preview__title">OneDrive workbook connections</div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">RWL &amp; LTL Update</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+        </div>
+        <input type="file" id="ltlFileInput" data-workbook-input="ltl" accept=".xlsx,.xlsm" />
+        <div id="ltlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
+      </div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">MountLog</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+        </div>
+        <input type="file" id="mountFileInput" data-workbook-input="mount" accept=".xlsx,.xlsm" />
+        <div id="mountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
+      </div>
+      <div class="lookup-file">
+        <div>
+          <div class="lookup-file__title">Loan Library CRM Check</div>
+          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+        </div>
+        <input type="file" id="crmFileInput" data-workbook-input="crm" accept=".xlsx,.xlsm" />
+        <div id="crmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
+      </div>
+    </div>
+    <div class="theme-menu" id="themeMenu">
+      <div class="theme-menu__title">User management</div>
+      <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
+        Edit user profile
+      </button>
+      <label class="checkbox-row" for="dailyCounterToggle">
+        <input type="checkbox" id="dailyCounterToggle" />
+        Show daily task counter on the landing page
+      </label>
+      <label for="zipFolderInput">Default zip save folder</label>
+      <input type="text" id="zipFolderInput" placeholder="e.g., CRM Sidekick Zips" />
+      <p class="hint-text">Uses a subfolder inside your Downloads directory. Leave blank to use the default downloads folder.</p>
+      <button class="toggle-btn theme-menu__action" id="zipFolderSaveBtn" type="button">
+        Save zip folder
+      </button>
+      <div id="zipFolderStatus" class="status-line">Saving zips to your default Downloads folder.</div>
+      <label for="cleanupFolderPickBtn">Start another check-in cleanup folder</label>
+      <p class="hint-text">Choose a folder to clear whenever you start another check-in.</p>
+      <button class="toggle-btn theme-menu__action" id="cleanupFolderPickBtn" type="button">
+        Choose cleanup folder
+      </button>
+      <div id="cleanupFolderStatus" class="status-line">No cleanup folder selected yet.</div>
+      <div class="theme-menu__title">Sidekick color themes</div>
+      <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
+      <div class="theme-options">
+        <button class="theme-option" type="button" data-theme="ocean" style="--theme-swatch:#81cfff;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Ocean Blue</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="sunset" style="--theme-swatch:#ff9f68;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Sunset Ember</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="forest" style="--theme-swatch:#6ee7b7;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Forest Glow</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="plum" style="--theme-swatch:#c084fc;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Plum Night</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="slate" style="--theme-swatch:#94a3b8;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Slate Storm</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="aurora" style="--theme-swatch:#5eead4;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Aurora Mint</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="citrus" style="--theme-swatch:#facc15;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Citrus Pop</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="sand" style="--theme-swatch:#f5d0a9;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Desert Sand</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="midnight" style="--theme-swatch:#8b5cf6;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Midnight Violet</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="rose" style="--theme-swatch:#f472b6;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Rose Quartz</span>
+        </button>
+        <button class="theme-option" type="button" data-theme="chaos" style="--theme-swatch:#f9a8d4;">
+          <span class="theme-swatch"></span>
+          <span class="theme-option__label">Chaos Goblin</span>
+        </button>
+      </div>
+      <div class="chaos-controls" id="chaosControls" style="display:none;">
+        <label for="chaosRotationInput">Chaos rotation speed (seconds)</label>
+        <input type="number" id="chaosRotationInput" min="1" step="1" placeholder="30" />
+        <p class="chaos-hint">Defaults to 30 seconds if left blank.</p>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="settingsReturnBtn" class="toggle-btn" type="button">
+        Return to CRM Sidekick
+      </button>
+    </div>
+  </div>
+
+  <!-- CRM NAVIGATOR VIEW -->
+  <div class="container crm-navigator-view" id="crmNavigatorView" style="display:none;">
+    <h1>CRM Navigator</h1>
+    <p class="complete-intro">Enter a CRM ID to jump straight to the client record.</p>
+    <form id="crmNavigatorForm">
+      <label for="crmNavigatorInput">CRM ID</label>
+      <input type="text" id="crmNavigatorInput" placeholder="Enter CRM ID" required />
+      <button type="submit" id="crmNavigatorGoBtn">Go!</button>
+    </form>
+    <div class="crm-nav-footer">
+      <button id="crmNavigatorReturnBtn" class="toggle-btn" type="button">
+        Return to CRM Sidekick
+      </button>
+    </div>
+  </div>
+
+  <!-- DEVICE LOOKUP VIEW -->
+  <div class="container device-lookup-view" id="deviceLookupView" style="display:none;">
+    <h1>Device Number Lookup Sidekick</h1>
+    <p class="complete-intro">Lookup device, mount, and camera info using the OneDrive workbooks.</p>
+
+    <form id="deviceLookupForm" class="lookup-form">
+      <label for="deviceLookupInput">Device serial number</label>
+      <input type="text" id="deviceLookupInput" placeholder="Scan or type the serial number" required />
+      <div class="lookup-meta">
+        <div>
+          <div class="lookup-meta__label">Raw scan</div>
+          <div id="deviceLookupRaw" class="lookup-meta__value">—</div>
+        </div>
+        <div>
+          <div class="lookup-meta__label">Extracted serial</div>
+          <div id="deviceLookupExtracted" class="lookup-meta__value">—</div>
+        </div>
+      </div>
+      <button type="submit" id="deviceLookupSearchBtn">Search</button>
+    </form>
+
+    <div class="lookup-results">
+      <div class="note-preview lookup-result" id="lookupSerialCard">
+        <div class="note-preview__title">Serial number result</div>
+        <pre id="lookupSerialResult" class="note-preview__body"></pre>
+      </div>
+      <div class="note-preview lookup-result" id="lookupMountCard">
+        <div class="note-preview__title">Mount result</div>
+        <pre id="lookupMountResult" class="note-preview__body"></pre>
+      </div>
+      <div class="note-preview lookup-result lookup-result--wide" id="lookupActionCard">
+        <div class="note-preview__title">Action required</div>
+        <pre id="lookupActionResult" class="note-preview__body"></pre>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Quick copy</div>
+      <div class="lookup-copy-grid">
+        <button class="copy-btn" type="button" id="copyDeviceSnBtn" disabled>Copy device SN</button>
+        <button class="copy-btn" type="button" id="copyCameraSnBtn" disabled>Copy camera SNs</button>
+        <button class="copy-btn" type="button" id="copyLuminSnBtn" disabled>Copy Lumin-I SNs</button>
+        <button class="copy-btn" type="button" id="copyEvoSnBtn" disabled>Copy Evo SNs</button>
+        <button class="copy-btn" type="button" id="copyCrmBtn" disabled>Copy CRM #</button>
+        <button class="copy-btn" type="button" id="copyClampBtn" disabled>Copy clamp mount</button>
+        <button class="copy-btn" type="button" id="copyTableBtn" disabled>Copy table mount</button>
+        <button class="copy-btn" type="button" id="copyRollingBtn" disabled>Copy rolling mount</button>
+      </div>
+      <div id="lookupCopyStatus" class="status-line"></div>
+    </div>
+
+    <div class="mini-row">
+      <button id="lookupOpenCrmBtn" class="toggle-btn" type="button">Begin Check-in</button>
+      <button id="lookupOpenWorkbookBtn" class="toggle-btn" type="button">Open LTL/RWL workbook</button>
+    </div>
+
+    <div class="crm-nav-footer">
+      <button id="deviceLookupReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+  </div>
+
+  <!-- APP OVERRIDES VIEW -->
+  <div class="container app-overrides-view" id="appOverridesView" style="display:none;">
+    <h1>APP Overrides</h1>
+    <p class="complete-intro">Quick reference for app override credentials and paths.</p>
+    <div class="note-preview">
+      <div class="note-preview__title">Overrides</div>
+      <div class="note-preview__body">
+        <p><strong>Touchchat:</strong> 72584556</p>
+        <p><strong>P2G:</strong> vygh-phi-rhy-mo</p>
+        <p><strong>Lamp:</strong> IOS &rarr; LAMP &rarr; Settings</p>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="appOverridesReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+  </div>
+
+  <!-- GRID SIDEKICK VIEW -->
+  <div class="container" id="gridView" style="display:none;">
+    <h1>Grid Sidekick</h1>
+    <p class="complete-intro">Generate Grid credentials for the selected CRM client.</p>
+
+    <div class="mini-row">
+      <button id="gridRefreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
+      <button id="gridReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+
+    <div class="grid-form">
+      <label>Client First Name</label>
+      <input type="text" id="gridFirstName" />
+
+      <label>Client Last Name</label>
+      <input type="text" id="gridLastName" />
+
+      <label>CRM ID</label>
+      <input type="text" id="gridCrmId" />
+
+      <div class="grid-toggle">
+        <label class="grid-toggle__option">
+          <input type="radio" name="gridType" value="CL" checked />
+          CL
+        </label>
+        <label class="grid-toggle__option">
+          <input type="radio" name="gridType" value="LTL" />
+          LTL
+        </label>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Grid credentials</div>
+      <label class="copy-label" for="gridEmailField">Grid email</label>
+      <div class="copy-row">
+        <input type="text" id="gridEmailField" class="copy-field" readonly placeholder="Generated Grid email" />
+        <button id="gridEmailCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
+      </div>
+      <label class="copy-label" for="gridPasswordField">Grid password</label>
+      <div class="copy-row">
+        <input type="text" id="gridPasswordField" class="copy-field" readonly placeholder="Xqxq77##" />
+        <button id="gridPasswordCopyBtn" class="copy-btn" type="button">Copy</button>
+      </div>
+      <label class="copy-label" for="gridCrmInfoField">CRM Grid info</label>
+      <div class="copy-row">
+        <input type="text" id="gridCrmInfoField" class="copy-field" readonly placeholder="Grid: generated email | Xqxq77##" />
+        <button id="gridCrmInfoCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
+      </div>
+      <div id="gridStatus" class="status-line"></div>
+    </div>
+  </div>
+
+  <!-- FORM VIEW -->
+  <div class="container" id="formView" style="display:none;">
+    <h1>Trials Automated Check-in SideKick</h1>
+
+    <div class="mini-row">
+      <button id="refreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
+      <button id="returnToLandingBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+
+    <form id="checkinForm">
+
+      <!-- Device number -->
+      <label>Device Number (Put an X if only Checking in Mount) *</label>
+      <input type="text" id="deviceNumberInput" required />
+
+      <!-- Device condition -->
+      <div id="conditionContainer">
+        <label>Device Condition *</label>
+        <select id="conditionSelect" required>
+          <option value="">Select condition...</option>
+          <option value="Working">Working</option>
+          <option value="Needs Repair">Needs Repair</option>
+        </select>
+      </div>
+
+      <!-- Repairs -->
+      <div id="repairSection" class="hidden-section">
+        <label>Repairs Needed</label>
+        <div class="repair-buttons">
+          <button type="button" class="repair-btn">Loose or broken handle</button>
+          <button type="button" class="repair-btn">Loose or broken kickstand</button>
+          <button type="button" class="repair-btn">Replace screen protector</button>
+          <button type="button" class="repair-btn">Missing buttons</button>
+          <button type="button" class="repair-btn">Broken display</button>
+          <button type="button" class="repair-btn" id="otherRepairBtn">Other</button>
+        </div>
+
+        <textarea id="repairsTextBox" placeholder="Selected repairs will appear here..."></textarea>
+        <textarea id="otherRepairInput" placeholder="Describe other repair..." style="display:none;"></textarea>
+      </div>
+
+      <!-- Client info -->
+      <label>Client First Name</label>
+      <input type="text" id="firstName" />
+
+      <label>Client Last Name</label>
+      <input type="text" id="lastName" />
+
+      <label>AAC</label>
+      <input type="text" id="aac" />
+
+      <label>CRM ID</label>
+      <input type="text" id="crmId" />
+
+      <!-- Vocab checkbox -->
+      <label style="margin-top:12px;">
+        <input type="checkbox" id="vocabNotReturned" />
+        Vocab NOT returned
+      </label>
+
+      <!-- Camera / Lumin -->
+      <button type="button" class="toggle-btn" id="cameraToggle">+ Add Camera & Lumin-I Info</button>
+      <div id="cameraLuminSection" class="hidden-section">
+        <label>Camera Number</label>
+        <input type="text" name="cameraNumber" />
+
+        <label>Lumin-I Number (GPL.XXXXXXX)</label>
+        <input type="text" name="luminNumber" />
+      </div>
+
+      <!-- Mounts -->
+      <button type="button" class="toggle-btn" id="mountToggle">+ Add Mount Info</button>
+      <div id="mountSection" class="hidden-section">
+        <label>Clamp Mount Number</label>
+        <input type="text" name="clampMount" />
+
+        <label>Table Mount Number</label>
+        <input type="text" name="tableMount" />
+
+        <label>Rolling Mount Number</label>
+        <input type="text" name="rollingMount" />
+      </div>
+
+      <!-- Accessories -->
+      <button type="button" class="toggle-btn" id="accessoryToggle">+ Add Trial Accessories</button>
+      <div id="accessorySection" class="hidden-section">
+        <label>Trial Accessories (Switches, KGs)</label>
+        <input type="text" name="accessories" />
+      </div>
+
+      <!-- Trial files -->
+      <div class="upload-block">
+        <label>Trial Vocab/Export Files</label>
+        <button class="toggle-btn" id="trialFilesFolderPickBtn" type="button">
+          Choose trial files folder
+        </button>
+        <button class="toggle-btn" id="trialFilesFolderRefreshBtn" type="button">
+          Refresh folder files
+        </button>
+        <div id="trialFilesFolderStatus" class="status-line">No trial files folder selected yet.</div>
+        <div class="hint-text">
+          The Sidekick will pull every file from the selected folder when you click Next Step.
+        </div>
+        <input type="file" id="trialFilesInput" multiple />
+        <div class="hint-text">
+          Select the Grid, Saltillo, and P2G exports you want zipped if you don't use a folder.
+          We'll prompt you to save the zip when you click Next Step.
+        </div>
+        <div id="trialFilesStatus" class="status-line">No files selected.</div>
+      </div>
+
+      <button type="submit" id="submitBtn">Next Step</button>
+    </form>
+
+    <div id="thankYouMessage">✅ Check-in completed.</div>
+  </div>
+
+  <!-- COMPLETE VIEW -->
+  <div class="container" id="completeView" style="display:none;">
+    <h1>Next Steps</h1>
+    <p id="completeIntro" class="complete-intro"></p>
+
+    <div id="uploadPrompt" class="note-preview" style="display:none;">
+      <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
+      <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
+      <div class="copy-row">
+        <input type="text" id="zipFilenameField" class="copy-field" readonly />
+        <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">CRM note submitted</div>
+      <pre id="notePreviewText" class="note-preview__body"></pre>
+    </div>
+
+    <button id="startAnotherBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Next Step
+    </button>
+  </div>
+
+  <!-- SMARTBOX REPAIR VIEW -->
+  <div class="container" id="smartboxRepairView" style="display:none;">
+    <h1>Smartbox Repair Tracker</h1>
+    <p class="complete-intro">
+      This Talk Pad/Grid Pad needs repair. Please complete the Smartbox Repair Tracker before running inventory.
+    </p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Smartbox Repair Tracker form</div>
+      <p class="note-preview__body">
+        <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u" target="_blank" rel="noopener noreferrer">
+          Open the Smartbox Repair Tracker
+        </a>
+      </p>
+    </div>
+
+    <button id="openSmartboxRepairBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Open Smartbox Repair Tracker
+    </button>
+    <button id="smartboxContinueBtn" class="toggle-btn" type="button" style="margin-top:10px;">
+      Continue to Inventory
+    </button>
+  </div>
+
+  <!-- INVENTORY VIEW -->
+  <div class="container" id="inventoryView" style="display:none;">
+    <h1>Manage Inventory</h1>
+    <p class="complete-intro">Run the inventory script using the device, camera, or Lumin-I number from your last check-in.</p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Search value</div>
+      <pre id="inventorySearchValue" class="note-preview__body"></pre>
+      <div id="inventoryStatus" class="status-line"></div>
+    </div>
+
+    <button id="runInventoryScriptBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Run inventory script
+    </button>
+    <button id="inventoryNextStepBtn" class="toggle-btn" type="button" style="margin-top:10px; display:none;">
+      Next Step
+    </button>
+  </div>
+
+  <!-- DAF recap VIEW -->
+  <div class="container" id="dafRecapView" style="display:none;">
+    <h1>DAF Recap</h1>
+    <p class="complete-intro">
+      We opened the DAF form in a new tab. Review the check-in details that will auto-fill on the form. Use the copy buttons if the form blocks autofill.
+    </p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Check-in details</div>
+      <div id="dafRecapFields" class="daf-fields"></div>
+      <div id="dafRecapEmpty" class="hint-text"></div>
+      <div id="dafRecapStatus" class="status-line"></div>
+    </div>
+
+    <button id="dafAutofillBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Run DAF Autofill
+    </button>
+
+    <button id="finishCheckinBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Final Step
+    </button>
+  </div>
+
+  <!-- Outlook email VIEW -->
+  <div class="container" id="emailView" style="display:none;">
+    <h1>Final Step</h1>
+    <p class="complete-intro">
+      Open Outlook and send the email from Trials Operations to Trials. Copy the subject and body below.
+    </p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Email subject</div>
+      <div class="copy-row">
+        <input type="text" id="emailSubjectField" class="copy-field" readonly />
+        <button id="copyEmailSubjectBtn" class="copy-btn" type="button">Copy subject</button>
+      </div>
+    </div>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Email body</div>
+      <pre id="emailBodyPreview" class="note-preview__body"></pre>
+      <div id="emailStatus" class="status-line"></div>
+    </div>
+
+    <button id="copyEmailBodyBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Copy email body
+    </button>
+
+    <button id="emailDoneBtn" class="toggle-btn" type="button" style="margin-top:10px;">
+      Start another check-in
+    </button>
+  </div>
+
+  <!-- Panel logic -->
+  <script src="panel.js"></script>
+</body>
+</html>
