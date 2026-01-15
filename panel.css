@@ -576,6 +576,38 @@ button[type="submit"]:hover {
   transition: background-color 0.6s ease, border-color 0.6s ease;
 }
 
+.prep-checklist__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prep-checklist__item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.92rem;
+  color: var(--text-color);
+}
+
+.prep-checklist__item input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.prep-checklist__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prep-checklist__sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 22px;
+}
+
 .copy-row {
   display: flex;
   gap: 8px;
