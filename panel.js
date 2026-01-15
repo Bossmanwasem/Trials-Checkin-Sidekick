@@ -41,7 +41,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -56,6 +56,7 @@ function showLandingView() {
   showView("landingView");
   void refreshLandingView();
 }
+function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
@@ -444,6 +445,10 @@ function applyTheme(themeId, { persist = true } = {}) {
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
   updateThemeSelection(resolvedTheme);
+  const themeSelect = document.getElementById("onboardingThemeSelect");
+  if (themeSelect) {
+    themeSelect.value = resolvedTheme;
+  }
   if (persist) saveThemePreference(resolvedTheme);
 }
 
@@ -539,8 +544,32 @@ async function initDailyCounterSetting() {
 function initThemeControls() {
   const menuBtn = document.getElementById("themeMenuBtn");
   menuBtn?.addEventListener("click", () => {
-    showOnboardingView();
+    showSettingsView();
   });
+
+  const themeOptions = document.getElementById("themeOptions");
+  if (themeOptions) {
+    themeOptions.innerHTML = "";
+    Object.entries(THEMES).forEach(([id, theme]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "theme-option";
+      button.dataset.theme = id;
+      button.setAttribute("aria-pressed", "false");
+
+      const swatch = document.createElement("span");
+      swatch.className = "theme-swatch";
+      swatch.style.setProperty("--theme-swatch", theme.vars["accent"] || "");
+
+      const label = document.createElement("span");
+      label.className = "theme-option__label";
+      label.textContent = theme.label;
+
+      button.appendChild(swatch);
+      button.appendChild(label);
+      themeOptions.appendChild(button);
+    });
+  }
 
   document.querySelectorAll(".theme-option").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -3037,6 +3066,14 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
     showCrmNavigatorView();
+  });
+
+  document.getElementById("settingsReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
+    showOnboardingView();
   });
 
   document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
