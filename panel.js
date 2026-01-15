@@ -397,7 +397,7 @@ function applyChaosThemeTransition(theme) {
 function updateChaosControlsVisibility(themeId) {
   const controls = document.getElementById("chaosControls");
   if (controls) {
-    controls.style.display = themeId === "chaos" ? "flex" : "none";
+    controls.style.display = themeId === "chaos" ? "grid" : "none";
   }
 }
 
@@ -534,6 +534,41 @@ async function initDailyCounterSetting() {
   toggle.addEventListener("change", async () => {
     await setDailyCounterEnabled(toggle.checked);
     await updateDailyCounterVisibility();
+  });
+}
+
+function initSettingsTabs() {
+  const tabs = Array.from(document.querySelectorAll("[data-settings-tab]"));
+  const panels = Array.from(document.querySelectorAll("[data-settings-panel]"));
+  if (!tabs.length || !panels.length) return;
+
+  const setActiveTab = key => {
+    tabs.forEach(tab => {
+      const isActive = tab.dataset.settingsTab === key;
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+      tab.tabIndex = isActive ? 0 : -1;
+    });
+    panels.forEach(panel => {
+      panel.hidden = panel.dataset.settingsPanel !== key;
+    });
+  };
+
+  const defaultTab = tabs.find(tab => tab.getAttribute("aria-selected") === "true")?.dataset.settingsTab
+    || tabs[0].dataset.settingsTab;
+  setActiveTab(defaultTab);
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => {
+      setActiveTab(tab.dataset.settingsTab);
+    });
+    tab.addEventListener("keydown", event => {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      event.preventDefault();
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextIndex = (index + direction + tabs.length) % tabs.length;
+      tabs[nextIndex].focus();
+      setActiveTab(tabs[nextIndex].dataset.settingsTab);
+    });
   });
 }
 
@@ -864,6 +899,7 @@ async function initTrialFilesFolderSetting() {
 }
 
 initThemeControls();
+initSettingsTabs();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();

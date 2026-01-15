@@ -149,107 +149,133 @@
   <div class="container settings-view" id="settingsView" style="display:none;">
     <h1>User Settings &amp; Theme</h1>
     <p class="complete-intro">Update your profile details or select a new Sidekick theme.</p>
-    <div class="note-preview">
-      <div class="note-preview__title">OneDrive workbook connections</div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">RWL &amp; LTL Update</div>
-          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
-        </div>
-        <button type="button" class="toggle-btn" data-workbook-connect="ltl">Connect workbook</button>
-        <button type="button" class="toggle-btn" data-workbook-open="ltl">Open workbook</button>
-        <div id="ltlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
+    <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+      <button class="settings-tab" type="button" role="tab" id="settingsTabUser" aria-controls="settingsPanelUser" aria-selected="true" data-settings-tab="user">
+        User management
+      </button>
+      <button class="settings-tab" type="button" role="tab" id="settingsTabWorkbooks" aria-controls="settingsPanelWorkbooks" aria-selected="false" data-settings-tab="workbooks">
+        Workbook connections
+      </button>
+      <button class="settings-tab" type="button" role="tab" id="settingsTabThemes" aria-controls="settingsPanelThemes" aria-selected="false" data-settings-tab="themes">
+        Theme selection
+      </button>
+    </div>
+    <div class="settings-panel" id="settingsPanelUser" role="tabpanel" aria-labelledby="settingsTabUser" data-settings-panel="user">
+      <div class="settings-card">
+        <div class="settings-card__title">Profile</div>
+        <button class="toggle-btn settings-card__action" id="userSettingsActionBtn" type="button">
+          Edit user profile
+        </button>
+        <label class="checkbox-row" for="dailyCounterToggle">
+          <input type="checkbox" id="dailyCounterToggle" />
+          Show daily task counter on the landing page
+        </label>
       </div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">MountLog</div>
-          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
-        </div>
-        <button type="button" class="toggle-btn" data-workbook-connect="mount">Connect workbook</button>
-        <button type="button" class="toggle-btn" data-workbook-open="mount">Open workbook</button>
-        <div id="mountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
+      <div class="settings-card">
+        <div class="settings-card__title">Zip save folder</div>
+        <label for="zipFolderInput">Default zip save folder</label>
+        <input type="text" id="zipFolderInput" placeholder="e.g., CRM Sidekick Zips" />
+        <p class="hint-text">Uses a subfolder inside your Downloads directory. Leave blank to use the default downloads folder.</p>
+        <button class="toggle-btn settings-card__action" id="zipFolderSaveBtn" type="button">
+          Save zip folder
+        </button>
+        <div id="zipFolderStatus" class="status-line">Saving zips to your default Downloads folder.</div>
       </div>
-      <div class="lookup-file">
-        <div>
-          <div class="lookup-file__title">Loan Library CRM Check</div>
-          <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
-        </div>
-        <button type="button" class="toggle-btn" data-workbook-connect="crm">Connect workbook</button>
-        <button type="button" class="toggle-btn" data-workbook-open="crm">Open workbook</button>
-        <div id="crmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
+      <div class="settings-card">
+        <div class="settings-card__title">Cleanup folder</div>
+        <label for="cleanupFolderPickBtn">Start another check-in cleanup folder</label>
+        <p class="hint-text">Choose a folder to clear whenever you start another check-in.</p>
+        <button class="toggle-btn settings-card__action" id="cleanupFolderPickBtn" type="button">
+          Choose cleanup folder
+        </button>
+        <div id="cleanupFolderStatus" class="status-line">No cleanup folder selected yet.</div>
       </div>
     </div>
-    <div class="theme-menu" id="themeMenu">
-      <div class="theme-menu__title">User management</div>
-      <button class="toggle-btn theme-menu__action" id="userSettingsActionBtn" type="button">
-        Edit user profile
-      </button>
-      <label class="checkbox-row" for="dailyCounterToggle">
-        <input type="checkbox" id="dailyCounterToggle" />
-        Show daily task counter on the landing page
-      </label>
-      <label for="zipFolderInput">Default zip save folder</label>
-      <input type="text" id="zipFolderInput" placeholder="e.g., CRM Sidekick Zips" />
-      <p class="hint-text">Uses a subfolder inside your Downloads directory. Leave blank to use the default downloads folder.</p>
-      <button class="toggle-btn theme-menu__action" id="zipFolderSaveBtn" type="button">
-        Save zip folder
-      </button>
-      <div id="zipFolderStatus" class="status-line">Saving zips to your default Downloads folder.</div>
-      <label for="cleanupFolderPickBtn">Start another check-in cleanup folder</label>
-      <p class="hint-text">Choose a folder to clear whenever you start another check-in.</p>
-      <button class="toggle-btn theme-menu__action" id="cleanupFolderPickBtn" type="button">
-        Choose cleanup folder
-      </button>
-      <div id="cleanupFolderStatus" class="status-line">No cleanup folder selected yet.</div>
-      <div class="theme-menu__title">Sidekick color themes</div>
-      <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
-      <div class="theme-options">
-        <button class="theme-option" type="button" data-theme="ocean" style="--theme-swatch:#81cfff;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Ocean Blue</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="sunset" style="--theme-swatch:#ff9f68;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Sunset Ember</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="forest" style="--theme-swatch:#6ee7b7;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Forest Glow</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="plum" style="--theme-swatch:#c084fc;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Plum Night</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="slate" style="--theme-swatch:#94a3b8;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Slate Storm</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="aurora" style="--theme-swatch:#5eead4;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Aurora Mint</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="citrus" style="--theme-swatch:#facc15;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Citrus Pop</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="sand" style="--theme-swatch:#f5d0a9;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Desert Sand</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="midnight" style="--theme-swatch:#8b5cf6;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Midnight Violet</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="rose" style="--theme-swatch:#f472b6;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Rose Quartz</span>
-        </button>
-        <button class="theme-option" type="button" data-theme="chaos" style="--theme-swatch:#f9a8d4;">
-          <span class="theme-swatch"></span>
-          <span class="theme-option__label">Chaos Goblin</span>
-        </button>
+    <div class="settings-panel" id="settingsPanelWorkbooks" role="tabpanel" aria-labelledby="settingsTabWorkbooks" data-settings-panel="workbooks" hidden>
+      <div class="note-preview">
+        <div class="note-preview__title">OneDrive workbook connections</div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">RWL &amp; LTL Update</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+          </div>
+          <button type="button" class="toggle-btn" data-workbook-connect="ltl">Connect workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-open="ltl">Open workbook</button>
+          <div id="ltlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">MountLog</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+          </div>
+          <button type="button" class="toggle-btn" data-workbook-connect="mount">Connect workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-open="mount">Open workbook</button>
+          <div id="mountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">Loan Library CRM Check</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+          </div>
+          <button type="button" class="toggle-btn" data-workbook-connect="crm">Connect workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-open="crm">Open workbook</button>
+          <div id="crmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
+        </div>
       </div>
-      <div class="chaos-controls" id="chaosControls" style="display:none;">
+    </div>
+    <div class="settings-panel" id="settingsPanelThemes" role="tabpanel" aria-labelledby="settingsTabThemes" data-settings-panel="themes" hidden>
+      <div class="settings-card">
+        <div class="settings-card__title">Sidekick color themes</div>
+        <div class="theme-current" id="themeCurrentLabel">Current theme: Ocean Blue</div>
+        <div class="theme-options">
+          <button class="theme-option" type="button" data-theme="ocean" style="--theme-swatch:#81cfff;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Ocean Blue</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="sunset" style="--theme-swatch:#ff9f68;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Sunset Ember</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="forest" style="--theme-swatch:#6ee7b7;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Forest Glow</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="plum" style="--theme-swatch:#c084fc;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Plum Night</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="slate" style="--theme-swatch:#94a3b8;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Slate Storm</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="aurora" style="--theme-swatch:#5eead4;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Aurora Mint</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="citrus" style="--theme-swatch:#facc15;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Citrus Pop</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="sand" style="--theme-swatch:#f5d0a9;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Desert Sand</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="midnight" style="--theme-swatch:#8b5cf6;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Midnight Violet</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="rose" style="--theme-swatch:#f472b6;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Rose Quartz</span>
+          </button>
+          <button class="theme-option" type="button" data-theme="chaos" style="--theme-swatch:#f9a8d4;">
+            <span class="theme-swatch"></span>
+            <span class="theme-option__label">Chaos Goblin</span>
+          </button>
+        </div>
+      </div>
+      <div class="settings-card chaos-controls" id="chaosControls" style="display:none;">
+        <div class="settings-card__title">Chaos rotation</div>
         <label for="chaosRotationInput">Chaos rotation speed (seconds)</label>
         <input type="number" id="chaosRotationInput" min="1" step="1" placeholder="30" />
         <p class="chaos-hint">Defaults to 30 seconds if left blank.</p>
