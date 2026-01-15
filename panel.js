@@ -279,6 +279,196 @@ const THEMES = {
       "error-color": "#ff8fab"
     }
   },
+  snow: {
+    label: "Snow Day",
+    vars: {
+      "bg-color": "#f8fafc",
+      "text-color": "#0f172a",
+      "muted-text": "#475569",
+      "container-bg": "#ffffff",
+      "container-border": "#cbd5f5",
+      "container-shadow": "0 0 24px rgba(148, 163, 184, 0.35)",
+      "accent": "#4f46e5",
+      "accent-strong": "#1e1b4b",
+      "accent-strong-hover": "#312e81",
+      "input-bg": "#f1f5f9",
+      "input-border": "#cbd5e1",
+      "note-bg": "#eef2ff",
+      "note-border": "#c7d2fe",
+      "error-color": "#dc2626"
+    }
+  },
+  coral: {
+    label: "Coral Reef",
+    vars: {
+      "bg-color": "#0b1416",
+      "text-color": "#e6fffb",
+      "muted-text": "#b4f3ef",
+      "container-bg": "#102126",
+      "container-border": "#ff8fa3",
+      "container-shadow": "0 0 20px rgba(255, 143, 163, 0.25)",
+      "accent": "#ff8fa3",
+      "accent-strong": "#5e2a3a",
+      "accent-strong-hover": "#7a3547",
+      "input-bg": "#1b2c31",
+      "input-border": "#3d5a63",
+      "note-bg": "#0f1d20",
+      "note-border": "#2f4b52",
+      "error-color": "#ff7b7b"
+    }
+  },
+  lagoon: {
+    label: "Lagoon Glow",
+    vars: {
+      "bg-color": "#0a1412",
+      "text-color": "#eafff5",
+      "muted-text": "#b8f5e0",
+      "container-bg": "#13241f",
+      "container-border": "#34d399",
+      "container-shadow": "0 0 20px rgba(52, 211, 153, 0.24)",
+      "accent": "#22d3ee",
+      "accent-strong": "#0f4c5c",
+      "accent-strong-hover": "#126277",
+      "input-bg": "#1c2f2a",
+      "input-border": "#3f5f55",
+      "note-bg": "#0f1d1a",
+      "note-border": "#2e4c43",
+      "error-color": "#ff9aa2"
+    }
+  },
+  prism: {
+    label: "Prism Party",
+    vars: {
+      "bg-color": "#12111a",
+      "text-color": "#f5f0ff",
+      "muted-text": "#d7c7ff",
+      "container-bg": "#1d1b2f",
+      "container-border": "#f472b6",
+      "container-shadow": "0 0 20px rgba(59, 130, 246, 0.25)",
+      "accent": "#38bdf8",
+      "accent-strong": "#1e3a8a",
+      "accent-strong-hover": "#1d4ed8",
+      "input-bg": "#2a2640",
+      "input-border": "#514773",
+      "note-bg": "#181427",
+      "note-border": "#3a3456",
+      "error-color": "#f97316"
+    }
+  },
+  neon: {
+    label: "Neon Circuit",
+    vars: {
+      "bg-color": "#0a0d14",
+      "text-color": "#eaf6ff",
+      "muted-text": "#9dd6ff",
+      "container-bg": "#121a26",
+      "container-border": "#22d3ee",
+      "container-shadow": "0 0 20px rgba(14, 165, 233, 0.28)",
+      "accent": "#f472b6",
+      "accent-strong": "#5b1e3d",
+      "accent-strong-hover": "#7c2552",
+      "input-bg": "#1c2634",
+      "input-border": "#36485c",
+      "note-bg": "#0e1620",
+      "note-border": "#2a3b4d",
+      "error-color": "#fb7185"
+    }
+  },
+  tropic: {
+    label: "Tropical Punch",
+    vars: {
+      "bg-color": "#111109",
+      "text-color": "#fff7e6",
+      "muted-text": "#ffd7a0",
+      "container-bg": "#241f10",
+      "container-border": "#f97316",
+      "container-shadow": "0 0 20px rgba(249, 115, 22, 0.25)",
+      "accent": "#22c55e",
+      "accent-strong": "#14532d",
+      "accent-strong-hover": "#166534",
+      "input-bg": "#2f2815",
+      "input-border": "#65522d",
+      "note-bg": "#191407",
+      "note-border": "#4f3b17",
+      "error-color": "#f43f5e"
+    }
+  },
+  auroraBurst: {
+    label: "Aurora Burst",
+    vars: {
+      "bg-color": "#0b0f18",
+      "text-color": "#f1f5ff",
+      "muted-text": "#b9c6ff",
+      "container-bg": "#141a2b",
+      "container-border": "#a78bfa",
+      "container-shadow": "0 0 20px rgba(167, 139, 250, 0.26)",
+      "accent": "#34d399",
+      "accent-strong": "#0f4d3d",
+      "accent-strong-hover": "#14664f",
+      "input-bg": "#1f273a",
+      "input-border": "#42526d",
+      "note-bg": "#111624",
+      "note-border": "#303b54",
+      "error-color": "#f87171"
+    }
+  },
+  retroWave: {
+    label: "Retro Wave",
+    vars: {
+      "bg-color": "#140b1a",
+      "text-color": "#ffe9fb",
+      "muted-text": "#f5b7e5",
+      "container-bg": "#24112f",
+      "container-border": "#f472b6",
+      "container-shadow": "0 0 20px rgba(244, 114, 182, 0.28)",
+      "accent": "#22d3ee",
+      "accent-strong": "#0e4f5e",
+      "accent-strong-hover": "#136378",
+      "input-bg": "#2f193b",
+      "input-border": "#5a2f6a",
+      "note-bg": "#1b1023",
+      "note-border": "#4a2b59",
+      "error-color": "#fb7185"
+    }
+  },
+  peacock: {
+    label: "Peacock Parade",
+    vars: {
+      "bg-color": "#0a1316",
+      "text-color": "#e9faff",
+      "muted-text": "#b7efff",
+      "container-bg": "#102126",
+      "container-border": "#60a5fa",
+      "container-shadow": "0 0 20px rgba(96, 165, 250, 0.24)",
+      "accent": "#f59e0b",
+      "accent-strong": "#7a3f00",
+      "accent-strong-hover": "#955100",
+      "input-bg": "#1b2d33",
+      "input-border": "#3f5b63",
+      "note-bg": "#0e1b20",
+      "note-border": "#2d4b52",
+      "error-color": "#f97316"
+    }
+  },
+  emberSky: {
+    label: "Ember Sky",
+    vars: {
+      "bg-color": "#0c1017",
+      "text-color": "#f1f7ff",
+      "muted-text": "#b7c9e6",
+      "container-bg": "#161f2b",
+      "container-border": "#f97316",
+      "container-shadow": "0 0 20px rgba(248, 113, 113, 0.25)",
+      "accent": "#38bdf8",
+      "accent-strong": "#0f3b57",
+      "accent-strong-hover": "#125170",
+      "input-bg": "#1f2b39",
+      "input-border": "#425466",
+      "note-bg": "#111822",
+      "note-border": "#2d3b4a",
+      "error-color": "#fb7185"
+    }
+  },
   chaos: {
     label: "Chaos Goblin",
     vars: {
@@ -496,7 +686,6 @@ function populateThemeSelect(selectEl) {
 async function initOnboardingForm() {
   const form = document.getElementById("onboardingForm");
   const firstNameInput = document.getElementById("userFirstName");
-  const lastNameInput = document.getElementById("userLastName");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
@@ -508,9 +697,8 @@ async function initOnboardingForm() {
   }
 
   const existingProfile = await getUserProfile();
-  if (existingProfile) {
-    if (firstNameInput) firstNameInput.value = existingProfile.firstName || "";
-    if (lastNameInput) lastNameInput.value = existingProfile.lastName || "";
+  if (existingProfile && firstNameInput) {
+    firstNameInput.value = existingProfile.firstName || "";
   }
   if (dailyCounterToggle) {
     dailyCounterToggle.checked = await getDailyCounterEnabled();
@@ -523,13 +711,13 @@ async function initOnboardingForm() {
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const firstName = (firstNameInput?.value || "").trim();
-    const lastName = (lastNameInput?.value || "").trim();
+    const lastName = existingProfile?.lastName || "";
     const themeId = themeSelect?.value || "ocean";
     const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
 
-    if (!firstName || !lastName) {
-      alert("Please enter your first name and last name.");
+    if (!firstName) {
+      alert("Please enter your first name.");
       return;
     }
 
