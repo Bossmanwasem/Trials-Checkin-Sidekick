@@ -779,6 +779,16 @@ input[type="file"] {
   grid-column: 1 / -1;
 }
 
+.onboarding-mascot-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 16px;
+  border: 1px solid var(--note-border);
+  background: var(--note-bg);
+  padding: 6px;
+}
+
 .device-lookup-view .lookup-copy-grid {
   display: grid;
   gap: 8px;

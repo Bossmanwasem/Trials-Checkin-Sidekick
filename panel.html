@@ -11,10 +11,15 @@
   <!-- ONBOARDING VIEW -->
   <div class="container onboarding-view" id="onboardingView" style="display:none;">
     <h1>Welcome to CRM Sidekick</h1>
-    <p class="complete-intro">Tell us your first name, choose your starting color theme, and connect your device lookup workbooks.</p>
+    <p class="complete-intro">Tell us your username, choose your starting color theme, and connect your device lookup workbooks.</p>
     <form id="onboardingForm">
-      <label for="userFirstName">First name</label>
+      <label for="userFirstName">Create username</label>
       <input type="text" id="userFirstName" autocomplete="given-name" required />
+
+      <label for="userMascotInput">Profile mascot image</label>
+      <input type="file" id="userMascotInput" accept="image/*" />
+      <img id="userMascotPreview" class="onboarding-mascot-preview" src="assets/sparknsymoji.png" alt="Spark mascot preview" />
+      <p class="hint-text">Choose an image to replace the Spark mascot on the landing page.</p>
 
       <label for="onboardingThemeSelect">Starting color theme</label>
       <select id="onboardingThemeSelect" required></select>
@@ -90,7 +95,7 @@
       <div class="landing-header">
         <h1 class="landing-title">CRM Sidekick</h1>
       </div>
-      <img class="landing-symojo" src="assets/sparknsymoji.png" alt="Spark mascot" />
+      <img class="landing-symojo" id="landingMascot" src="assets/sparknsymoji.png" alt="Spark mascot" />
       <p class="landing-greeting" id="landingGreeting"></p>
       <div class="daily-counter" id="dailyCounterSection" aria-label="Daily task counter">
         <div class="daily-counter__header">
