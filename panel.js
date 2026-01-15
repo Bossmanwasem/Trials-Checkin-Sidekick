@@ -25,6 +25,8 @@ const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
+const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
+const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -1004,6 +1006,24 @@ async function setWeeklyCounterEnabled(enabled) {
   await setStoredValue(WEEKLY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
 }
 
+async function getDailyCounterCollapsed() {
+  const stored = await getStoredValue(DAILY_COUNTER_COLLAPSED_STORAGE_KEY);
+  return Boolean(stored);
+}
+
+async function setDailyCounterCollapsed(collapsed) {
+  await setStoredValue(DAILY_COUNTER_COLLAPSED_STORAGE_KEY, Boolean(collapsed));
+}
+
+async function getWeeklyCounterCollapsed() {
+  const stored = await getStoredValue(WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY);
+  return Boolean(stored);
+}
+
+async function setWeeklyCounterCollapsed(collapsed) {
+  await setStoredValue(WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY, Boolean(collapsed));
+}
+
 async function getWeeklyCounterTotal() {
   const stored = await getStoredValue(WEEKLY_COUNTER_STORAGE_KEY);
   return Number(stored) || 0;
@@ -1033,6 +1053,36 @@ function updateDailyCounterDisplay(counters) {
 
 function updateWeeklyCounterDisplay(total) {
   setText("weeklyTotalCount", String(total ?? 0));
+}
+
+function applyCounterCollapseState({ toggleId, contentId }, collapsed) {
+  const toggle = document.getElementById(toggleId);
+  const content = document.getElementById(contentId);
+  if (!toggle || !content) return;
+  toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  const label = toggle.querySelector(".daily-counter__toggle-text");
+  if (label) {
+    label.textContent = collapsed ? "Show" : "Hide";
+  }
+  content.hidden = collapsed;
+}
+
+async function updateDailyCounterCollapseState() {
+  const collapsed = await getDailyCounterCollapsed();
+  applyCounterCollapseState(
+    { toggleId: "toggleDailyCounterBtn", contentId: "dailyCounterContent" },
+    collapsed
+  );
+  return collapsed;
+}
+
+async function updateWeeklyCounterCollapseState() {
+  const collapsed = await getWeeklyCounterCollapsed();
+  applyCounterCollapseState(
+    { toggleId: "toggleWeeklyCounterBtn", contentId: "weeklyCounterContent" },
+    collapsed
+  );
+  return collapsed;
 }
 
 async function refreshDailyCounters() {
@@ -1120,6 +1170,8 @@ async function refreshLandingView() {
   updateLandingVersion();
   await updateDailyCounterVisibility();
   await updateWeeklyCounterVisibility();
+  await updateDailyCounterCollapseState();
+  await updateWeeklyCounterCollapseState();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -3124,6 +3176,32 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("clearWeeklyCountersBtn")?.addEventListener("click", async () => {
     await clearWeeklyCounters();
+  });
+
+  document.getElementById("toggleDailyCounterBtn")?.addEventListener("click", async () => {
+    const collapsed = await getDailyCounterCollapsed();
+    const nextCollapsed = !collapsed;
+    await setDailyCounterCollapsed(nextCollapsed);
+    applyCounterCollapseState(
+      { toggleId: "toggleDailyCounterBtn", contentId: "dailyCounterContent" },
+      nextCollapsed
+    );
+    if (!nextCollapsed) {
+      await refreshDailyCounters();
+    }
+  });
+
+  document.getElementById("toggleWeeklyCounterBtn")?.addEventListener("click", async () => {
+    const collapsed = await getWeeklyCounterCollapsed();
+    const nextCollapsed = !collapsed;
+    await setWeeklyCounterCollapsed(nextCollapsed);
+    applyCounterCollapseState(
+      { toggleId: "toggleWeeklyCounterBtn", contentId: "weeklyCounterContent" },
+      nextCollapsed
+    );
+    if (!nextCollapsed) {
+      await refreshWeeklyCounters();
+    }
   });
 
   document.querySelectorAll("[data-counter][data-delta]").forEach(btn => {

@@ -99,11 +99,18 @@
       <div class="daily-counter" id="dailyCounterSection" aria-label="Daily task counter">
         <div class="daily-counter__header">
           <span>Daily task counter</span>
-          <button id="clearDailyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear daily counters">
-            Clear
-          </button>
+          <div class="daily-counter__actions">
+            <button id="clearDailyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear daily counters">
+              Clear
+            </button>
+            <button id="toggleDailyCounterBtn" class="daily-counter__toggle" type="button" aria-expanded="true" aria-controls="dailyCounterContent">
+              <span class="daily-counter__toggle-text">Hide</span>
+              <span class="daily-counter__chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
         </div>
-        <div class="daily-counter__grid">
+        <div class="daily-counter__content" id="dailyCounterContent">
+          <div class="daily-counter__grid">
           <div class="daily-counter__item">
             <span class="daily-counter__label">Checkins</span>
             <span class="daily-counter__value" id="dailyCheckinsCount">0</span>
@@ -124,19 +131,28 @@
               <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="1" aria-label="Increase prep count">+</button>
             </div>
           </div>
+          </div>
         </div>
       </div>
       <div class="daily-counter" id="weeklyCounterSection" aria-label="Weekly task counter">
         <div class="daily-counter__header">
           <span>Weekly task counter</span>
-          <button id="clearWeeklyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear weekly counter">
-            Clear
-          </button>
+          <div class="daily-counter__actions">
+            <button id="clearWeeklyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear weekly counter">
+              Clear
+            </button>
+            <button id="toggleWeeklyCounterBtn" class="daily-counter__toggle" type="button" aria-expanded="true" aria-controls="weeklyCounterContent">
+              <span class="daily-counter__toggle-text">Hide</span>
+              <span class="daily-counter__chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
         </div>
-        <div class="daily-counter__grid weekly-counter__grid">
-          <div class="daily-counter__item">
-            <span class="daily-counter__label">Total</span>
-            <span class="daily-counter__value" id="weeklyTotalCount">0</span>
+        <div class="daily-counter__content" id="weeklyCounterContent">
+          <div class="daily-counter__grid weekly-counter__grid">
+            <div class="daily-counter__item">
+              <span class="daily-counter__label">Total</span>
+              <span class="daily-counter__value" id="weeklyTotalCount">0</span>
+            </div>
           </div>
         </div>
       </div>

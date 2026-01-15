@@ -164,6 +164,12 @@ body.chaos-transitioning #themeTransitionLayer {
   color: var(--muted-text);
 }
 
+.daily-counter__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .daily-counter__clear {
   border: 1px solid transparent;
   background: rgba(0, 0, 0, 0.25);
@@ -177,6 +183,33 @@ body.chaos-transitioning #themeTransitionLayer {
 .daily-counter__clear:hover {
   border-color: var(--accent);
   color: var(--text-color);
+}
+
+.daily-counter__toggle {
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--muted-text);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.daily-counter__toggle:hover {
+  border-color: var(--accent);
+  color: var(--text-color);
+}
+
+.daily-counter__chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.daily-counter__toggle[aria-expanded="false"] .daily-counter__chevron {
+  transform: rotate(-90deg);
 }
 
 .daily-counter__grid {
