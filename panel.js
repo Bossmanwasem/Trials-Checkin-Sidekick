@@ -2160,6 +2160,11 @@ function buildVocabLine() {
   return `I saved ${vocabLabel} vocabs to the CRM.`;
 }
 
+function hasValidVocabSelection() {
+  const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
+  return vocabNotReturned || getSelectedVocabTypes().length > 0;
+}
+
 function buildAccessoriesLineIfAny() {
   const accessories = getFormValue('input[name="accessories"]');
   if (!accessories) return "";
@@ -2732,6 +2737,11 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
 
 document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
+
+  if (!hasValidVocabSelection()) {
+    alert("Select at least one vocab or check \"Vocab NOT returned\" before continuing.");
+    return;
+  }
 
   const deviceNumber = getFormValue("#deviceNumberInput");
   const isMountOnly = deviceNumber.toLowerCase() === "x";
