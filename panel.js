@@ -11,6 +11,7 @@ const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
 const QA_FORM_URL = "https://forms.office.com/pages/responsepage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&route=shorturl";
+const KG_REQUESTS_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?e=io5Jrk&siteid=%7B551ABA4E-AFDD-40EB-909B-2091F063C2D7%7D&webid=%7BFE759ED0-F9C4-4656-B80C-7ABB6753DE39%7D&uniqueid=%7B332C40DB-DF9D-4F37-81B2-CD90F8E81F9A%7D&env=WebViewList";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
@@ -3975,6 +3976,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("appOverridesBtn")?.addEventListener("click", () => {
     showAppOverridesView();
+  });
+
+  document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
+    chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
 
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
