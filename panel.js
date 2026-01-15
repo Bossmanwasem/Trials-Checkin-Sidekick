@@ -1139,6 +1139,13 @@ let deviceLookupWorkbookMeta = {
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
+let deviceLookupLastAutofill = {
+  cameraSerials: [],
+  luminSerials: [],
+  clampMounts: [],
+  tableMounts: [],
+  rollingMounts: []
+};
 const lookupCopyButtons = [
   { id: "copyDeviceSnBtn", label: "Copy device SN" },
   { id: "copyCameraSnBtn", label: "Copy camera SNs" },
@@ -1744,6 +1751,34 @@ function resetLookupCopyButtons() {
   lookupCopyButtons.forEach(({ id, label }) => updateCopyButton(id, "", label));
 }
 
+function applyLookupAutofillToCheckin() {
+  const cameraInput = document.querySelector('input[name="cameraNumber"]');
+  const luminInput = document.querySelector('input[name="luminNumber"]');
+  const clampInput = document.querySelector('input[name="clampMount"]');
+  const tableInput = document.querySelector('input[name="tableMount"]');
+  const rollingInput = document.querySelector('input[name="rollingMount"]');
+
+  const cameraValue = deviceLookupLastAutofill.cameraSerials.join(", ");
+  const luminValue = deviceLookupLastAutofill.luminSerials.join(", ");
+  const clampValue = deviceLookupLastAutofill.clampMounts.join(", ");
+  const tableValue = deviceLookupLastAutofill.tableMounts.join(", ");
+  const rollingValue = deviceLookupLastAutofill.rollingMounts.join(", ");
+
+  if (cameraInput && cameraValue && !cameraInput.value.trim()) cameraInput.value = cameraValue;
+  if (luminInput && luminValue && !luminInput.value.trim()) luminInput.value = luminValue;
+  if (clampInput && clampValue && !clampInput.value.trim()) clampInput.value = clampValue;
+  if (tableInput && tableValue && !tableInput.value.trim()) tableInput.value = tableValue;
+  if (rollingInput && rollingValue && !rollingInput.value.trim()) rollingInput.value = rollingValue;
+
+  const cameraLuminSection = document.getElementById("cameraLuminSection");
+  if (cameraLuminSection && (cameraValue || luminValue)) {
+    cameraLuminSection.style.display = "block";
+  }
+  if (mountSection && (clampValue || tableValue || rollingValue)) {
+    mountSection.style.display = "block";
+  }
+}
+
 async function runDeviceLookupSearch(rawInput) {
   const lookupCopyStatus = document.getElementById("lookupCopyStatus");
   if (lookupCopyStatus) lookupCopyStatus.textContent = "";
@@ -1755,6 +1790,13 @@ async function runDeviceLookupSearch(rawInput) {
   setText("deviceLookupExtracted", extracted ? `✅ ${extracted}` : "❌ Invalid serial scanned");
   deviceLookupLastSerial = extracted || "";
   deviceLookupLastCrmId = "";
+  deviceLookupLastAutofill = {
+    cameraSerials: [],
+    luminSerials: [],
+    clampMounts: [],
+    tableMounts: [],
+    rollingMounts: []
+  };
 
   if (!extracted) {
     updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Invalid serial number detected. Please enter it manually and try again.", "red");
@@ -1880,6 +1922,13 @@ async function runDeviceLookupSearch(rawInput) {
   updateCopyButton("copyClampBtn", mountResult.clamp.map(item => item.serial).join(", "), "Copy clamp mount");
   updateCopyButton("copyTableBtn", mountResult.table.map(item => item.serial).join(", "), "Copy table mount");
   updateCopyButton("copyRollingBtn", mountResult.rolling.map(item => item.serial).join(", "), "Copy rolling mount");
+  deviceLookupLastAutofill = {
+    cameraSerials,
+    luminSerials,
+    clampMounts: mountResult.clamp.map(item => item.serial),
+    tableMounts: mountResult.table.map(item => item.serial),
+    rollingMounts: mountResult.rolling.map(item => item.serial)
+  };
 }
 
 /* ---------------- Grid sidekick ---------------- */
@@ -3070,6 +3119,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showFormView();
     setValue("deviceNumberInput", deviceLookupLastSerial);
     updateDeviceRules();
+    applyLookupAutofillToCheckin();
   });
 
   document.getElementById("lookupOpenWorkbookBtn")?.addEventListener("click", () => {
