@@ -27,6 +27,10 @@
         <input type="checkbox" id="onboardingDailyCounterToggle" />
         Show daily task counter on the landing page
       </label>
+      <label class="checkbox-row" for="onboardingWeeklyCounterToggle">
+        <input type="checkbox" id="onboardingWeeklyCounterToggle" />
+        Show weekly task counter on the landing page
+      </label>
 
       <div class="settings-card">
         <div class="settings-card__title">Zip save folder</div>
@@ -122,6 +126,20 @@
           </div>
         </div>
       </div>
+      <div class="daily-counter" id="weeklyCounterSection" aria-label="Weekly task counter">
+        <div class="daily-counter__header">
+          <span>Weekly task counter</span>
+          <button id="clearWeeklyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear weekly counter">
+            Clear
+          </button>
+        </div>
+        <div class="daily-counter__grid weekly-counter__grid">
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">Total</span>
+            <span class="daily-counter__value" id="weeklyTotalCount">0</span>
+          </div>
+        </div>
+      </div>
       <p class="landing-subtitle">Pick a workflow to get started.</p>
       <div class="landing-section">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false">
@@ -173,7 +191,7 @@
     <div class="settings-panel">
       <div class="settings-card">
         <div class="settings-card__title">User profile</div>
-        <p class="hint-text">Update your name, daily counter preference, and workbook connections.</p>
+        <p class="hint-text">Update your name, daily and weekly counter preferences, and workbook connections.</p>
         <button id="editUserProfileBtn" class="toggle-btn settings-card__action" type="button">
           Edit user profile
         </button>

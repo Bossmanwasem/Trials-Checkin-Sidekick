@@ -186,6 +186,10 @@ body.chaos-transitioning #themeTransitionLayer {
   gap: 8px;
 }
 
+.weekly-counter__grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .daily-counter__item {
   padding: 8px;
   border-radius: 10px;

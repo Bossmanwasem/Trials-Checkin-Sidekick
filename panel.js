@@ -23,6 +23,8 @@ const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
+const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
+const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -495,6 +497,7 @@ async function initOnboardingForm() {
   const lastNameInput = document.getElementById("userLastName");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
+  const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
 
   populateThemeSelect(themeSelect);
   const storedTheme = await getStoredValue(THEME_STORAGE_KEY);
@@ -510,6 +513,9 @@ async function initOnboardingForm() {
   if (dailyCounterToggle) {
     dailyCounterToggle.checked = await getDailyCounterEnabled();
   }
+  if (weeklyCounterToggle) {
+    weeklyCounterToggle.checked = await getWeeklyCounterEnabled();
+  }
 
   if (!form) return;
   form.addEventListener("submit", async event => {
@@ -518,6 +524,7 @@ async function initOnboardingForm() {
     const lastName = (lastNameInput?.value || "").trim();
     const themeId = themeSelect?.value || "ocean";
     const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
+    const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
 
     if (!firstName || !lastName) {
       alert("Please enter your first name and last name.");
@@ -526,6 +533,7 @@ async function initOnboardingForm() {
 
     await saveUserProfile({ firstName, lastName });
     await setDailyCounterEnabled(dailyCounterEnabled);
+    await setWeeklyCounterEnabled(weeklyCounterEnabled);
     applyTheme(themeId);
     showLandingView();
   });
@@ -972,6 +980,10 @@ function getDefaultDailyCounters() {
   };
 }
 
+function getDailyCountersTotal(counters) {
+  return Object.values(counters || {}).reduce((total, value) => total + (Number(value) || 0), 0);
+}
+
 async function getDailyCounterEnabled() {
   const stored = await getStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY);
   if (stored === null || typeof stored === "undefined") return true;
@@ -980,6 +992,25 @@ async function getDailyCounterEnabled() {
 
 async function setDailyCounterEnabled(enabled) {
   await setStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function getWeeklyCounterEnabled() {
+  const stored = await getStoredValue(WEEKLY_COUNTER_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return true;
+  return Boolean(stored);
+}
+
+async function setWeeklyCounterEnabled(enabled) {
+  await setStoredValue(WEEKLY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function getWeeklyCounterTotal() {
+  const stored = await getStoredValue(WEEKLY_COUNTER_STORAGE_KEY);
+  return Number(stored) || 0;
+}
+
+async function setWeeklyCounterTotal(total) {
+  await setStoredValue(WEEKLY_COUNTER_STORAGE_KEY, Math.max(0, Number(total) || 0));
 }
 
 async function getDailyCounters() {
@@ -1000,10 +1031,20 @@ function updateDailyCounterDisplay(counters) {
   setText("dailyPrepsCount", String(counters.preps ?? 0));
 }
 
+function updateWeeklyCounterDisplay(total) {
+  setText("weeklyTotalCount", String(total ?? 0));
+}
+
 async function refreshDailyCounters() {
   const counters = await getDailyCounters();
   updateDailyCounterDisplay(counters);
   return counters;
+}
+
+async function refreshWeeklyCounters() {
+  const total = await getWeeklyCounterTotal();
+  updateWeeklyCounterDisplay(total);
+  return total;
 }
 
 async function updateDailyCounterVisibility() {
@@ -1016,22 +1057,49 @@ async function updateDailyCounterVisibility() {
   return enabled;
 }
 
+async function updateWeeklyCounterVisibility() {
+  const enabled = await getWeeklyCounterEnabled();
+  const section = document.getElementById("weeklyCounterSection");
+  if (section) section.style.display = enabled ? "" : "none";
+  if (enabled) {
+    await refreshWeeklyCounters();
+  }
+  return enabled;
+}
+
+async function adjustWeeklyCounterByDelta(delta) {
+  if (!delta) {
+    return await refreshWeeklyCounters();
+  }
+  const current = await getWeeklyCounterTotal();
+  const nextTotal = Math.max(0, current + delta);
+  await setWeeklyCounterTotal(nextTotal);
+  updateWeeklyCounterDisplay(nextTotal);
+  return nextTotal;
+}
+
 async function incrementDailyCounter(key) {
   const counters = await getDailyCounters();
+  const previousTotal = getDailyCountersTotal(counters);
   const nextValue = (counters[key] ?? 0) + 1;
   const updated = { ...counters, [key]: nextValue };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
+  const nextTotal = getDailyCountersTotal(updated);
+  await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
   return updated;
 }
 
 async function adjustDailyCounter(key, delta) {
   const counters = await getDailyCounters();
+  const previousTotal = getDailyCountersTotal(counters);
   const current = counters[key] ?? 0;
   const nextValue = Math.max(0, current + delta);
   const updated = { ...counters, [key]: nextValue };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
+  const nextTotal = getDailyCountersTotal(updated);
+  await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
   return updated;
 }
 
@@ -1041,11 +1109,17 @@ async function clearDailyCounters() {
   updateDailyCounterDisplay(reset);
 }
 
+async function clearWeeklyCounters() {
+  await setWeeklyCounterTotal(0);
+  updateWeeklyCounterDisplay(0);
+}
+
 async function refreshLandingView() {
   const profile = await getUserProfile();
   updateLandingGreeting(profile);
   updateLandingVersion();
   await updateDailyCounterVisibility();
+  await updateWeeklyCounterVisibility();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -3046,6 +3120,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("clearDailyCountersBtn")?.addEventListener("click", async () => {
     await clearDailyCounters();
+  });
+
+  document.getElementById("clearWeeklyCountersBtn")?.addEventListener("click", async () => {
+    await clearWeeklyCounters();
   });
 
   document.querySelectorAll("[data-counter][data-delta]").forEach(btn => {
