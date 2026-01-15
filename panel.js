@@ -77,7 +77,7 @@ const MULTI_THEME_IDS = new Set([
   "vividHarbor",
   "zenithMix"
 ]);
-const SPECIAL_THEME_IDS = new Set(["chaos"]);
+const SPECIAL_THEME_IDS = new Set(["chaos", "surpriseParty"]);
 const THEME_CATEGORY_LABELS = {
   single: "Single Color Themes",
   multi: "Multi Color Themes",
@@ -924,6 +924,25 @@ const THEMES = {
       "note-border": "#2f4b6f",
       "error-color": "#ff8fab"
     }
+  },
+  surpriseParty: {
+    label: "Surprise Party",
+    vars: {
+      "bg-color": "#160b24",
+      "text-color": "#f9f0ff",
+      "muted-text": "#e7c6ff",
+      "container-bg": "#241338",
+      "container-border": "#ffb8f0",
+      "container-shadow": "0 0 22px rgba(255, 184, 240, 0.32)",
+      "accent": "#ffd166",
+      "accent-strong": "#9333ea",
+      "accent-strong-hover": "#a855f7",
+      "input-bg": "#2d1c44",
+      "input-border": "#704c91",
+      "note-bg": "#1c102c",
+      "note-border": "#5b3a7d",
+      "error-color": "#ff9ad5"
+    }
   }
 };
 
@@ -931,6 +950,7 @@ let chaosIntervalId = null;
 let chaosRotationSeconds = DEFAULT_CHAOS_ROTATION_SECONDS;
 let activeThemeId = "ocean";
 let currentChaosThemeId = null;
+let currentSurpriseThemeId = null;
 let chaosTransitionTimeoutId = null;
 
 function ensureThemeTransitionLayer() {
@@ -966,15 +986,15 @@ function getThemesByCategory() {
   return grouped;
 }
 
-function getRandomThemeId() {
-  const availableThemes = Object.keys(THEMES).filter(id => id !== "chaos");
+function getRandomThemeId({ exclude = [], previous = null } = {}) {
+  const excludedIds = new Set(exclude);
+  const availableThemes = Object.keys(THEMES).filter(id => !excludedIds.has(id));
   if (!availableThemes.length) return "ocean";
   let next = availableThemes[Math.floor(Math.random() * availableThemes.length)];
-  if (availableThemes.length > 1 && next === currentChaosThemeId) {
+  if (availableThemes.length > 1 && next === previous) {
     const currentIndex = availableThemes.indexOf(next);
     next = availableThemes[(currentIndex + 1) % availableThemes.length];
   }
-  currentChaosThemeId = next;
   return next;
 }
 
@@ -994,7 +1014,11 @@ function normalizeChaosSeconds(value) {
 }
 
 function applyRandomChaosTheme() {
-  const nextThemeId = getRandomThemeId();
+  const nextThemeId = getRandomThemeId({
+    exclude: ["chaos", "surpriseParty"],
+    previous: currentChaosThemeId
+  });
+  currentChaosThemeId = nextThemeId;
   const theme = THEMES[nextThemeId];
   if (theme) {
     applyChaosThemeTransition(theme);
@@ -1049,10 +1073,23 @@ function updateChaosControlsVisibility(themeId) {
   }
 }
 
+function updateSurpriseControlsVisibility(themeId) {
+  const controls = document.getElementById("surprisePartyControls");
+  if (controls) {
+    controls.style.display = themeId === "surpriseParty" ? "grid" : "none";
+  }
+}
+
 function updateThemeSelection(themeId) {
   const current = THEMES[themeId] || THEMES.ocean;
   const label = document.getElementById("themeCurrentLabel");
-  if (label) label.textContent = `Current theme: ${current.label}`;
+  if (label) {
+    if (themeId === "surpriseParty" && currentSurpriseThemeId && THEMES[currentSurpriseThemeId]) {
+      label.textContent = `Current theme: ${current.label} (${THEMES[currentSurpriseThemeId].label})`;
+    } else {
+      label.textContent = `Current theme: ${current.label}`;
+    }
+  }
 
   document.querySelectorAll(".theme-option").forEach(btn => {
     const isActive = btn.dataset.theme === themeId;
@@ -1061,6 +1098,7 @@ function updateThemeSelection(themeId) {
   });
 
   updateChaosControlsVisibility(themeId);
+  updateSurpriseControlsVisibility(themeId);
 }
 
 function saveThemePreference(themeId) {
@@ -1090,6 +1128,9 @@ function applyTheme(themeId, { persist = true } = {}) {
   }
   stopChaosRotation();
   clearChaosTransition();
+  if (resolvedTheme === "surpriseParty") {
+    currentSurpriseThemeId = null;
+  }
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
   updateThemeSelection(resolvedTheme);
@@ -1250,6 +1291,21 @@ function initThemeControls() {
     btn.addEventListener("click", () => {
       applyTheme(btn.dataset.theme);
     });
+  });
+
+  const surprisePartyBtn = document.getElementById("surprisePartyBtn");
+  surprisePartyBtn?.addEventListener("click", () => {
+    if (activeThemeId !== "surpriseParty") return;
+    const nextThemeId = getRandomThemeId({
+      exclude: ["chaos", "surpriseParty"],
+      previous: currentSurpriseThemeId
+    });
+    currentSurpriseThemeId = nextThemeId;
+    const theme = THEMES[nextThemeId];
+    if (theme) {
+      applyChaosThemeTransition(theme);
+      updateThemeSelection(activeThemeId);
+    }
   });
 }
 
