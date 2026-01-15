@@ -1025,6 +1025,20 @@ function applyRandomChaosTheme() {
   }
 }
 
+function triggerSurprisePartyThemeChange() {
+  if (activeThemeId !== "surpriseParty") return;
+  const nextThemeId = getRandomThemeId({
+    exclude: ["chaos", "surpriseParty"],
+    previous: currentSurpriseThemeId
+  });
+  currentSurpriseThemeId = nextThemeId;
+  const theme = THEMES[nextThemeId];
+  if (theme) {
+    applyChaosThemeTransition(theme);
+    updateThemeSelection(activeThemeId);
+  }
+}
+
 function startChaosRotation() {
   stopChaosRotation();
   applyRandomChaosTheme();
@@ -1295,17 +1309,7 @@ function initThemeControls() {
 
   const surprisePartyBtn = document.getElementById("surprisePartyBtn");
   surprisePartyBtn?.addEventListener("click", () => {
-    if (activeThemeId !== "surpriseParty") return;
-    const nextThemeId = getRandomThemeId({
-      exclude: ["chaos", "surpriseParty"],
-      previous: currentSurpriseThemeId
-    });
-    currentSurpriseThemeId = nextThemeId;
-    const theme = THEMES[nextThemeId];
-    if (theme) {
-      applyChaosThemeTransition(theme);
-      updateThemeSelection(activeThemeId);
-    }
+    triggerSurprisePartyThemeChange();
   });
 }
 
@@ -3881,6 +3885,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       const isExpanded = btn.getAttribute("aria-expanded") === "true";
       setCollapsibleState(key, !isExpanded);
     });
+  });
+
+  const landingView = document.getElementById("landingView");
+  landingView?.addEventListener("click", event => {
+    const button = event.target?.closest?.("button");
+    if (!button || !landingView.contains(button)) return;
+    triggerSurprisePartyThemeChange();
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
