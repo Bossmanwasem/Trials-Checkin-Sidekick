@@ -41,7 +41,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
+const VIEW_IDS = ["onboardingView", "landingView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -56,7 +56,6 @@ function showLandingView() {
   showView("landingView");
   void refreshLandingView();
 }
-function showSettingsView() { showView("settingsView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
@@ -537,54 +536,10 @@ async function initDailyCounterSetting() {
   });
 }
 
-function initSettingsTabs() {
-  const tabs = Array.from(document.querySelectorAll("[data-settings-tab]"));
-  const panels = Array.from(document.querySelectorAll("[data-settings-panel]"));
-  if (!tabs.length || !panels.length) return;
-
-  const setActiveTab = key => {
-    tabs.forEach(tab => {
-      const isActive = tab.dataset.settingsTab === key;
-      tab.setAttribute("aria-selected", isActive ? "true" : "false");
-      tab.tabIndex = isActive ? 0 : -1;
-    });
-    panels.forEach(panel => {
-      panel.hidden = panel.dataset.settingsPanel !== key;
-    });
-  };
-
-  const defaultTab = tabs.find(tab => tab.getAttribute("aria-selected") === "true")?.dataset.settingsTab
-    || tabs[0].dataset.settingsTab;
-  setActiveTab(defaultTab);
-
-  tabs.forEach((tab, index) => {
-    tab.addEventListener("click", () => {
-      setActiveTab(tab.dataset.settingsTab);
-    });
-    tab.addEventListener("keydown", event => {
-      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-      event.preventDefault();
-      const direction = event.key === "ArrowRight" ? 1 : -1;
-      const nextIndex = (index + direction + tabs.length) % tabs.length;
-      tabs[nextIndex].focus();
-      setActiveTab(tabs[nextIndex].dataset.settingsTab);
-    });
-  });
-}
-
 function initThemeControls() {
   const menuBtn = document.getElementById("themeMenuBtn");
-  const userSettingsAction = document.getElementById("userSettingsActionBtn");
-  const settingsReturnBtn = document.getElementById("settingsReturnBtn");
   menuBtn?.addEventListener("click", () => {
-    showSettingsView();
-  });
-
-  userSettingsAction?.addEventListener("click", () => {
     showOnboardingView();
-  });
-  settingsReturnBtn?.addEventListener("click", () => {
-    showLandingView();
   });
 
   document.querySelectorAll(".theme-option").forEach(btn => {
@@ -899,7 +854,6 @@ async function initTrialFilesFolderSetting() {
 }
 
 initThemeControls();
-initSettingsTabs();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();
