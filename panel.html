@@ -464,10 +464,35 @@
       <input type="text" id="crmId" />
 
       <!-- Vocab checkbox -->
-      <label style="margin-top:12px;">
+      <label class="checkbox-row" for="vocabNotReturned">
         <input type="checkbox" id="vocabNotReturned" />
         Vocab NOT returned
       </label>
+
+      <!-- Vocab selection -->
+      <label>What Vocabs did you pull off the device?</label>
+      <div class="checkbox-group">
+        <label class="checkbox-row" for="vocabGrid">
+          <input type="checkbox" id="vocabGrid" name="vocabTypes" value="Grid" />
+          Grid
+        </label>
+        <label class="checkbox-row" for="vocabP2g">
+          <input type="checkbox" id="vocabP2g" name="vocabTypes" value="P2G" />
+          P2G
+        </label>
+        <label class="checkbox-row" for="vocabTc">
+          <input type="checkbox" id="vocabTc" name="vocabTypes" value="TC" />
+          TC
+        </label>
+        <label class="checkbox-row" for="vocabLamp">
+          <input type="checkbox" id="vocabLamp" name="vocabTypes" value="LAMP" />
+          LAMP
+        </label>
+        <label class="checkbox-row" for="vocabDialogue">
+          <input type="checkbox" id="vocabDialogue" name="vocabTypes" value="Dialogue" />
+          Dialogue
+        </label>
+      </div>
 
       <!-- Camera / Lumin -->
       <button type="button" class="toggle-btn" id="cameraToggle">+ Add Camera & Lumin-I Info</button>

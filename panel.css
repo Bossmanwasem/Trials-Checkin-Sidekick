@@ -377,6 +377,18 @@ label {
   margin: 0;
 }
 
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.checkbox-group .checkbox-row {
+  margin-top: 0;
+  font-weight: 500;
+}
+
 input[type="text"],
 select,
 textarea {
