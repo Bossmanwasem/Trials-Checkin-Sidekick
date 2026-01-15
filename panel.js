@@ -1626,6 +1626,13 @@ function setThemeVars(vars) {
   });
 }
 
+function setButtonTextColor(themeId, theme) {
+  const fallbackTextColor = theme?.vars?.["text-color"] || "#ffffff";
+  const defaultButtonColor = theme?.vars?.["accent"] || "";
+  const buttonTextColor = NFL_THEME_IDS.has(themeId) ? fallbackTextColor : defaultButtonColor;
+  document.documentElement.style.setProperty("--button-text-color", buttonTextColor);
+}
+
 function getThemeCategory(themeId) {
   if (SPECIAL_THEME_IDS.has(themeId)) return "special";
   if (NFL_THEME_IDS.has(themeId)) return "nfl";
@@ -1679,7 +1686,7 @@ function applyRandomChaosTheme() {
   currentChaosThemeId = nextThemeId;
   const theme = THEMES[nextThemeId];
   if (theme) {
-    applyChaosThemeTransition(theme);
+    applyChaosThemeTransition(nextThemeId, theme);
   }
 }
 
@@ -1692,7 +1699,7 @@ function triggerSurprisePartyThemeChange() {
   currentSurpriseThemeId = nextThemeId;
   const theme = THEMES[nextThemeId];
   if (theme) {
-    applyChaosThemeTransition(theme);
+    applyChaosThemeTransition(nextThemeId, theme);
     updateThemeSelection(activeThemeId);
   }
 }
@@ -1716,7 +1723,7 @@ function clearChaosTransition() {
   }
 }
 
-function applyChaosThemeTransition(theme) {
+function applyChaosThemeTransition(themeId, theme) {
   if (!theme) return;
   const layer = ensureThemeTransitionLayer();
   const currentBg = getComputedStyle(document.documentElement).getPropertyValue("--bg-color").trim();
@@ -1724,6 +1731,7 @@ function applyChaosThemeTransition(theme) {
     document.body.style.backgroundColor = currentBg;
   }
   setThemeVars(theme.vars);
+  setButtonTextColor(themeId, theme);
   layer.style.backgroundColor = theme.vars["bg-color"] || "";
   document.body.classList.remove("chaos-transitioning");
   void layer.offsetHeight;
@@ -1805,6 +1813,7 @@ function applyTheme(themeId, { persist = true } = {}) {
   }
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
+  setButtonTextColor(resolvedTheme, theme);
   updateThemeSelection(resolvedTheme);
   const themeSelect = document.getElementById("onboardingThemeSelect");
   if (themeSelect) {
