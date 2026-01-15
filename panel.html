@@ -166,6 +166,39 @@
     <img class="landing-corner-symojo" src="assets/symoji.png" alt="Symoji mascot" />
   </div>
 
+  <!-- SETTINGS VIEW -->
+  <div class="container settings-view" id="settingsView" style="display:none;">
+    <h1>User settings</h1>
+    <p class="complete-intro">Manage your profile details and theme preferences.</p>
+    <div class="settings-panel">
+      <div class="settings-card">
+        <div class="settings-card__title">User profile</div>
+        <p class="hint-text">Update your name, daily counter preference, and workbook connections.</p>
+        <button id="editUserProfileBtn" class="toggle-btn settings-card__action" type="button">
+          Edit user profile
+        </button>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card__title">Theme picker</div>
+        <div class="theme-menu" aria-live="polite">
+          <div class="theme-menu__title">Pick a theme</div>
+          <div id="themeCurrentLabel" class="theme-current">Current theme: —</div>
+          <div id="themeOptions" class="theme-options"></div>
+          <div id="chaosControls" class="chaos-controls" style="display:none;">
+            <label for="chaosRotationInput">Chaos rotation timing (seconds)</label>
+            <input type="number" id="chaosRotationInput" min="5" step="1" />
+            <p class="chaos-hint">Chaos rotates through the non-chaos themes on a timer.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="settingsReturnBtn" class="toggle-btn" type="button">
+        Return to CRM Sidekick
+      </button>
+    </div>
+  </div>
+
   <!-- CRM NAVIGATOR VIEW -->
   <div class="container crm-navigator-view" id="crmNavigatorView" style="display:none;">
     <h1>CRM Navigator</h1>
