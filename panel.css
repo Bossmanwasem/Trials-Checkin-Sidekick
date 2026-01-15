@@ -860,6 +860,23 @@ input[type="file"] {
   gap: 10px;
 }
 
+.theme-options__section {
+  display: grid;
+  gap: 8px;
+}
+
+.theme-options__heading {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
+}
+
+.theme-options__grid {
+  display: grid;
+  gap: 10px;
+}
+
 .theme-option {
   display: flex;
   align-items: center;
