@@ -1853,6 +1853,11 @@ async function runDeviceLookupSearch(rawInput) {
   const foundInRwl = serialResult.sheetsFound.includes("Return Watchlist");
   const crmFullUrl = crmId ? `https://crm.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
 
+  if (foundInRwl) {
+    const rwlUrl = DEVICE_LOOKUP_SHEET_LINKS["Return Watchlist"] || DEVICE_LOOKUP_EXCEL_WEB_URL;
+    chrome.tabs.create({ url: rwlUrl });
+  }
+
   const deviceInfoParts = [];
   if (cameraSerials.length) deviceInfoParts.push(`Camera: ${cameraSerials.join(", ")}`);
   if (luminSerials.length) deviceInfoParts.push(`Lumin-i: ${luminSerials.join(", ")}`);
