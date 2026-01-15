@@ -79,13 +79,48 @@ const MULTI_THEME_IDS = new Set([
   "vividHarbor",
   "zenithMix"
 ]);
+const NFL_THEME_IDS = new Set([
+  "nflCardinals",
+  "nflFalcons",
+  "nflRavens",
+  "nflBills",
+  "nflPanthers",
+  "nflBears",
+  "nflBengals",
+  "nflBrowns",
+  "nflCowboys",
+  "nflBroncos",
+  "nflLions",
+  "nflPackers",
+  "nflTexans",
+  "nflColts",
+  "nflJaguars",
+  "nflChiefs",
+  "nflRaiders",
+  "nflChargers",
+  "nflRams",
+  "nflDolphins",
+  "nflVikings",
+  "nflPatriots",
+  "nflSaints",
+  "nflGiants",
+  "nflJets",
+  "nflEagles",
+  "nflSteelers",
+  "nfl49ers",
+  "nflSeahawks",
+  "nflBuccaneers",
+  "nflTitans",
+  "nflCommanders"
+]);
 const SPECIAL_THEME_IDS = new Set(["chaos", "surpriseParty"]);
 const THEME_CATEGORY_LABELS = {
   single: "Single Color Themes",
   multi: "Multi Color Themes",
+  nfl: "NFL Themes",
   special: "Special Themes"
 };
-const THEME_CATEGORY_ORDER = ["single", "multi", "special"];
+const THEME_CATEGORY_ORDER = ["single", "multi", "nfl", "special"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -920,6 +955,614 @@ const THEMES = {
       "error-color": "#34d399"
     }
   },
+  nflCardinals: {
+    label: "Arizona Cardinals",
+    vars: {
+      "bg-color": "#160c10",
+      "text-color": "#f6edf0",
+      "muted-text": "#e2c3cd",
+      "container-bg": "#22121a",
+      "container-border": "#ffb612",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#97233f",
+      "accent-strong": "#5b1426",
+      "accent-strong-hover": "#6f1b2f",
+      "input-bg": "#1d131a",
+      "input-border": "#ffb612",
+      "note-bg": "#120a0e",
+      "note-border": "#ffb612",
+      "error-color": "#ffb612"
+    }
+  },
+  nflFalcons: {
+    label: "Atlanta Falcons",
+    vars: {
+      "bg-color": "#160b0f",
+      "text-color": "#f7f1f2",
+      "muted-text": "#e2c9cc",
+      "container-bg": "#221015",
+      "container-border": "#a5acaf",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#a71930",
+      "accent-strong": "#5c0d1a",
+      "accent-strong-hover": "#731022",
+      "input-bg": "#1d1217",
+      "input-border": "#a5acaf",
+      "note-bg": "#120a0d",
+      "note-border": "#a5acaf",
+      "error-color": "#a5acaf"
+    }
+  },
+  nflRavens: {
+    label: "Baltimore Ravens",
+    vars: {
+      "bg-color": "#100d1c",
+      "text-color": "#f2eefc",
+      "muted-text": "#d1c7ef",
+      "container-bg": "#1a1428",
+      "container-border": "#9e7c0c",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#241773",
+      "accent-strong": "#120c3a",
+      "accent-strong-hover": "#1a1153",
+      "input-bg": "#181126",
+      "input-border": "#9e7c0c",
+      "note-bg": "#0d0a18",
+      "note-border": "#9e7c0c",
+      "error-color": "#9e7c0c"
+    }
+  },
+  nflBills: {
+    label: "Buffalo Bills",
+    vars: {
+      "bg-color": "#0b111f",
+      "text-color": "#eef3ff",
+      "muted-text": "#c7d4ef",
+      "container-bg": "#141d31",
+      "container-border": "#c60c30",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#00338d",
+      "accent-strong": "#001c50",
+      "accent-strong-hover": "#00286b",
+      "input-bg": "#1a2438",
+      "input-border": "#c60c30",
+      "note-bg": "#0d1523",
+      "note-border": "#c60c30",
+      "error-color": "#c60c30"
+    }
+  },
+  nflPanthers: {
+    label: "Carolina Panthers",
+    vars: {
+      "bg-color": "#0b1218",
+      "text-color": "#eaf6ff",
+      "muted-text": "#c1d7e6",
+      "container-bg": "#141f28",
+      "container-border": "#bfc0bf",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#0085ca",
+      "accent-strong": "#004c74",
+      "accent-strong-hover": "#006096",
+      "input-bg": "#1a2732",
+      "input-border": "#bfc0bf",
+      "note-bg": "#0d161d",
+      "note-border": "#bfc0bf",
+      "error-color": "#bfc0bf"
+    }
+  },
+  nflBears: {
+    label: "Chicago Bears",
+    vars: {
+      "bg-color": "#0b1018",
+      "text-color": "#eff3f8",
+      "muted-text": "#c6d0dc",
+      "container-bg": "#141b26",
+      "container-border": "#c83803",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#0b162a",
+      "accent-strong": "#060c18",
+      "accent-strong-hover": "#0a1222",
+      "input-bg": "#1a2230",
+      "input-border": "#c83803",
+      "note-bg": "#0d121b",
+      "note-border": "#c83803",
+      "error-color": "#c83803"
+    }
+  },
+  nflBengals: {
+    label: "Cincinnati Bengals",
+    vars: {
+      "bg-color": "#180d09",
+      "text-color": "#fff2eb",
+      "muted-text": "#ffd0bc",
+      "container-bg": "#241311",
+      "container-border": "#000000",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#fb4f14",
+      "accent-strong": "#a4320c",
+      "accent-strong-hover": "#c33c0f",
+      "input-bg": "#1f140f",
+      "input-border": "#000000",
+      "note-bg": "#120b08",
+      "note-border": "#000000",
+      "error-color": "#000000"
+    }
+  },
+  nflBrowns: {
+    label: "Cleveland Browns",
+    vars: {
+      "bg-color": "#140f0a",
+      "text-color": "#f7efe6",
+      "muted-text": "#e4cfb5",
+      "container-bg": "#1f160f",
+      "container-border": "#ff3c00",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#311d00",
+      "accent-strong": "#1b1000",
+      "accent-strong-hover": "#241500",
+      "input-bg": "#1b140c",
+      "input-border": "#ff3c00",
+      "note-bg": "#120d08",
+      "note-border": "#ff3c00",
+      "error-color": "#ff3c00"
+    }
+  },
+  nflCowboys: {
+    label: "Dallas Cowboys",
+    vars: {
+      "bg-color": "#0b111f",
+      "text-color": "#eef3ff",
+      "muted-text": "#c7d4ef",
+      "container-bg": "#141d31",
+      "container-border": "#869397",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#003594",
+      "accent-strong": "#001f56",
+      "accent-strong-hover": "#002c73",
+      "input-bg": "#1a2438",
+      "input-border": "#869397",
+      "note-bg": "#0d1523",
+      "note-border": "#869397",
+      "error-color": "#869397"
+    }
+  },
+  nflBroncos: {
+    label: "Denver Broncos",
+    vars: {
+      "bg-color": "#180d09",
+      "text-color": "#fff2eb",
+      "muted-text": "#ffd0bc",
+      "container-bg": "#241311",
+      "container-border": "#002244",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#fb4f14",
+      "accent-strong": "#a4320c",
+      "accent-strong-hover": "#c33c0f",
+      "input-bg": "#1f140f",
+      "input-border": "#002244",
+      "note-bg": "#120b08",
+      "note-border": "#002244",
+      "error-color": "#002244"
+    }
+  },
+  nflLions: {
+    label: "Detroit Lions",
+    vars: {
+      "bg-color": "#0b1118",
+      "text-color": "#eef6ff",
+      "muted-text": "#c7d9e8",
+      "container-bg": "#141f2b",
+      "container-border": "#b0b7bc",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#0076b6",
+      "accent-strong": "#00456b",
+      "accent-strong-hover": "#005b88",
+      "input-bg": "#1a2634",
+      "input-border": "#b0b7bc",
+      "note-bg": "#0d151d",
+      "note-border": "#b0b7bc",
+      "error-color": "#b0b7bc"
+    }
+  },
+  nflPackers: {
+    label: "Green Bay Packers",
+    vars: {
+      "bg-color": "#0d1312",
+      "text-color": "#eef8f4",
+      "muted-text": "#c6dfd5",
+      "container-bg": "#17201d",
+      "container-border": "#ffb612",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#203731",
+      "accent-strong": "#12201c",
+      "accent-strong-hover": "#182a26",
+      "input-bg": "#1b2622",
+      "input-border": "#ffb612",
+      "note-bg": "#0f1513",
+      "note-border": "#ffb612",
+      "error-color": "#ffb612"
+    }
+  },
+  nflTexans: {
+    label: "Houston Texans",
+    vars: {
+      "bg-color": "#0b1116",
+      "text-color": "#edf5ff",
+      "muted-text": "#c5d7ea",
+      "container-bg": "#141d26",
+      "container-border": "#a71930",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#03202f",
+      "accent-strong": "#011018",
+      "accent-strong-hover": "#021824",
+      "input-bg": "#1a242f",
+      "input-border": "#a71930",
+      "note-bg": "#0d151d",
+      "note-border": "#a71930",
+      "error-color": "#a71930"
+    }
+  },
+  nflColts: {
+    label: "Indianapolis Colts",
+    vars: {
+      "bg-color": "#0b111f",
+      "text-color": "#eef3ff",
+      "muted-text": "#c7d4ef",
+      "container-bg": "#141d31",
+      "container-border": "#a5acaf",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#002c5f",
+      "accent-strong": "#001936",
+      "accent-strong-hover": "#002447",
+      "input-bg": "#1a2438",
+      "input-border": "#a5acaf",
+      "note-bg": "#0d1523",
+      "note-border": "#a5acaf",
+      "error-color": "#a5acaf"
+    }
+  },
+  nflJaguars: {
+    label: "Jacksonville Jaguars",
+    vars: {
+      "bg-color": "#0b1416",
+      "text-color": "#eaf7f8",
+      "muted-text": "#c0dadc",
+      "container-bg": "#142126",
+      "container-border": "#9f792c",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#006778",
+      "accent-strong": "#003c45",
+      "accent-strong-hover": "#00505d",
+      "input-bg": "#1a2730",
+      "input-border": "#9f792c",
+      "note-bg": "#0d171b",
+      "note-border": "#9f792c",
+      "error-color": "#9f792c"
+    }
+  },
+  nflChiefs: {
+    label: "Kansas City Chiefs",
+    vars: {
+      "bg-color": "#160b10",
+      "text-color": "#f8edf0",
+      "muted-text": "#e8c5cb",
+      "container-bg": "#221218",
+      "container-border": "#ffb81c",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#e31837",
+      "accent-strong": "#8c0e21",
+      "accent-strong-hover": "#b0122b",
+      "input-bg": "#1c1317",
+      "input-border": "#ffb81c",
+      "note-bg": "#120a0d",
+      "note-border": "#ffb81c",
+      "error-color": "#ffb81c"
+    }
+  },
+  nflRaiders: {
+    label: "Las Vegas Raiders",
+    vars: {
+      "bg-color": "#0c0c0e",
+      "text-color": "#f5f5f5",
+      "muted-text": "#d2d2d2",
+      "container-bg": "#16161a",
+      "container-border": "#a5acaf",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#000000",
+      "accent-strong": "#1a1a1a",
+      "accent-strong-hover": "#2a2a2a",
+      "input-bg": "#1e1e24",
+      "input-border": "#a5acaf",
+      "note-bg": "#111114",
+      "note-border": "#a5acaf",
+      "error-color": "#a5acaf"
+    }
+  },
+  nflChargers: {
+    label: "Los Angeles Chargers",
+    vars: {
+      "bg-color": "#0b1118",
+      "text-color": "#eef6ff",
+      "muted-text": "#c7d9e8",
+      "container-bg": "#141f2b",
+      "container-border": "#ffc20e",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#0080c6",
+      "accent-strong": "#004a74",
+      "accent-strong-hover": "#006091",
+      "input-bg": "#1a2634",
+      "input-border": "#ffc20e",
+      "note-bg": "#0d151d",
+      "note-border": "#ffc20e",
+      "error-color": "#ffc20e"
+    }
+  },
+  nflRams: {
+    label: "Los Angeles Rams",
+    vars: {
+      "bg-color": "#0b111f",
+      "text-color": "#eef3ff",
+      "muted-text": "#c7d4ef",
+      "container-bg": "#141d31",
+      "container-border": "#ffa300",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#003594",
+      "accent-strong": "#001f56",
+      "accent-strong-hover": "#002c73",
+      "input-bg": "#1a2438",
+      "input-border": "#ffa300",
+      "note-bg": "#0d1523",
+      "note-border": "#ffa300",
+      "error-color": "#ffa300"
+    }
+  },
+  nflDolphins: {
+    label: "Miami Dolphins",
+    vars: {
+      "bg-color": "#0b1416",
+      "text-color": "#eaf7f8",
+      "muted-text": "#c0dadc",
+      "container-bg": "#142126",
+      "container-border": "#fc4c02",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#008e97",
+      "accent-strong": "#00535a",
+      "accent-strong-hover": "#006b73",
+      "input-bg": "#1a2730",
+      "input-border": "#fc4c02",
+      "note-bg": "#0d171b",
+      "note-border": "#fc4c02",
+      "error-color": "#fc4c02"
+    }
+  },
+  nflVikings: {
+    label: "Minnesota Vikings",
+    vars: {
+      "bg-color": "#120b1b",
+      "text-color": "#f6f0ff",
+      "muted-text": "#dcccf7",
+      "container-bg": "#1c1428",
+      "container-border": "#ffc62f",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#4f2683",
+      "accent-strong": "#2d154a",
+      "accent-strong-hover": "#3b1c62",
+      "input-bg": "#1e1629",
+      "input-border": "#ffc62f",
+      "note-bg": "#120b19",
+      "note-border": "#ffc62f",
+      "error-color": "#ffc62f"
+    }
+  },
+  nflPatriots: {
+    label: "New England Patriots",
+    vars: {
+      "bg-color": "#0b1118",
+      "text-color": "#eef6ff",
+      "muted-text": "#c7d9e8",
+      "container-bg": "#141f2b",
+      "container-border": "#c60c30",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#002244",
+      "accent-strong": "#001327",
+      "accent-strong-hover": "#001b36",
+      "input-bg": "#1a2634",
+      "input-border": "#c60c30",
+      "note-bg": "#0d151d",
+      "note-border": "#c60c30",
+      "error-color": "#c60c30"
+    }
+  },
+  nflSaints: {
+    label: "New Orleans Saints",
+    vars: {
+      "bg-color": "#0b0f12",
+      "text-color": "#f8f6ef",
+      "muted-text": "#e3dbc6",
+      "container-bg": "#161a20",
+      "container-border": "#d3bc8d",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#101820",
+      "accent-strong": "#0a0f14",
+      "accent-strong-hover": "#0d131a",
+      "input-bg": "#1c2027",
+      "input-border": "#d3bc8d",
+      "note-bg": "#11151b",
+      "note-border": "#d3bc8d",
+      "error-color": "#d3bc8d"
+    }
+  },
+  nflGiants: {
+    label: "New York Giants",
+    vars: {
+      "bg-color": "#0b111d",
+      "text-color": "#eef2ff",
+      "muted-text": "#c7cfeb",
+      "container-bg": "#141a2b",
+      "container-border": "#a71930",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#0b2265",
+      "accent-strong": "#06143a",
+      "accent-strong-hover": "#081b4c",
+      "input-bg": "#1a2234",
+      "input-border": "#a71930",
+      "note-bg": "#0d121e",
+      "note-border": "#a71930",
+      "error-color": "#a71930"
+    }
+  },
+  nflJets: {
+    label: "New York Jets",
+    vars: {
+      "bg-color": "#0b1411",
+      "text-color": "#ecf6f1",
+      "muted-text": "#c6d9d0",
+      "container-bg": "#14201c",
+      "container-border": "#000000",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#125740",
+      "accent-strong": "#0a3225",
+      "accent-strong-hover": "#0f4331",
+      "input-bg": "#1a2622",
+      "input-border": "#000000",
+      "note-bg": "#0d1714",
+      "note-border": "#000000",
+      "error-color": "#000000"
+    }
+  },
+  nflEagles: {
+    label: "Philadelphia Eagles",
+    vars: {
+      "bg-color": "#0b1315",
+      "text-color": "#eaf6f7",
+      "muted-text": "#c2d7da",
+      "container-bg": "#142023",
+      "container-border": "#a5acaf",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#004c54",
+      "accent-strong": "#002c31",
+      "accent-strong-hover": "#003d44",
+      "input-bg": "#1a262a",
+      "input-border": "#a5acaf",
+      "note-bg": "#0d1619",
+      "note-border": "#a5acaf",
+      "error-color": "#a5acaf"
+    }
+  },
+  nflSteelers: {
+    label: "Pittsburgh Steelers",
+    vars: {
+      "bg-color": "#14100a",
+      "text-color": "#fff5db",
+      "muted-text": "#f0d28b",
+      "container-bg": "#1f1a10",
+      "container-border": "#101820",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#ffb612",
+      "accent-strong": "#9a6d00",
+      "accent-strong-hover": "#c28a00",
+      "input-bg": "#1b1710",
+      "input-border": "#101820",
+      "note-bg": "#120f0a",
+      "note-border": "#101820",
+      "error-color": "#101820"
+    }
+  },
+  nfl49ers: {
+    label: "San Francisco 49ers",
+    vars: {
+      "bg-color": "#160b0b",
+      "text-color": "#f8efef",
+      "muted-text": "#e4c6c6",
+      "container-bg": "#221212",
+      "container-border": "#b3995d",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#aa0000",
+      "accent-strong": "#660000",
+      "accent-strong-hover": "#840000",
+      "input-bg": "#1c1313",
+      "input-border": "#b3995d",
+      "note-bg": "#120a0a",
+      "note-border": "#b3995d",
+      "error-color": "#b3995d"
+    }
+  },
+  nflSeahawks: {
+    label: "Seattle Seahawks",
+    vars: {
+      "bg-color": "#0b1118",
+      "text-color": "#eef6ff",
+      "muted-text": "#c7d9e8",
+      "container-bg": "#141f2b",
+      "container-border": "#69be28",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#002244",
+      "accent-strong": "#001327",
+      "accent-strong-hover": "#001b36",
+      "input-bg": "#1a2634",
+      "input-border": "#69be28",
+      "note-bg": "#0d151d",
+      "note-border": "#69be28",
+      "error-color": "#69be28"
+    }
+  },
+  nflBuccaneers: {
+    label: "Tampa Bay Buccaneers",
+    vars: {
+      "bg-color": "#160a0a",
+      "text-color": "#f8ecec",
+      "muted-text": "#e4c2c2",
+      "container-bg": "#221111",
+      "container-border": "#ff7900",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#d50a0a",
+      "accent-strong": "#7f0606",
+      "accent-strong-hover": "#a00808",
+      "input-bg": "#1d1212",
+      "input-border": "#34302b",
+      "note-bg": "#120909",
+      "note-border": "#ff7900",
+      "error-color": "#ff7900"
+    }
+  },
+  nflTitans: {
+    label: "Tennessee Titans",
+    vars: {
+      "bg-color": "#0b1118",
+      "text-color": "#eef6ff",
+      "muted-text": "#c7d9e8",
+      "container-bg": "#141f2b",
+      "container-border": "#c8102e",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#4b92db",
+      "accent-strong": "#2a5d94",
+      "accent-strong-hover": "#3575b8",
+      "input-bg": "#1a2634",
+      "input-border": "#c8102e",
+      "note-bg": "#0d151d",
+      "note-border": "#c8102e",
+      "error-color": "#c8102e"
+    }
+  },
+  nflCommanders: {
+    label: "Washington Commanders",
+    vars: {
+      "bg-color": "#150b0b",
+      "text-color": "#f8efef",
+      "muted-text": "#e3c9c9",
+      "container-bg": "#201212",
+      "container-border": "#ffb612",
+      "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
+      "accent": "#5a1414",
+      "accent-strong": "#330b0b",
+      "accent-strong-hover": "#461010",
+      "input-bg": "#1c1313",
+      "input-border": "#ffb612",
+      "note-bg": "#120a0a",
+      "note-border": "#ffb612",
+      "error-color": "#ffb612"
+    }
+  },
   chaos: {
     label: "Chaos Goblin",
     vars: {
@@ -985,6 +1628,7 @@ function setThemeVars(vars) {
 
 function getThemeCategory(themeId) {
   if (SPECIAL_THEME_IDS.has(themeId)) return "special";
+  if (NFL_THEME_IDS.has(themeId)) return "nfl";
   if (MULTI_THEME_IDS.has(themeId)) return "multi";
   return "single";
 }
