@@ -743,6 +743,60 @@ input[type="file"] {
   transition: background-color 0.6s ease, border-color 0.6s ease;
 }
 
+.settings-tabs {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.settings-tab {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--note-border);
+  background: var(--note-bg);
+  color: var(--text-color);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.6s ease, box-shadow 0.6s ease, color 0.6s ease;
+}
+
+.settings-tab[aria-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+  color: var(--accent);
+}
+
+.settings-tab:hover {
+  border-color: var(--accent);
+}
+
+.settings-panel {
+  margin-top: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.settings-card {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--note-border);
+  background: var(--note-bg);
+  display: grid;
+  gap: 10px;
+  transition: background-color 0.6s ease, border-color 0.6s ease;
+}
+
+.settings-card__title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.settings-card__action {
+  margin-top: 6px;
+  width: 100%;
+}
+
 .theme-menu__title {
   font-weight: 600;
   color: var(--accent);
