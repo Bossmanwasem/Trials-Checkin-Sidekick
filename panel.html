@@ -177,6 +177,9 @@
           <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button">
             Grid Sidekick
           </button>
+          <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button">
+            TalkPad Prep Sidekick
+          </button>
         </div>
       </div>
       <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
@@ -405,6 +408,142 @@
         <button id="gridCrmInfoCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
       </div>
       <div id="gridStatus" class="status-line"></div>
+    </div>
+  </div>
+
+  <!-- TALKPAD PREP SIDEKICK VIEW -->
+  <div class="container prep-view" id="prepView" style="display:none;">
+    <h1>TalkPad Prep Sidekick</h1>
+    <p class="complete-intro">Work through the prep checklist and mark items off as you go.</p>
+
+    <div class="mini-row">
+      <button id="prepReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+
+    <div class="note-preview prep-checklist">
+      <div class="note-preview__title">Prep checklist</div>
+      <div class="prep-checklist__list">
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepChargers" />
+          Gather Correct Chargers
+        </label>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepStrapClips" />
+          Shoulder strap has Correct clips
+        </label>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepFolderMaterials" />
+          Folder is prepared with Needed materials (Include Spanish AND English materials if device has any Spanish requested vocab or Spanish Interpreter Needed. Shipping reminder is present for all non-LTL devices)
+        </label>
+        <div class="prep-checklist__group">
+          <label class="prep-checklist__item">
+            <input type="checkbox" id="prepDeviceCondition" />
+            Ensure Device is in good condition
+          </label>
+          <div class="prep-checklist__sublist">
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepScreenProtector" />
+              Check Screen protector for scratches/Bubbles
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepScreenScratches" />
+              Check screen for any scratches
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepDevicePerformance" />
+              Device is performing well
+            </label>
+          </div>
+        </div>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepCaseCondition" />
+          Case is in Good Condition
+        </label>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepAccessories" />
+          Accessories listed on the Device Tab are with the Device
+        </label>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepBackboxBluetooth" />
+          Backbox connected via Bluetooth
+        </label>
+        <div class="prep-checklist__group">
+          <label class="prep-checklist__item">
+            <input type="checkbox" id="prepIosSettings1" />
+            iOS Settings 1
+          </label>
+          <div class="prep-checklist__sublist">
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepAutoLock" />
+              Display and Brightness - Auto-Lock set to 10 minutes
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepDockSliders" />
+              Home Screen &amp; App Library - Dock sliders are turned off
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepGestures" />
+              Multitasking &amp; Gestures - All sliders turned off
+            </label>
+          </div>
+        </div>
+        <div class="prep-checklist__group">
+          <label class="prep-checklist__item">
+            <input type="checkbox" id="prepIosSettings2" />
+            iOS Settings 2
+          </label>
+          <div class="prep-checklist__sublist">
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepSiriSuggestions" />
+              Notifications - Siri Suggestions - All Off
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepNotificationStyle" />
+              Notifications - Notification Style - All Off
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepItunesPurchases" />
+              Screen Time - iTunes &amp; App Store purchases turned off
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepSiriDictation" />
+              Screen Time - Siri &amp; Dictation - Off
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepScreenTimePasscode" />
+              Screen Time passcode set to 9357
+            </label>
+          </div>
+        </div>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepCameraAccess" />
+          Camera and Photo Access Allowed (Only needed for requested Main 4 apps)
+        </label>
+        <div class="prep-checklist__group">
+          <label class="prep-checklist__item">
+            <input type="checkbox" id="prepCrmComplete" />
+            CRM is appropriately filled out
+          </label>
+          <div class="prep-checklist__sublist">
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepVocabSet" />
+              Vocab Set filled out as necessary
+            </label>
+            <label class="prep-checklist__item">
+              <input type="checkbox" id="prepGridAccounts" />
+              Grid accounts are added to device tab
+            </label>
+          </div>
+        </div>
+        <label class="prep-checklist__item">
+          <input type="checkbox" id="prepKeyguards" />
+          Make sure requested keyguard(s) and keyguard frame are present, fit properly, and do not have sharp edges
+        </label>
+      </div>
+    </div>
+
+    <div class="crm-nav-footer">
+      <button id="prepFinishBtn" class="toggle-btn" type="button">Finish prep</button>
     </div>
   </div>
 

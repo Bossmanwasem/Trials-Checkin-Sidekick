@@ -47,7 +47,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -107,6 +107,7 @@ function showGridView() {
   showView("gridView");
   void refreshGridClientData();
 }
+function showPrepView() { showView("prepView"); }
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showSmartboxRepairView() { showView("smartboxRepairView"); }
@@ -4023,6 +4024,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     await syncViewForTab(activeTab);
   });
 
+  document.getElementById("talkPadPrepBtn")?.addEventListener("click", () => {
+    showPrepView();
+  });
+
   document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
     showCrmNavigatorView();
   });
@@ -4081,6 +4086,15 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("appOverridesReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("prepReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
+    await incrementDailyCounter("preps");
     showLandingView();
   });
 
