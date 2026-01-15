@@ -113,11 +113,7 @@
           </div>
           <div class="daily-counter__item">
             <span class="daily-counter__label">QA's</span>
-            <div class="daily-counter__controls">
-              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="-1" aria-label="Decrease QA count">-</button>
-              <span class="daily-counter__value" id="dailyQasCount">0</span>
-              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="1" aria-label="Increase QA count">+</button>
-            </div>
+            <span class="daily-counter__value" id="dailyQasCount">0</span>
           </div>
           <div class="daily-counter__item">
             <span class="daily-counter__label">Preps</span>
@@ -237,6 +233,18 @@
         Return to CRM Sidekick
       </button>
     </div>
+  </div>
+
+  <!-- QA COMPLETE VIEW -->
+  <div class="container" id="qaCompleteView" style="display:none;">
+    <h1>QA Complete</h1>
+    <p class="complete-intro">
+      Finish the QA form, then return here to log it.
+    </p>
+
+    <button id="qaFinishedBtn" class="toggle-btn" type="button" style="margin-top:16px;">
+      Finished QA
+    </button>
   </div>
 
   <!-- CRM NAVIGATOR VIEW -->

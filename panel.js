@@ -46,7 +46,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
+const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -113,6 +113,7 @@ function showInventoryView() { showView("inventoryView"); }
 function showDafView() { showView("dafRecapView"); }
 function showEmailView() { showView("emailView"); }
 function showAppOverridesView() { showView("appOverridesView"); }
+function showQaCompleteView() { showView("qaCompleteView"); }
 
 function setCollapsibleState(key, expanded) {
   const toggle = document.querySelector(`[data-collapsible="${key}"]`);
@@ -3972,6 +3973,12 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("qaFormBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: QA_FORM_URL });
+    showQaCompleteView();
+  });
+
+  document.getElementById("qaFinishedBtn")?.addEventListener("click", async () => {
+    await incrementDailyCounter("qas");
+    showLandingView();
   });
 
   document.getElementById("appOverridesBtn")?.addEventListener("click", () => {
