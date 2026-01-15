@@ -46,6 +46,44 @@ const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView"];
+const MULTI_THEME_IDS = new Set([
+  "coral",
+  "lagoon",
+  "prism",
+  "neon",
+  "tropic",
+  "auroraBurst",
+  "retroWave",
+  "peacock",
+  "emberSky",
+  "electricMeadow",
+  "solarBloom",
+  "galaxyTrail",
+  "cobaltSunset",
+  "frostfire",
+  "berryBlitz",
+  "canyonLights",
+  "holoWave",
+  "jadeFlare",
+  "lavaPool",
+  "moonlitSurf",
+  "novaPunch",
+  "orchidIce",
+  "pulseRift",
+  "rainbowRoad",
+  "saffronTide",
+  "skylineGlow",
+  "spectrumNoir",
+  "vividHarbor",
+  "zenithMix"
+]);
+const SPECIAL_THEME_IDS = new Set(["chaos"]);
+const THEME_CATEGORY_LABELS = {
+  single: "Single Color Themes",
+  multi: "Multi Color Themes",
+  special: "Special Themes"
+};
+const THEME_CATEGORY_ORDER = ["single", "multi", "special"];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -298,6 +336,25 @@ const THEMES = {
       "error-color": "#dc2626"
     }
   },
+  blackIce: {
+    label: "Black Ice",
+    vars: {
+      "bg-color": "#05070a",
+      "text-color": "#f8fafc",
+      "muted-text": "#d6dbe1",
+      "container-bg": "#0d1117",
+      "container-border": "#f8fafc",
+      "container-shadow": "0 0 24px rgba(248, 250, 252, 0.2)",
+      "accent": "#ffffff",
+      "accent-strong": "#1f2937",
+      "accent-strong-hover": "#111827",
+      "input-bg": "#0f172a",
+      "input-border": "#e2e8f0",
+      "note-bg": "#111827",
+      "note-border": "#cbd5f5",
+      "error-color": "#f87171"
+    }
+  },
   coral: {
     label: "Coral Reef",
     vars: {
@@ -469,6 +526,386 @@ const THEMES = {
       "error-color": "#fb7185"
     }
   },
+  electricMeadow: {
+    label: "Electric Meadow",
+    vars: {
+      "bg-color": "#0b120d",
+      "text-color": "#effff3",
+      "muted-text": "#b6f7cb",
+      "container-bg": "#142117",
+      "container-border": "#34d399",
+      "container-shadow": "0 0 20px rgba(59, 130, 246, 0.24)",
+      "accent": "#60a5fa",
+      "accent-strong": "#0f3b57",
+      "accent-strong-hover": "#125170",
+      "input-bg": "#1d2b20",
+      "input-border": "#3d5a46",
+      "note-bg": "#0f1a14",
+      "note-border": "#2e4a37",
+      "error-color": "#fb7185"
+    }
+  },
+  solarBloom: {
+    label: "Solar Bloom",
+    vars: {
+      "bg-color": "#141009",
+      "text-color": "#fff7e1",
+      "muted-text": "#fdd9a4",
+      "container-bg": "#241c10",
+      "container-border": "#f97316",
+      "container-shadow": "0 0 20px rgba(234, 179, 8, 0.25)",
+      "accent": "#eab308",
+      "accent-strong": "#7a4a0b",
+      "accent-strong-hover": "#935a10",
+      "input-bg": "#2e2412",
+      "input-border": "#6b5321",
+      "note-bg": "#191306",
+      "note-border": "#4b3a18",
+      "error-color": "#f43f5e"
+    }
+  },
+  galaxyTrail: {
+    label: "Galaxy Trail",
+    vars: {
+      "bg-color": "#0b0c16",
+      "text-color": "#f4f3ff",
+      "muted-text": "#c5c0ff",
+      "container-bg": "#141528",
+      "container-border": "#8b5cf6",
+      "container-shadow": "0 0 20px rgba(56, 189, 248, 0.25)",
+      "accent": "#38bdf8",
+      "accent-strong": "#1e3a8a",
+      "accent-strong-hover": "#1d4ed8",
+      "input-bg": "#1f1f38",
+      "input-border": "#46406b",
+      "note-bg": "#111126",
+      "note-border": "#342e56",
+      "error-color": "#fb7185"
+    }
+  },
+  cobaltSunset: {
+    label: "Cobalt Sunset",
+    vars: {
+      "bg-color": "#0b1118",
+      "text-color": "#eef6ff",
+      "muted-text": "#b8cceb",
+      "container-bg": "#152030",
+      "container-border": "#f97316",
+      "container-shadow": "0 0 20px rgba(14, 116, 144, 0.25)",
+      "accent": "#0ea5e9",
+      "accent-strong": "#0f3b57",
+      "accent-strong-hover": "#125170",
+      "input-bg": "#1f2b3d",
+      "input-border": "#3e546b",
+      "note-bg": "#101723",
+      "note-border": "#2b3b4d",
+      "error-color": "#fb7185"
+    }
+  },
+  frostfire: {
+    label: "Frostfire",
+    vars: {
+      "bg-color": "#0c1013",
+      "text-color": "#f5fbff",
+      "muted-text": "#bdddf8",
+      "container-bg": "#141d22",
+      "container-border": "#f97316",
+      "container-shadow": "0 0 20px rgba(14, 165, 233, 0.25)",
+      "accent": "#38bdf8",
+      "accent-strong": "#0e4f5e",
+      "accent-strong-hover": "#136378",
+      "input-bg": "#1c2730",
+      "input-border": "#3a4e5e",
+      "note-bg": "#0f171d",
+      "note-border": "#2b3e4a",
+      "error-color": "#f97316"
+    }
+  },
+  berryBlitz: {
+    label: "Berry Blitz",
+    vars: {
+      "bg-color": "#140c14",
+      "text-color": "#ffeefc",
+      "muted-text": "#f6b5ea",
+      "container-bg": "#251326",
+      "container-border": "#f472b6",
+      "container-shadow": "0 0 20px rgba(99, 102, 241, 0.24)",
+      "accent": "#6366f1",
+      "accent-strong": "#312e81",
+      "accent-strong-hover": "#3730a3",
+      "input-bg": "#311a34",
+      "input-border": "#5e3a63",
+      "note-bg": "#1c101f",
+      "note-border": "#47304f",
+      "error-color": "#fb7185"
+    }
+  },
+  canyonLights: {
+    label: "Canyon Lights",
+    vars: {
+      "bg-color": "#14110c",
+      "text-color": "#fff3e3",
+      "muted-text": "#f7c9a1",
+      "container-bg": "#261a12",
+      "container-border": "#fb7185",
+      "container-shadow": "0 0 20px rgba(245, 158, 11, 0.24)",
+      "accent": "#f59e0b",
+      "accent-strong": "#7a4a0b",
+      "accent-strong-hover": "#935a10",
+      "input-bg": "#2f2215",
+      "input-border": "#6d4a29",
+      "note-bg": "#1a130a",
+      "note-border": "#4f3920",
+      "error-color": "#f87171"
+    }
+  },
+  holoWave: {
+    label: "Holo Wave",
+    vars: {
+      "bg-color": "#0b1016",
+      "text-color": "#eef9ff",
+      "muted-text": "#b6e6ff",
+      "container-bg": "#13202b",
+      "container-border": "#22d3ee",
+      "container-shadow": "0 0 20px rgba(168, 85, 247, 0.24)",
+      "accent": "#a855f7",
+      "accent-strong": "#4c1d95",
+      "accent-strong-hover": "#5b21b6",
+      "input-bg": "#1c2b39",
+      "input-border": "#3f5a6f",
+      "note-bg": "#0f1821",
+      "note-border": "#2f4456",
+      "error-color": "#fb7185"
+    }
+  },
+  jadeFlare: {
+    label: "Jade Flare",
+    vars: {
+      "bg-color": "#0b1211",
+      "text-color": "#e9fff8",
+      "muted-text": "#b7f5e4",
+      "container-bg": "#14211f",
+      "container-border": "#f97316",
+      "container-shadow": "0 0 20px rgba(34, 197, 94, 0.24)",
+      "accent": "#22c55e",
+      "accent-strong": "#14532d",
+      "accent-strong-hover": "#166534",
+      "input-bg": "#1c2b28",
+      "input-border": "#3c5a52",
+      "note-bg": "#0f1a17",
+      "note-border": "#2d4b43",
+      "error-color": "#f97316"
+    }
+  },
+  lavaPool: {
+    label: "Lava Pool",
+    vars: {
+      "bg-color": "#120c0a",
+      "text-color": "#fff1e6",
+      "muted-text": "#f7c4a4",
+      "container-bg": "#251410",
+      "container-border": "#22d3ee",
+      "container-shadow": "0 0 20px rgba(248, 113, 113, 0.25)",
+      "accent": "#f97316",
+      "accent-strong": "#7a2f0b",
+      "accent-strong-hover": "#93370f",
+      "input-bg": "#2f1a15",
+      "input-border": "#6b3a2a",
+      "note-bg": "#1a0f0c",
+      "note-border": "#4a2a20",
+      "error-color": "#38bdf8"
+    }
+  },
+  moonlitSurf: {
+    label: "Moonlit Surf",
+    vars: {
+      "bg-color": "#0a1115",
+      "text-color": "#e9faff",
+      "muted-text": "#b7dff2",
+      "container-bg": "#132028",
+      "container-border": "#a3e635",
+      "container-shadow": "0 0 20px rgba(56, 189, 248, 0.24)",
+      "accent": "#38bdf8",
+      "accent-strong": "#0f3b57",
+      "accent-strong-hover": "#125170",
+      "input-bg": "#1c2b35",
+      "input-border": "#3b5668",
+      "note-bg": "#0f1820",
+      "note-border": "#2d4454",
+      "error-color": "#f97316"
+    }
+  },
+  novaPunch: {
+    label: "Nova Punch",
+    vars: {
+      "bg-color": "#120f16",
+      "text-color": "#f8f3ff",
+      "muted-text": "#d4c4ff",
+      "container-bg": "#1f1b2e",
+      "container-border": "#f472b6",
+      "container-shadow": "0 0 20px rgba(34, 211, 238, 0.24)",
+      "accent": "#22d3ee",
+      "accent-strong": "#0e4f5e",
+      "accent-strong-hover": "#136378",
+      "input-bg": "#2a2540",
+      "input-border": "#524a73",
+      "note-bg": "#181427",
+      "note-border": "#3a3456",
+      "error-color": "#f97316"
+    }
+  },
+  orchidIce: {
+    label: "Orchid Ice",
+    vars: {
+      "bg-color": "#0f111a",
+      "text-color": "#f4f0ff",
+      "muted-text": "#c7c1ff",
+      "container-bg": "#1b1e30",
+      "container-border": "#f9a8d4",
+      "container-shadow": "0 0 20px rgba(129, 140, 248, 0.25)",
+      "accent": "#818cf8",
+      "accent-strong": "#3730a3",
+      "accent-strong-hover": "#4338ca",
+      "input-bg": "#27263f",
+      "input-border": "#4d4a73",
+      "note-bg": "#151626",
+      "note-border": "#34324f",
+      "error-color": "#f472b6"
+    }
+  },
+  pulseRift: {
+    label: "Pulse Rift",
+    vars: {
+      "bg-color": "#0b0f14",
+      "text-color": "#eaf6ff",
+      "muted-text": "#a9d6ff",
+      "container-bg": "#121a26",
+      "container-border": "#f472b6",
+      "container-shadow": "0 0 20px rgba(14, 165, 233, 0.24)",
+      "accent": "#0ea5e9",
+      "accent-strong": "#0f3b57",
+      "accent-strong-hover": "#125170",
+      "input-bg": "#1c2634",
+      "input-border": "#36485c",
+      "note-bg": "#0e1620",
+      "note-border": "#2a3b4d",
+      "error-color": "#f472b6"
+    }
+  },
+  rainbowRoad: {
+    label: "Rainbow Road",
+    vars: {
+      "bg-color": "#0c0f18",
+      "text-color": "#f2f7ff",
+      "muted-text": "#c1d4ff",
+      "container-bg": "#151c2e",
+      "container-border": "#22c55e",
+      "container-shadow": "0 0 20px rgba(236, 72, 153, 0.24)",
+      "accent": "#ec4899",
+      "accent-strong": "#831843",
+      "accent-strong-hover": "#9d174d",
+      "input-bg": "#1f273b",
+      "input-border": "#42506b",
+      "note-bg": "#111624",
+      "note-border": "#303b54",
+      "error-color": "#f59e0b"
+    }
+  },
+  saffronTide: {
+    label: "Saffron Tide",
+    vars: {
+      "bg-color": "#0f120d",
+      "text-color": "#f9ffe9",
+      "muted-text": "#d6f5b7",
+      "container-bg": "#1b2416",
+      "container-border": "#38bdf8",
+      "container-shadow": "0 0 20px rgba(250, 204, 21, 0.24)",
+      "accent": "#facc15",
+      "accent-strong": "#7a5a00",
+      "accent-strong-hover": "#946b00",
+      "input-bg": "#263020",
+      "input-border": "#4f5f3b",
+      "note-bg": "#151d12",
+      "note-border": "#3a4a2b",
+      "error-color": "#38bdf8"
+    }
+  },
+  skylineGlow: {
+    label: "Skyline Glow",
+    vars: {
+      "bg-color": "#0b1016",
+      "text-color": "#eef6ff",
+      "muted-text": "#b7cbe8",
+      "container-bg": "#141d2b",
+      "container-border": "#facc15",
+      "container-shadow": "0 0 20px rgba(99, 102, 241, 0.24)",
+      "accent": "#6366f1",
+      "accent-strong": "#312e81",
+      "accent-strong-hover": "#3730a3",
+      "input-bg": "#1f2b3c",
+      "input-border": "#3e5166",
+      "note-bg": "#111825",
+      "note-border": "#2d3b4a",
+      "error-color": "#facc15"
+    }
+  },
+  spectrumNoir: {
+    label: "Spectrum Noir",
+    vars: {
+      "bg-color": "#080a12",
+      "text-color": "#f1f5ff",
+      "muted-text": "#c3c9ff",
+      "container-bg": "#12182b",
+      "container-border": "#60a5fa",
+      "container-shadow": "0 0 20px rgba(244, 114, 182, 0.24)",
+      "accent": "#f472b6",
+      "accent-strong": "#7a2a4d",
+      "accent-strong-hover": "#95325f",
+      "input-bg": "#1a223a",
+      "input-border": "#3b4666",
+      "note-bg": "#0f1525",
+      "note-border": "#2b3352",
+      "error-color": "#f59e0b"
+    }
+  },
+  vividHarbor: {
+    label: "Vivid Harbor",
+    vars: {
+      "bg-color": "#0a1216",
+      "text-color": "#e9fbff",
+      "muted-text": "#b7e8f2",
+      "container-bg": "#14222a",
+      "container-border": "#f59e0b",
+      "container-shadow": "0 0 20px rgba(34, 211, 238, 0.24)",
+      "accent": "#22d3ee",
+      "accent-strong": "#0e4f5e",
+      "accent-strong-hover": "#136378",
+      "input-bg": "#1c2c36",
+      "input-border": "#3e5a6b",
+      "note-bg": "#0f1a20",
+      "note-border": "#2d4552",
+      "error-color": "#f59e0b"
+    }
+  },
+  zenithMix: {
+    label: "Zenith Mix",
+    vars: {
+      "bg-color": "#0f1116",
+      "text-color": "#f6f3ff",
+      "muted-text": "#d2c9ff",
+      "container-bg": "#1a1e2d",
+      "container-border": "#34d399",
+      "container-shadow": "0 0 20px rgba(168, 85, 247, 0.24)",
+      "accent": "#a855f7",
+      "accent-strong": "#4c1d95",
+      "accent-strong-hover": "#5b21b6",
+      "input-bg": "#26263f",
+      "input-border": "#4b4a6b",
+      "note-bg": "#151525",
+      "note-border": "#34324f",
+      "error-color": "#34d399"
+    }
+  },
   chaos: {
     label: "Chaos Goblin",
     vars: {
@@ -510,6 +947,23 @@ function setThemeVars(vars) {
   Object.entries(vars).forEach(([key, value]) => {
     document.documentElement.style.setProperty(`--${key}`, value);
   });
+}
+
+function getThemeCategory(themeId) {
+  if (SPECIAL_THEME_IDS.has(themeId)) return "special";
+  if (MULTI_THEME_IDS.has(themeId)) return "multi";
+  return "single";
+}
+
+function getThemesByCategory() {
+  const grouped = {};
+  Object.entries(THEMES).forEach(([id, theme]) => {
+    const category = getThemeCategory(id);
+    if (!grouped[category]) grouped[category] = [];
+    grouped[category].push({ id, theme });
+  });
+  Object.values(grouped).forEach(list => list.sort((a, b) => a.theme.label.localeCompare(b.theme.label)));
+  return grouped;
 }
 
 function getRandomThemeId() {
@@ -675,11 +1129,19 @@ async function initChaosControls() {
 function populateThemeSelect(selectEl) {
   if (!selectEl) return;
   selectEl.innerHTML = "";
-  Object.entries(THEMES).forEach(([id, theme]) => {
-    const option = document.createElement("option");
-    option.value = id;
-    option.textContent = theme.label;
-    selectEl.appendChild(option);
+  const groupedThemes = getThemesByCategory();
+  THEME_CATEGORY_ORDER.forEach(category => {
+    const themes = groupedThemes[category];
+    if (!themes || !themes.length) return;
+    const group = document.createElement("optgroup");
+    group.label = THEME_CATEGORY_LABELS[category] || category;
+    themes.forEach(({ id, theme }) => {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = theme.label;
+      group.appendChild(option);
+    });
+    selectEl.appendChild(group);
   });
 }
 
@@ -748,24 +1210,39 @@ function initThemeControls() {
   const themeOptions = document.getElementById("themeOptions");
   if (themeOptions) {
     themeOptions.innerHTML = "";
-    Object.entries(THEMES).forEach(([id, theme]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "theme-option";
-      button.dataset.theme = id;
-      button.setAttribute("aria-pressed", "false");
+    const groupedThemes = getThemesByCategory();
+    THEME_CATEGORY_ORDER.forEach(category => {
+      const themes = groupedThemes[category];
+      if (!themes || !themes.length) return;
+      const section = document.createElement("div");
+      section.className = "theme-options__section";
+      const heading = document.createElement("div");
+      heading.className = "theme-options__heading";
+      heading.textContent = THEME_CATEGORY_LABELS[category] || category;
+      const grid = document.createElement("div");
+      grid.className = "theme-options__grid";
+      themes.forEach(({ id, theme }) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "theme-option";
+        button.dataset.theme = id;
+        button.setAttribute("aria-pressed", "false");
 
-      const swatch = document.createElement("span");
-      swatch.className = "theme-swatch";
-      swatch.style.setProperty("--theme-swatch", theme.vars["accent"] || "");
+        const swatch = document.createElement("span");
+        swatch.className = "theme-swatch";
+        swatch.style.setProperty("--theme-swatch", theme.vars["accent"] || "");
 
-      const label = document.createElement("span");
-      label.className = "theme-option__label";
-      label.textContent = theme.label;
+        const label = document.createElement("span");
+        label.className = "theme-option__label";
+        label.textContent = theme.label;
 
-      button.appendChild(swatch);
-      button.appendChild(label);
-      themeOptions.appendChild(button);
+        button.appendChild(swatch);
+        button.appendChild(label);
+        grid.appendChild(button);
+      });
+      section.appendChild(heading);
+      section.appendChild(grid);
+      themeOptions.appendChild(section);
     });
   }
 
