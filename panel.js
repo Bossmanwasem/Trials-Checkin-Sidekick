@@ -127,6 +127,8 @@ let hasStartedCheckin = false;
 let smartboxRepairRequired = false;
 let hasStartedGrid = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
+const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
+const DEFAULT_MASCOT_SRC = "assets/sparknsymoji.png";
 
 const THEMES = {
   ocean: {
@@ -1202,12 +1204,26 @@ function populateThemeSelect(selectEl) {
   });
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      resolve(typeof result === "string" ? result : "");
+    };
+    reader.onerror = () => reject(new Error("Unable to read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function initOnboardingForm() {
   const form = document.getElementById("onboardingForm");
   const firstNameInput = document.getElementById("userFirstName");
+  const mascotInput = document.getElementById("userMascotInput");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
+  let pendingMascot = null;
 
   populateThemeSelect(themeSelect);
   const storedTheme = await getStoredValue(THEME_STORAGE_KEY);
@@ -1218,6 +1234,30 @@ async function initOnboardingForm() {
   const existingProfile = await getUserProfile();
   if (existingProfile && firstNameInput) {
     firstNameInput.value = existingProfile.firstName || "";
+  }
+  if (mascotInput) {
+    const storedMascot = await getUserMascot();
+    updateMascotPreview(storedMascot);
+    mascotInput.addEventListener("change", async () => {
+      const file = mascotInput.files?.[0];
+      if (!file) {
+        pendingMascot = null;
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file for your mascot.");
+        mascotInput.value = "";
+        pendingMascot = null;
+        return;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        pendingMascot = dataUrl;
+        updateMascotPreview(dataUrl);
+      } catch {
+        alert("Unable to read that image file.");
+      }
+    });
   }
   if (dailyCounterToggle) {
     dailyCounterToggle.checked = await getDailyCounterEnabled();
@@ -1236,11 +1276,15 @@ async function initOnboardingForm() {
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
 
     if (!firstName) {
-      alert("Please enter your first name.");
+      alert("Please enter your username.");
       return;
     }
 
     await saveUserProfile({ firstName, lastName });
+    if (pendingMascot) {
+      await saveUserMascot(pendingMascot);
+      updateLandingMascot(pendingMascot);
+    }
     await setDailyCounterEnabled(dailyCounterEnabled);
     await setWeeklyCounterEnabled(weeklyCounterEnabled);
     applyTheme(themeId);
@@ -1689,10 +1733,32 @@ async function saveUserProfile(profile) {
   await setStoredValue(USER_PROFILE_STORAGE_KEY, profile);
 }
 
+async function getUserMascot() {
+  return await getStoredValue(USER_MASCOT_STORAGE_KEY);
+}
+
+async function saveUserMascot(mascotSrc) {
+  await setStoredValue(USER_MASCOT_STORAGE_KEY, mascotSrc);
+}
+
 function updateLandingGreeting(profile) {
   const firstName = (profile?.firstName || "").trim();
   const greeting = firstName ? `Welcome back, ${firstName}!` : "Welcome back!";
   setText("landingGreeting", greeting);
+}
+
+function updateLandingMascot(mascotSrc) {
+  const image = document.getElementById("landingMascot");
+  if (image) {
+    image.src = mascotSrc || DEFAULT_MASCOT_SRC;
+  }
+}
+
+function updateMascotPreview(mascotSrc) {
+  const image = document.getElementById("userMascotPreview");
+  if (image) {
+    image.src = mascotSrc || DEFAULT_MASCOT_SRC;
+  }
 }
 
 function updateLandingVersion() {
@@ -1894,6 +1960,8 @@ async function clearWeeklyCounters() {
 async function refreshLandingView() {
   const profile = await getUserProfile();
   updateLandingGreeting(profile);
+  const mascot = await getUserMascot();
+  updateLandingMascot(mascot);
   updateLandingVersion();
   await updateDailyCounterVisibility();
   await updateWeeklyCounterVisibility();
