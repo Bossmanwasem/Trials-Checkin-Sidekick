@@ -8,6 +8,7 @@
   --accent: #81cfff;
   --accent-strong: #003366;
   --accent-strong-hover: #005599;
+  --button-text-color: var(--accent);
   --input-bg: #2a2a3a;
   --input-border: #555;
   --note-bg: #0f1b2b;
@@ -477,7 +478,7 @@ textarea {
   display: block;
   background-color: transparent;
   border: 1px solid var(--accent);
-  color: var(--accent);
+  color: var(--button-text-color);
   padding: 10px;
   margin-top: 16px;
   text-align: center;
@@ -541,7 +542,7 @@ button[type="submit"]:hover {
 .repair-btn {
   background-color: transparent;
   border: 1px solid var(--accent);
-  color: var(--accent);
+  color: var(--button-text-color);
   padding: 10px;
   border-radius: 6px;
   cursor: pointer;
