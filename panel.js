@@ -108,6 +108,14 @@ function showGridView() {
   void refreshGridClientData();
 }
 function showPrepView() { showView("prepView"); }
+
+function clearPrepChecklist() {
+  const prepView = document.getElementById("prepView");
+  if (!prepView) return;
+  prepView.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = false;
+  });
+}
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
 function showSmartboxRepairView() { showView("smartboxRepairView"); }
@@ -4095,6 +4103,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("preps");
+    clearPrepChecklist();
     showLandingView();
   });
 
