@@ -2098,6 +2098,20 @@ document.getElementById("cameraToggle")?.addEventListener("click", () => toggleS
 document.getElementById("mountToggle")?.addEventListener("click", () => toggleSection("mountSection"));
 document.getElementById("accessoryToggle")?.addEventListener("click", () => toggleSection("accessorySection"));
 
+const vocabNotReturnedToggle = document.getElementById("vocabNotReturned");
+const vocabTypeInputs = Array.from(document.querySelectorAll('input[name="vocabTypes"]'));
+
+function updateVocabSelectionAvailability() {
+  const disabled = vocabNotReturnedToggle?.checked === true;
+  vocabTypeInputs.forEach(input => {
+    input.disabled = disabled;
+    if (disabled) input.checked = false;
+  });
+}
+
+vocabNotReturnedToggle?.addEventListener("change", updateVocabSelectionAvailability);
+updateVocabSelectionAvailability();
+
 /* ---------------- Device model detection ---------------- */
 
 function detectDeviceModel(deviceNumberRaw) {
@@ -2132,9 +2146,18 @@ function isSmartboxRepairModel(deviceNumberRaw) {
 
 /* ---------------- NOTE helpers ---------------- */
 
+function getSelectedVocabTypes() {
+  return Array.from(document.querySelectorAll('input[name="vocabTypes"]:checked'))
+    .map(input => input.value)
+    .filter(Boolean);
+}
+
 function buildVocabLine() {
   const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
-  return vocabNotReturned ? "No vocab returned." : "I saved vocab to the CRM.";
+  if (vocabNotReturned) return "No vocab returned.";
+  const selected = getSelectedVocabTypes();
+  const vocabLabel = selected.length ? selected.join(", ") : "selected";
+  return `I saved ${vocabLabel} vocabs to the CRM.`;
 }
 
 function buildAccessoriesLineIfAny() {
@@ -2661,6 +2684,10 @@ function resetAllFieldsAndUI() {
 
   const vocabNotReturned = document.getElementById("vocabNotReturned");
   if (vocabNotReturned) vocabNotReturned.checked = false;
+  document.querySelectorAll('input[name="vocabTypes"]').forEach(input => {
+    input.checked = false;
+    input.disabled = false;
+  });
 
   clearRepairsUI();
 
