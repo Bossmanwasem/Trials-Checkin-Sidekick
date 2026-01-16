@@ -1064,6 +1064,7 @@ body[data-theme="rainbowParty"] h3 {
 
 body[data-theme="rainbowParty"] .container {
   position: relative;
+  border-color: transparent;
 }
 
 body[data-theme="rainbowParty"] .container > * {
