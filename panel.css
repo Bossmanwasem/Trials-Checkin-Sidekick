@@ -952,11 +952,39 @@ input[type="file"] {
   gap: 8px;
 }
 
-.theme-options__heading {
+.theme-options__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted-text);
+}
+
+.theme-options__chevron {
+  font-size: 13px;
+  transition: transform 0.2s ease;
+}
+
+.theme-options__toggle[aria-expanded="true"] .theme-options__chevron {
+  transform: rotate(180deg);
+}
+
+.theme-options__content {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+.theme-options__content[hidden] {
+  display: none;
 }
 
 .theme-options__grid {
