@@ -1062,12 +1062,21 @@ body[data-theme="rainbowParty"] h3 {
   color: #ffffff;
 }
 
-body[data-theme="rainbowParty"]::before,
-body[data-theme="rainbowParty"]::after {
+body[data-theme="rainbowParty"] .container {
+  position: relative;
+}
+
+body[data-theme="rainbowParty"] .container > * {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-theme="rainbowParty"] .container::before,
+body[data-theme="rainbowParty"] .container::after {
   content: "";
-  position: fixed;
+  position: absolute;
   inset: 0;
-  border-radius: 0;
+  border-radius: inherit;
   padding: 3px;
   background: conic-gradient(
     from var(--rainbow-angle),
@@ -1087,7 +1096,7 @@ body[data-theme="rainbowParty"]::after {
   mask-composite: exclude;
 }
 
-body[data-theme="rainbowParty"]::after {
+body[data-theme="rainbowParty"] .container::after {
   filter: blur(16px);
   opacity: 0.55;
 }
