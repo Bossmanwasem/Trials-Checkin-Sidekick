@@ -113,7 +113,7 @@ const NFL_THEME_IDS = new Set([
   "nflTitans",
   "nflCommanders"
 ]);
-const SPECIAL_THEME_IDS = new Set(["chaos", "surpriseParty"]);
+const SPECIAL_THEME_IDS = new Set(["chaos", "surpriseParty", "rainbowParty"]);
 const THEME_CATEGORY_LABELS = {
   single: "Single Color Themes",
   multi: "Multi Color Themes",
@@ -1600,6 +1600,25 @@ const THEMES = {
       "note-border": "#5b3a7d",
       "error-color": "#ff9ad5"
     }
+  },
+  rainbowParty: {
+    label: "Rainbow Party",
+    vars: {
+      "bg-color": "#0b0b16",
+      "text-color": "#ffffff",
+      "muted-text": "#ffffff",
+      "container-bg": "#151527",
+      "container-border": "#ffffff",
+      "container-shadow": "0 0 18px rgba(255, 255, 255, 0.18)",
+      "accent": "#ffffff",
+      "accent-strong": "#1a1a2a",
+      "accent-strong-hover": "#24243a",
+      "input-bg": "#1a1a2e",
+      "input-border": "#4c4c6a",
+      "note-bg": "#121226",
+      "note-border": "#3a3a54",
+      "error-color": "#ffffff"
+    }
   }
 };
 
@@ -1624,6 +1643,11 @@ function setThemeVars(vars) {
   Object.entries(vars).forEach(([key, value]) => {
     document.documentElement.style.setProperty(`--${key}`, value);
   });
+}
+
+function setBodyThemeAttribute(themeId) {
+  if (!document.body) return;
+  document.body.dataset.theme = themeId;
 }
 
 function setButtonTextColor(themeId, theme) {
@@ -1731,6 +1755,7 @@ function applyChaosThemeTransition(themeId, theme) {
     document.body.style.backgroundColor = currentBg;
   }
   setThemeVars(theme.vars);
+  setBodyThemeAttribute(themeId);
   setButtonTextColor(themeId, theme);
   layer.style.backgroundColor = theme.vars["bg-color"] || "";
   document.body.classList.remove("chaos-transitioning");
@@ -1801,6 +1826,7 @@ function applyTheme(themeId, { persist = true } = {}) {
   const resolvedTheme = THEMES[themeId] ? themeId : "ocean";
   activeThemeId = resolvedTheme;
   if (resolvedTheme === "chaos") {
+    setBodyThemeAttribute(resolvedTheme);
     updateThemeSelection(resolvedTheme);
     startChaosRotation();
     if (persist) saveThemePreference(resolvedTheme);
@@ -1813,6 +1839,7 @@ function applyTheme(themeId, { persist = true } = {}) {
   }
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
+  setBodyThemeAttribute(resolvedTheme);
   setButtonTextColor(resolvedTheme, theme);
   updateThemeSelection(resolvedTheme);
   const themeSelect = document.getElementById("onboardingThemeSelect");
