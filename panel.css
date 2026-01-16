@@ -1040,3 +1040,83 @@ input[type="file"] {
   flex: 1;
   font-weight: 600;
 }
+
+@keyframes rainbowSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+body[data-theme="rainbowParty"] {
+  color: #ffffff;
+}
+
+body[data-theme="rainbowParty"] h1,
+body[data-theme="rainbowParty"] h3 {
+  color: #ffffff;
+}
+
+body[data-theme="rainbowParty"]::before,
+body[data-theme="rainbowParty"]::after {
+  content: "";
+  position: fixed;
+  inset: 8px;
+  border-radius: 18px;
+  padding: 3px;
+  background: conic-gradient(
+    #ff1b6b,
+    #ff7a18,
+    #ffe400,
+    #2aff6d,
+    #1fc8ff,
+    #7f4dff,
+    #ff1b6b
+  );
+  animation: rainbowSpin 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+body[data-theme="rainbowParty"]::after {
+  filter: blur(16px);
+  opacity: 0.55;
+}
+
+body[data-theme="rainbowParty"] button {
+  position: relative;
+  z-index: 0;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+body[data-theme="rainbowParty"] button::before,
+body[data-theme="rainbowParty"] button::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    #ff1b6b,
+    #ff7a18,
+    #ffe400,
+    #2aff6d,
+    #1fc8ff,
+    #7f4dff,
+    #ff1b6b
+  );
+  animation: rainbowSpin 4s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+body[data-theme="rainbowParty"] button::after {
+  filter: blur(10px);
+  opacity: 0.6;
+}
