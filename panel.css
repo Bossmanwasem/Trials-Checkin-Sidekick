@@ -1041,9 +1041,15 @@ input[type="file"] {
   font-weight: 600;
 }
 
-@keyframes rainbowSpin {
+@property --rainbow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rainbowFlow {
   to {
-    transform: rotate(360deg);
+    --rainbow-angle: 360deg;
   }
 }
 
@@ -1064,6 +1070,7 @@ body[data-theme="rainbowParty"]::after {
   border-radius: 18px;
   padding: 3px;
   background: conic-gradient(
+    from var(--rainbow-angle),
     #ff1b6b,
     #ff7a18,
     #ffe400,
@@ -1072,7 +1079,7 @@ body[data-theme="rainbowParty"]::after {
     #7f4dff,
     #ff1b6b
   );
-  animation: rainbowSpin 8s linear infinite;
+  animation: rainbowFlow 10s linear infinite;
   pointer-events: none;
   z-index: 0;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -1100,6 +1107,7 @@ body[data-theme="rainbowParty"] button::after {
   border-radius: inherit;
   padding: 2px;
   background: conic-gradient(
+    from var(--rainbow-angle),
     #ff1b6b,
     #ff7a18,
     #ffe400,
@@ -1108,7 +1116,7 @@ body[data-theme="rainbowParty"] button::after {
     #7f4dff,
     #ff1b6b
   );
-  animation: rainbowSpin 4s linear infinite;
+  animation: rainbowFlow 6s linear infinite;
   pointer-events: none;
   z-index: -1;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
