@@ -1980,9 +1980,16 @@ function initThemeControls() {
       if (!themes || !themes.length) return;
       const section = document.createElement("div");
       section.className = "theme-options__section";
-      const heading = document.createElement("div");
-      heading.className = "theme-options__heading";
-      heading.textContent = THEME_CATEGORY_LABELS[category] || category;
+      const sectionKey = `theme-${category}`;
+      const heading = document.createElement("button");
+      heading.type = "button";
+      heading.className = "toggle-btn theme-options__toggle";
+      heading.dataset.collapsible = sectionKey;
+      heading.setAttribute("aria-expanded", category === "single" ? "true" : "false");
+      heading.innerHTML = `
+        <span>${THEME_CATEGORY_LABELS[category] || category}</span>
+        <span class="theme-options__chevron" aria-hidden="true">▾</span>
+      `;
       const grid = document.createElement("div");
       grid.className = "theme-options__grid";
       themes.forEach(({ id, theme }) => {
@@ -2004,8 +2011,13 @@ function initThemeControls() {
         button.appendChild(label);
         grid.appendChild(button);
       });
+      const content = document.createElement("div");
+      content.className = "theme-options__content";
+      content.dataset.collapsibleContent = sectionKey;
+      content.hidden = category !== "single";
+      content.appendChild(grid);
       section.appendChild(heading);
-      section.appendChild(grid);
+      section.appendChild(content);
       themeOptions.appendChild(section);
     });
   }
