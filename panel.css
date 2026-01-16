@@ -1066,8 +1066,8 @@ body[data-theme="rainbowParty"]::before,
 body[data-theme="rainbowParty"]::after {
   content: "";
   position: fixed;
-  inset: 8px;
-  border-radius: 18px;
+  inset: 0;
+  border-radius: 0;
   padding: 3px;
   background: conic-gradient(
     from var(--rainbow-angle),
@@ -1097,6 +1097,10 @@ body[data-theme="rainbowParty"] button {
   z-index: 0;
   color: #ffffff;
   border-color: transparent;
+}
+
+body[data-theme="rainbowParty"] .landing-settings-btn {
+  position: absolute;
 }
 
 body[data-theme="rainbowParty"] button::before,
