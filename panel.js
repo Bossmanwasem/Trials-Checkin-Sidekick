@@ -2070,8 +2070,7 @@ function initThemeControls() {
   });
 }
 
-const zipFolderInput = document.getElementById("zipFolderInput");
-const zipFolderSaveBtn = document.getElementById("zipFolderSaveBtn");
+const zipFolderPickBtn = document.getElementById("zipFolderPickBtn");
 const zipFolderStatus = document.getElementById("zipFolderStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
@@ -2097,29 +2096,29 @@ function updateZipFolderStatus(folder) {
   zipFolderStatus.textContent = "Saving zips to your default Downloads folder.";
 }
 
-async function saveZipFolderSetting() {
-  if (!zipFolderInput) return;
-  const normalized = normalizeZipFolder(zipFolderInput.value);
-  zipFolderInput.value = normalized;
-  await setStoredValue(ZIP_FOLDER_STORAGE_KEY, normalized);
-  updateZipFolderStatus(normalized);
+async function pickZipFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "read" });
+  } catch {
+    return;
+  }
+  if (!handle) return;
+  const name = normalizeZipFolder(handle.name || "Selected folder");
+  await setStoredValue(ZIP_FOLDER_STORAGE_KEY, name);
+  updateZipFolderStatus(name);
 }
 
 async function initZipFolderSetting() {
-  if (!zipFolderInput) return;
+  if (!zipFolderPickBtn) return;
   const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-  zipFolderInput.value = storedFolder;
   updateZipFolderStatus(storedFolder);
-  zipFolderSaveBtn?.addEventListener("click", () => {
-    void saveZipFolderSetting();
-  });
-  zipFolderInput.addEventListener("change", () => {
-    void saveZipFolderSetting();
-  });
-  zipFolderInput.addEventListener("keydown", event => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    void saveZipFolderSetting();
+  zipFolderPickBtn.addEventListener("click", async () => {
+    await pickZipFolder();
   });
 }
 
