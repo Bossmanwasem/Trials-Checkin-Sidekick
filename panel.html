@@ -53,6 +53,10 @@
         <input type="checkbox" id="onboardingWeeklyCounterToggle" />
         Show weekly task counter on the landing page
       </label>
+      <label class="checkbox-row" for="onboardingTooltipToggle">
+        <input type="checkbox" id="onboardingTooltipToggle" />
+        Show tooltips on landing buttons
+      </label>
 
       <div class="settings-card">
         <div class="settings-card__title">Zip save folder</div>
@@ -176,49 +180,49 @@
       </div>
       <p class="landing-subtitle">Pick a workflow to get started.</p>
       <div class="landing-section">
-        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false" data-tooltip="Folder housing check-in tools. Click to reveal the Device Lookup tool and the Check-in form.">
           Check-in Tools
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="landing-section__content" data-collapsible-content="checkin-tools" hidden>
-          <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button">
+          <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Full device lookup tool with CRM navigation and check-in auto-fill.">
             Device Number Lookup Sidekick
           </button>
-          <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button">
+          <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Check-in form that auto-fills name and AAC from the current CRM.">
             Check-in Sidekick
           </button>
         </div>
       </div>
       <div class="landing-section">
-        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="prep-tools" aria-expanded="false">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="prep-tools" aria-expanded="false" data-tooltip="Folder housing prep tools. Click to reveal Grid Sidekick and TalkPad Prep Sidekick.">
           Prep Tools
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="landing-section__content" data-collapsible-content="prep-tools" hidden>
-          <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button">
+          <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Builds Grid email/password from the current CRM (CL or LTL) with copy fields.">
             Grid Sidekick
           </button>
-          <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button">
+          <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Basic TalkPad prep checklist (more features coming soon).">
             TalkPad Prep Sidekick
           </button>
         </div>
       </div>
-      <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button">
+      <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Enter a CRM number to open that client record in a new tab.">
         CRM Navigator
       </button>
       <div class="landing-section">
-        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false" data-tooltip="Folder of useful links like the QA form, APP override codes, and KG request form.">
           Trials Links
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="landing-section__content" data-collapsible-content="trials-links" hidden>
-          <button id="qaFormBtn" class="toggle-btn landing-btn" type="button">
+          <button id="qaFormBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens the QA form.">
             QA Form
           </button>
-          <button id="appOverridesBtn" class="toggle-btn landing-btn" type="button">
+          <button id="appOverridesBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens a window with our app override codes.">
             APP Overrides
           </button>
-          <button id="kgRequestsBtn" class="toggle-btn landing-btn" type="button">
+          <button id="kgRequestsBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens the KG request form.">
             KG Requests
           </button>
         </div>
@@ -240,6 +244,10 @@
       <div class="settings-card">
         <div class="settings-card__title">User profile</div>
         <p class="hint-text">Update your name, daily and weekly counter preferences, and workbook connections.</p>
+        <label class="checkbox-row" for="settingsTooltipToggle">
+          <input type="checkbox" id="settingsTooltipToggle" />
+          Show tooltips on landing buttons
+        </label>
         <button id="editUserProfileBtn" class="toggle-btn settings-card__action" type="button">
           Edit user profile
         </button>
