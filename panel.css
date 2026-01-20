@@ -72,6 +72,28 @@ body.chaos-transitioning #themeTransitionLayer {
   position: relative;
 }
 
+.welcome-view h1 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.welcome-intro {
+  margin: 12px 0;
+  line-height: 1.5;
+}
+
+.welcome-list {
+  margin: 12px 0 16px;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.welcome-continue {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+}
+
 .landing-content {
   text-align: center;
   width: 100%;

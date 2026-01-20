@@ -47,7 +47,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -130,6 +130,7 @@ function showView(targetId) {
   });
 }
 
+function showWelcomeView() { showView("welcomeView"); }
 function showOnboardingView() { showView("onboardingView"); }
 function showLandingView() {
   showView("landingView");
@@ -4647,7 +4648,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   if (profile) {
     showLandingView();
   } else {
-    showOnboardingView();
+    showWelcomeView();
   }
 
   document.querySelectorAll("[data-collapsible]").forEach(btn => {
@@ -4737,6 +4738,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
+    showOnboardingView();
+  });
+
+  document.getElementById("welcomeContinueBtn")?.addEventListener("click", () => {
     showOnboardingView();
   });
 
