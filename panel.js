@@ -4186,7 +4186,9 @@ async function updateInventorySearchDisplay() {
     runBtn.disabled = !searchValue;
     runBtn.style.display = searchValue && !inventoryScriptRan ? "block" : "none";
   }
-  if (status) status.textContent = "";
+  if (status && !(inventoryScriptRan && inventoryNextStepVisible)) {
+    status.textContent = "";
+  }
 
   setInventoryNextStepVisibility(Boolean(searchValue) && inventoryNextStepVisible);
 
