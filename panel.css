@@ -1345,3 +1345,8 @@ body[data-theme="rainbowParty"] button:not(.landing-btn)::after {
   filter: blur(10px);
   opacity: 0.6;
 }
+
+body[data-theme="rainbowParty"] .symoji-picker__toggle::before,
+body[data-theme="rainbowParty"] .symoji-picker__toggle::after {
+  content: none;
+}
