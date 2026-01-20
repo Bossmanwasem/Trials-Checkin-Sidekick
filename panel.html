@@ -78,6 +78,16 @@
         <div id="cleanupFolderStatus" class="status-line">No cleanup folder selected yet.</div>
       </div>
 
+      <div class="settings-card">
+        <div class="settings-card__title">Email template file</div>
+        <label for="onboardingEmailTemplatePickBtn">Saved email template</label>
+        <p class="hint-text">Select the email template file you keep on your PC.</p>
+        <button class="toggle-btn settings-card__action" id="onboardingEmailTemplatePickBtn" type="button">
+          Choose email template
+        </button>
+        <div id="onboardingEmailTemplateStatus" class="status-line">No email template selected yet.</div>
+      </div>
+
       <div class="note-preview">
         <div class="note-preview__title">OneDrive workbook connections</div>
         <div class="lookup-file">
@@ -224,9 +234,9 @@
           <button id="kgRequestsBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens the KG request form.">
             KG Requests
           </button>
-          <a class="toggle-btn landing-btn" href="outlook://compose?to=trials@talktometechnologies.com&from=trialsoperations@talktometechnologies.com" data-tooltip="Starts a new email to Trials in the existing Outlook app.">
+          <button id="sendEmailTemplateBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens your saved email template file.">
             Send Email
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -273,6 +283,14 @@
             </button>
           </div>
         </div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card__title">Email template file</div>
+        <p class="hint-text">Pick the email template file you want the Send Email button to open.</p>
+        <button id="settingsEmailTemplatePickBtn" class="toggle-btn settings-card__action" type="button">
+          Choose email template
+        </button>
+        <div id="settingsEmailTemplateStatus" class="status-line">No email template selected yet.</div>
       </div>
     </div>
     <div class="crm-nav-footer">

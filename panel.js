@@ -23,6 +23,8 @@ const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
+const EMAIL_TEMPLATE_NAME_STORAGE_KEY = "ttmtEmailTemplateName";
+const EMAIL_TEMPLATE_HANDLE_KEY = "emailTemplateFile";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
@@ -2079,6 +2081,10 @@ const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn
 const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
 const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
 const trialFilesStatus = document.getElementById("trialFilesStatus");
+const onboardingEmailTemplatePickBtn = document.getElementById("onboardingEmailTemplatePickBtn");
+const settingsEmailTemplatePickBtn = document.getElementById("settingsEmailTemplatePickBtn");
+const onboardingEmailTemplateStatus = document.getElementById("onboardingEmailTemplateStatus");
+const settingsEmailTemplateStatus = document.getElementById("settingsEmailTemplateStatus");
 
 function normalizeZipFolder(folder) {
   return (folder || "")
@@ -2373,6 +2379,102 @@ async function initTrialFilesFolderSetting() {
   });
 }
 
+function updateEmailTemplateStatus(name, messageOverride = null) {
+  const statuses = [onboardingEmailTemplateStatus, settingsEmailTemplateStatus].filter(Boolean);
+  if (statuses.length === 0) return;
+  let message = "No email template selected yet.";
+  if (messageOverride) {
+    message = messageOverride;
+  } else if (name) {
+    message = `Using "${name}" for the email template.`;
+  }
+  statuses.forEach(status => {
+    status.textContent = message;
+  });
+}
+
+async function setEmailTemplateName(name) {
+  await setStoredValue(EMAIL_TEMPLATE_NAME_STORAGE_KEY, name || "");
+  updateEmailTemplateStatus(name);
+}
+
+async function getEmailTemplateName() {
+  return await getStoredValue(EMAIL_TEMPLATE_NAME_STORAGE_KEY);
+}
+
+async function saveEmailTemplateHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, EMAIL_TEMPLATE_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadEmailTemplateHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(EMAIL_TEMPLATE_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function pickEmailTemplateFile() {
+  if (typeof window.showOpenFilePicker !== "function") {
+    alert("File picking isn't supported in this browser.");
+    return null;
+  }
+  let handles;
+  try {
+    handles = await window.showOpenFilePicker({
+      multiple: false
+    });
+  } catch {
+    return null;
+  }
+  const handle = handles?.[0];
+  if (!handle) return null;
+  await saveEmailTemplateHandle(handle);
+  await setEmailTemplateName(handle.name || "Selected file");
+  return handle;
+}
+
+async function openEmailTemplateFile() {
+  let handle = await loadEmailTemplateHandle().catch(() => null);
+  if (!handle) {
+    alert("Select an email template file in User settings first.");
+    return;
+  }
+  const permitted = await verifyFilePermission(handle, "read");
+  const storedName = await getEmailTemplateName();
+  if (!permitted) {
+    updateEmailTemplateStatus(storedName, "Email template access blocked. Click Choose email template to re-authorize.");
+    return;
+  }
+  try {
+    const file = await handle.getFile();
+    const fileUrl = URL.createObjectURL(file);
+    window.open(fileUrl, "_blank", "noopener");
+    window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+  } catch {
+    updateEmailTemplateStatus(storedName, "Unable to open the email template. Select it again.");
+  }
+}
+
+async function initEmailTemplateSetting() {
+  const storedName = await getEmailTemplateName();
+  updateEmailTemplateStatus(storedName);
+  onboardingEmailTemplatePickBtn?.addEventListener("click", async () => {
+    await pickEmailTemplateFile();
+  });
+  settingsEmailTemplatePickBtn?.addEventListener("click", async () => {
+    await pickEmailTemplateFile();
+  });
+}
+
 initThemeControls();
 initChaosControls();
 loadThemePreference();
@@ -2382,6 +2484,7 @@ initLandingTooltipsSetting();
 initZipFolderSetting();
 initCleanupFolderSetting();
 initTrialFilesFolderSetting();
+initEmailTemplateSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -4836,6 +4939,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: KG_REQUESTS_URL });
+  });
+
+  document.getElementById("sendEmailTemplateBtn")?.addEventListener("click", async () => {
+    await openEmailTemplateFile();
   });
 
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
