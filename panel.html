@@ -40,6 +40,9 @@
       <label for="userMascotInput">Profile mascot image</label>
       <input type="file" id="userMascotInput" accept="image/*" />
       <img id="userMascotPreview" class="onboarding-mascot-preview" src="assets/sparknsymoji.png" alt="Spark mascot preview" />
+      <button class="toggle-btn symoji-picker__toggle" id="symojiPickerMascotBtn" type="button">
+        Choose from Symojis
+      </button>
       <p class="hint-text">Choose an image to replace the Spark mascot on the landing page.</p>
 
       <label for="onboardingThemeSelect">Starting color theme</label>
@@ -232,7 +235,9 @@
       <span>User settings</span>
     </button>
     <div class="landing-version" id="landingVersion"></div>
-    <img class="landing-corner-symojo" src="assets/symoji.png" alt="Symoji mascot" />
+    <button class="landing-corner-symojo-btn" id="landingCornerSymojiBtn" type="button" aria-label="Change corner Symoji">
+      <img class="landing-corner-symojo" id="landingCornerSymoji" src="assets/symoji.png" alt="Symoji mascot" />
+    </button>
   </div>
 
   <!-- SETTINGS VIEW -->
@@ -304,6 +309,17 @@
       <button id="crmNavigatorReturnBtn" class="toggle-btn" type="button">
         Return to CRM Sidekick
       </button>
+    </div>
+  </div>
+
+  <div class="symoji-modal" id="symojiPicker" aria-hidden="true">
+    <div class="symoji-modal__content" role="dialog" aria-modal="true" aria-labelledby="symojiPickerTitle">
+      <div class="symoji-modal__header">
+        <h2 id="symojiPickerTitle">Choose a Symoji</h2>
+        <button class="toggle-btn symoji-modal__close" id="symojiPickerCloseBtn" type="button">Close</button>
+      </div>
+      <p class="hint-text" id="symojiPickerHint">Pick a Symoji from the built-in set.</p>
+      <div class="symoji-grid" id="symojiPickerGrid"></div>
     </div>
   </div>
 
