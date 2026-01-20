@@ -4098,11 +4098,14 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
 }
 
 function buildOutlookComposeUrl(payload) {
-  const params = new URLSearchParams();
-  if (payload?.to) params.set("to", payload.to);
-  if (payload?.subject) params.set("subject", payload.subject);
-  if (payload?.body) params.set("body", payload.body);
-  return `${OUTLOOK_COMPOSE_BASE_URL}?${params.toString()}`;
+  const params = {};
+  if (payload?.to) params.to = payload.to;
+  if (payload?.subject) params.subject = payload.subject;
+  if (payload?.body) params.body = payload.body;
+  const query = Object.entries(params)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join("&");
+  return `${OUTLOOK_COMPOSE_BASE_URL}?${query}`;
 }
 
 async function renderOutlookEmailPreview() {
