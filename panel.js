@@ -12,6 +12,7 @@ const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
 const QA_FORM_URL = "https://forms.office.com/pages/responsepage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&route=shorturl";
 const KG_REQUESTS_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?e=io5Jrk&siteid=%7B551ABA4E-AFDD-40EB-909B-2091F063C2D7%7D&webid=%7BFE759ED0-F9C4-4656-B80C-7ABB6753DE39%7D&uniqueid=%7B332C40DB-DF9D-4F37-81B2-CD90F8E81F9A%7D&env=WebViewList";
+const OUTLOOK_COMPOSE_BASE_URL = "https://outlook.office.com/mail/deeplink/compose";
 const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
@@ -23,8 +24,6 @@ const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
-const EMAIL_TEMPLATE_NAME_STORAGE_KEY = "ttmtEmailTemplateName";
-const EMAIL_TEMPLATE_HANDLE_KEY = "emailTemplateFile";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
@@ -2081,10 +2080,6 @@ const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn
 const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
 const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
 const trialFilesStatus = document.getElementById("trialFilesStatus");
-const onboardingEmailTemplatePickBtn = document.getElementById("onboardingEmailTemplatePickBtn");
-const settingsEmailTemplatePickBtn = document.getElementById("settingsEmailTemplatePickBtn");
-const onboardingEmailTemplateStatus = document.getElementById("onboardingEmailTemplateStatus");
-const settingsEmailTemplateStatus = document.getElementById("settingsEmailTemplateStatus");
 
 function normalizeZipFolder(folder) {
   return (folder || "")
@@ -2379,128 +2374,6 @@ async function initTrialFilesFolderSetting() {
   });
 }
 
-function updateEmailTemplateStatus(name, messageOverride = null) {
-  const statuses = [onboardingEmailTemplateStatus, settingsEmailTemplateStatus].filter(Boolean);
-  if (statuses.length === 0) return;
-  let message = "No email template selected yet.";
-  if (messageOverride) {
-    message = messageOverride;
-  } else if (name) {
-    message = `Using "${name}" for the email template.`;
-  }
-  statuses.forEach(status => {
-    status.textContent = message;
-  });
-}
-
-async function setEmailTemplateName(name) {
-  await setStoredValue(EMAIL_TEMPLATE_NAME_STORAGE_KEY, name || "");
-  updateEmailTemplateStatus(name);
-}
-
-async function getEmailTemplateName() {
-  return await getStoredValue(EMAIL_TEMPLATE_NAME_STORAGE_KEY);
-}
-
-async function saveEmailTemplateHandle(handle) {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
-    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, EMAIL_TEMPLATE_HANDLE_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function loadEmailTemplateHandle() {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
-    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(EMAIL_TEMPLATE_HANDLE_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function pickEmailTemplateFile() {
-  if (typeof window.showOpenFilePicker !== "function") {
-    alert("File picking isn't supported in this browser.");
-    return null;
-  }
-  let handles;
-  try {
-    handles = await window.showOpenFilePicker({
-      multiple: false
-    });
-  } catch {
-    return null;
-  }
-  const handle = handles?.[0];
-  if (!handle) return null;
-  await saveEmailTemplateHandle(handle);
-  await setEmailTemplateName(handle.name || "Selected file");
-  return handle;
-}
-
-async function openEmailTemplateFile() {
-  let handle = await loadEmailTemplateHandle().catch(() => null);
-  if (!handle) {
-    alert("Select an email template file in User settings first.");
-    return;
-  }
-  const permitted = await verifyFilePermission(handle, "read");
-  const storedName = await getEmailTemplateName();
-  if (!permitted) {
-    updateEmailTemplateStatus(storedName, "Email template access blocked. Click Choose email template to re-authorize.");
-    return;
-  }
-  try {
-    const file = await handle.getFile();
-    const fileUrl = URL.createObjectURL(file);
-    if (!chrome?.downloads?.download) {
-      updateEmailTemplateStatus(storedName, "Unable to open the email template. Downloads API not available.");
-      URL.revokeObjectURL(fileUrl);
-      return;
-    }
-    const downloadId = await new Promise((resolve, reject) => {
-      chrome.downloads.download(
-        {
-          url: fileUrl,
-          filename: file.name,
-          saveAs: false,
-          conflictAction: "uniquify"
-        },
-        id => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          resolve(id);
-        }
-      );
-    });
-    if (typeof downloadId === "number") {
-      chrome.downloads.open(downloadId);
-    } else {
-      updateEmailTemplateStatus(storedName, "Unable to open the email template. Select it again.");
-    }
-    window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
-  } catch {
-    updateEmailTemplateStatus(storedName, "Unable to open the email template. Select it again.");
-  }
-}
-
-async function initEmailTemplateSetting() {
-  const storedName = await getEmailTemplateName();
-  updateEmailTemplateStatus(storedName);
-  onboardingEmailTemplatePickBtn?.addEventListener("click", async () => {
-    await pickEmailTemplateFile();
-  });
-  settingsEmailTemplatePickBtn?.addEventListener("click", async () => {
-    await pickEmailTemplateFile();
-  });
-}
-
 initThemeControls();
 initChaosControls();
 loadThemePreference();
@@ -2510,7 +2383,6 @@ initLandingTooltipsSetting();
 initZipFolderSetting();
 initCleanupFolderSetting();
 initTrialFilesFolderSetting();
-initEmailTemplateSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -4225,6 +4097,14 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
   return { subject, body: lines.join("\n"), to, from };
 }
 
+function buildOutlookComposeUrl(payload) {
+  const params = new URLSearchParams();
+  if (payload?.to) params.set("to", payload.to);
+  if (payload?.subject) params.set("subject", payload.subject);
+  if (payload?.body) params.set("body", payload.body);
+  return `${OUTLOOK_COMPOSE_BASE_URL}?${params.toString()}`;
+}
+
 async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
   const crmLink = buildCrmLink(data);
@@ -4233,6 +4113,14 @@ async function renderOutlookEmailPreview() {
   setText("emailBodyPreview", payload.body);
   setText("emailStatus", "");
   return payload;
+}
+
+async function openOutlookComposeEmail() {
+  const data = await getLastCheckinDataForDaf();
+  const crmLink = buildCrmLink(data);
+  const payload = buildOutlookEmailPayload(data, { crmLink });
+  const url = buildOutlookComposeUrl(payload);
+  chrome.tabs.create({ url });
 }
 
 async function renderDafRecap() {
@@ -4968,7 +4856,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("sendEmailTemplateBtn")?.addEventListener("click", async () => {
-    await openEmailTemplateFile();
+    await openOutlookComposeEmail();
   });
 
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
