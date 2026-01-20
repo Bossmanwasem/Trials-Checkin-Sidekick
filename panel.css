@@ -1350,3 +1350,8 @@ body[data-theme="rainbowParty"] .symoji-picker__toggle::before,
 body[data-theme="rainbowParty"] .symoji-picker__toggle::after {
   content: none;
 }
+
+body[data-theme="rainbowParty"] .landing-corner-symojo-btn::before,
+body[data-theme="rainbowParty"] .landing-corner-symojo-btn::after {
+  content: none;
+}
