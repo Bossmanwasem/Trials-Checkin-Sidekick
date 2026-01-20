@@ -29,6 +29,7 @@ const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
+const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -1914,6 +1915,7 @@ async function initOnboardingForm() {
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
+  const tooltipToggle = document.getElementById("onboardingTooltipToggle");
   let pendingMascot = null;
 
   populateThemeSelect(themeSelect);
@@ -1956,6 +1958,9 @@ async function initOnboardingForm() {
   if (weeklyCounterToggle) {
     weeklyCounterToggle.checked = await getWeeklyCounterEnabled();
   }
+  if (tooltipToggle) {
+    tooltipToggle.checked = await getLandingTooltipsEnabled();
+  }
 
   if (!form) return;
   form.addEventListener("submit", async event => {
@@ -1965,6 +1970,7 @@ async function initOnboardingForm() {
     const themeId = themeSelect?.value || "ocean";
     const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
+    const tooltipsEnabled = tooltipToggle?.checked ?? true;
 
     if (!firstName) {
       alert("Please enter your username.");
@@ -1978,6 +1984,8 @@ async function initOnboardingForm() {
     }
     await setDailyCounterEnabled(dailyCounterEnabled);
     await setWeeklyCounterEnabled(weeklyCounterEnabled);
+    await setLandingTooltipsEnabled(tooltipsEnabled);
+    applyLandingTooltipsEnabled(tooltipsEnabled);
     applyTheme(themeId);
     showLandingView();
   });
@@ -2371,6 +2379,7 @@ initChaosControls();
 loadThemePreference();
 initOnboardingForm();
 initDailyCounterSetting();
+initLandingTooltipsSetting();
 initZipFolderSetting();
 initCleanupFolderSetting();
 initTrialFilesFolderSetting();
@@ -2500,6 +2509,50 @@ async function getWeeklyCounterEnabled() {
 
 async function setWeeklyCounterEnabled(enabled) {
   await setStoredValue(WEEKLY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function getLandingTooltipsEnabled() {
+  const stored = await getStoredValue(LANDING_TOOLTIPS_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return true;
+  return Boolean(stored);
+}
+
+async function setLandingTooltipsEnabled(enabled) {
+  await setStoredValue(LANDING_TOOLTIPS_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+function applyLandingTooltipsEnabled(enabled) {
+  const landingView = document.getElementById("landingView");
+  if (landingView) {
+    landingView.classList.toggle("tooltips-enabled", Boolean(enabled));
+  }
+}
+
+function updateLandingTooltipsToggleState(enabled) {
+  ["onboardingTooltipToggle", "settingsTooltipToggle"].forEach(id => {
+    const toggle = document.getElementById(id);
+    if (toggle) {
+      toggle.checked = Boolean(enabled);
+    }
+  });
+}
+
+async function updateLandingTooltipsEnabled() {
+  const enabled = await getLandingTooltipsEnabled();
+  applyLandingTooltipsEnabled(enabled);
+  updateLandingTooltipsToggleState(enabled);
+}
+
+async function initLandingTooltipsSetting() {
+  const toggle = document.getElementById("settingsTooltipToggle");
+  if (!toggle) return;
+  toggle.checked = await getLandingTooltipsEnabled();
+  toggle.addEventListener("change", async () => {
+    const enabled = Boolean(toggle.checked);
+    await setLandingTooltipsEnabled(enabled);
+    applyLandingTooltipsEnabled(enabled);
+    updateLandingTooltipsToggleState(enabled);
+  });
 }
 
 async function getDailyCounterCollapsed() {
@@ -2670,6 +2723,7 @@ async function refreshLandingView() {
   await updateWeeklyCounterVisibility();
   await updateDailyCounterCollapseState();
   await updateWeeklyCounterCollapseState();
+  await updateLandingTooltipsEnabled();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
