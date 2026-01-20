@@ -2457,7 +2457,33 @@ async function openEmailTemplateFile() {
   try {
     const file = await handle.getFile();
     const fileUrl = URL.createObjectURL(file);
-    window.open(fileUrl, "_blank", "noopener");
+    if (!chrome?.downloads?.download) {
+      updateEmailTemplateStatus(storedName, "Unable to open the email template. Downloads API not available.");
+      URL.revokeObjectURL(fileUrl);
+      return;
+    }
+    const downloadId = await new Promise((resolve, reject) => {
+      chrome.downloads.download(
+        {
+          url: fileUrl,
+          filename: file.name,
+          saveAs: false,
+          conflictAction: "uniquify"
+        },
+        id => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          resolve(id);
+        }
+      );
+    });
+    if (typeof downloadId === "number") {
+      chrome.downloads.open(downloadId);
+    } else {
+      updateEmailTemplateStatus(storedName, "Unable to open the email template. Select it again.");
+    }
     window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
   } catch {
     updateEmailTemplateStatus(storedName, "Unable to open the email template. Select it again.");
