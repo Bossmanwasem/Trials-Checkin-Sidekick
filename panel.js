@@ -4851,10 +4851,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
 
-  document.getElementById("sendEmailTemplateBtn")?.addEventListener("click", async () => {
-    await openOutlookComposeEmail();
-  });
-
   document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("crmNavigatorInput");
