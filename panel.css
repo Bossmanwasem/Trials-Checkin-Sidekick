@@ -134,6 +134,12 @@ body.chaos-transitioning #themeTransitionLayer {
   outline: none;
 }
 
+.landing-corner-symojo-btn:focus,
+.landing-corner-symojo-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .landing-corner-symojo {
   display: block;
   width: 72px;
