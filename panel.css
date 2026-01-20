@@ -130,12 +130,35 @@ body.chaos-transitioning #themeTransitionLayer {
   background: transparent;
   cursor: pointer;
   opacity: 0.9;
+  box-shadow: none;
+  outline: none;
 }
 
 .landing-corner-symojo {
   display: block;
   width: 72px;
   height: auto;
+  transform-origin: center;
+}
+
+@keyframes symojoHoverLiftShake {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-3px) rotate(-1.5deg);
+  }
+  70% {
+    transform: translateY(-4px) rotate(1.5deg);
+  }
+  100% {
+    transform: translateY(-3px) rotate(0deg);
+  }
+}
+
+.landing-corner-symojo-btn:hover .landing-corner-symojo,
+.landing-corner-symojo-btn:focus-visible .landing-corner-symojo {
+  animation: symojoHoverLiftShake 0.6s ease-in-out infinite;
 }
 
 .landing-version {
