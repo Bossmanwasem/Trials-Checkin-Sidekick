@@ -4614,6 +4614,7 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
   await renderOutlookEmailPreview();
   showEmailView();
+  await openOutlookComposeEmail();
 });
 
 document.getElementById("copyEmailBodyBtn")?.addEventListener("click", async () => {
