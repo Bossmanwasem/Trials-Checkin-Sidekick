@@ -174,6 +174,7 @@ function setCollapsibleState(key, expanded) {
 let hasStartedCheckin = false;
 let smartboxRepairRequired = false;
 let hasStartedGrid = false;
+let outlookEmailTabId = null;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
 const DEFAULT_MASCOT_SRC = "assets/sparknsymoji.png";
@@ -4123,7 +4124,15 @@ async function openOutlookComposeEmail() {
   const crmLink = buildCrmLink(data);
   const payload = buildOutlookEmailPayload(data, { crmLink });
   const url = buildOutlookComposeUrl(payload);
-  chrome.tabs.create({ url });
+  const tab = await chrome.tabs.create({ url });
+  outlookEmailTabId = tab?.id ?? null;
+}
+
+async function handleOutlookEmailTabClosed() {
+  if (!hasStartedCheckin) return;
+  await runCleanupFolderFlow({ promptIfMissing: false });
+  await incrementDailyCounter("checkins");
+  await finishCheckinAndReset({ returnToLanding: true });
 }
 
 async function renderDafRecap() {
@@ -4615,38 +4624,8 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
-  await renderOutlookEmailPreview();
   showEmailView();
   await openOutlookComposeEmail();
-});
-
-document.getElementById("copyEmailBodyBtn")?.addEventListener("click", async () => {
-  const payload = await renderOutlookEmailPreview();
-  if (!payload?.body) return;
-  await navigator.clipboard.writeText(payload.body);
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Email body copied to clipboard.";
-});
-
-document.getElementById("copyEmailSubjectBtn")?.addEventListener("click", async () => {
-  const payload = await renderOutlookEmailPreview();
-  if (!payload?.subject) return;
-  await navigator.clipboard.writeText(payload.subject);
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Email subject copied to clipboard.";
-});
-
-document.getElementById("emailDoneBtn")?.addEventListener("click", async () => {
-  const status = document.getElementById("emailStatus");
-  if (status) status.textContent = "Clearing your check-in cleanup folder...";
-  const cleaned = await runCleanupFolderFlow({ promptIfMissing: true });
-  if (status) {
-    status.textContent = cleaned
-      ? "Cleanup folder cleared. Starting a new check-in..."
-      : "Cleanup folder not cleared.";
-  }
-  await incrementDailyCounter("checkins");
-  await finishCheckinAndReset({ returnToLanding: true });
 });
 
 ["gridFirstName", "gridLastName", "gridCrmId"].forEach(id => {
@@ -5010,5 +4989,11 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     if (tab?.active && changeInfo?.status === "complete") {
       await syncViewForTab(tab);
     }
+  });
+
+  chrome.tabs.onRemoved.addListener(async (tabId) => {
+    if (tabId !== outlookEmailTabId) return;
+    outlookEmailTabId = null;
+    await handleOutlookEmailTabClosed();
   });
 })();
