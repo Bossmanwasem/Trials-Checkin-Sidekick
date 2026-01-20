@@ -175,6 +175,7 @@ let hasStartedCheckin = false;
 let smartboxRepairRequired = false;
 let hasStartedGrid = false;
 let outlookEmailTabId = null;
+let hasFinalizedCheckin = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
 const DEFAULT_MASCOT_SRC = "assets/sparknsymoji.png";
@@ -4128,10 +4129,16 @@ async function openOutlookComposeEmail() {
   outlookEmailTabId = tab?.id ?? null;
 }
 
-async function handleOutlookEmailTabClosed() {
-  if (!hasStartedCheckin) return;
+async function finalizeCheckinCleanupAndCounters() {
+  if (hasFinalizedCheckin) return;
   await runCleanupFolderFlow({ promptIfMissing: false });
   await incrementDailyCounter("checkins");
+  hasFinalizedCheckin = true;
+}
+
+async function handleOutlookEmailTabClosed() {
+  if (!hasStartedCheckin) return;
+  await finalizeCheckinCleanupAndCounters();
   await finishCheckinAndReset({ returnToLanding: true });
 }
 
@@ -4464,6 +4471,7 @@ function resetAllFieldsAndUI() {
 
 async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   resetAllFieldsAndUI();
+  hasFinalizedCheckin = false;
   smartboxRepairRequired = false;
   clearSelectedTrialFiles();
   await clearStoredCheckinData();
@@ -4625,6 +4633,11 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
   showEmailView();
+  await finalizeCheckinCleanupAndCounters();
+  const dafTabId = await getActiveDafTabId();
+  if (dafTabId) {
+    await chrome.tabs.remove(dafTabId);
+  }
   await openOutlookComposeEmail();
 });
 
