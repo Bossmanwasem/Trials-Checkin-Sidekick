@@ -121,14 +121,21 @@ body.chaos-transitioning #themeTransitionLayer {
   pointer-events: none;
 }
 
-.landing-corner-symojo {
+.landing-corner-symojo-btn {
   position: absolute;
   left: 12px;
   bottom: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.landing-corner-symojo {
+  display: block;
   width: 72px;
   height: auto;
-  pointer-events: none;
-  opacity: 0.9;
 }
 
 .landing-version {
@@ -902,6 +909,75 @@ input[type="file"] {
   padding: 6px;
 }
 
+.symoji-picker__toggle {
+  margin-top: 8px;
+}
+
+.symoji-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 10, 20, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 999;
+}
+
+.symoji-modal.is-open {
+  display: flex;
+}
+
+.symoji-modal__content {
+  background: var(--panel-bg);
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 760px;
+  width: min(100%, 760px);
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.symoji-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.symoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.symoji-grid__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg-alt);
+  cursor: pointer;
+}
+
+.symoji-grid__item img {
+  width: 56px;
+  height: auto;
+}
+
+.symoji-grid__label {
+  font-size: 12px;
+  color: var(--muted-text);
+  text-align: center;
+  word-break: break-word;
+}
+
 .device-lookup-view .lookup-copy-grid {
   display: grid;
   gap: 8px;
@@ -1147,7 +1223,7 @@ body[data-theme="rainbowParty"] .container > * {
 }
 
 body[data-theme="rainbowParty"] .landing-version,
-body[data-theme="rainbowParty"] .landing-corner-symojo {
+body[data-theme="rainbowParty"] .landing-corner-symojo-btn {
   position: absolute;
 }
 

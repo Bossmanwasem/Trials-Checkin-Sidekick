@@ -31,6 +31,7 @@ const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
+const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -179,6 +180,82 @@ let hasFinalizedCheckin = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
 const DEFAULT_MASCOT_SRC = "assets/sparknsymoji.png";
+const DEFAULT_CORNER_SYMOJI_SRC = "assets/symoji.png";
+const SYMOJI_ASSET_ROOT = "assets/Symojis";
+const SYMOJI_FILES = [
+  "Accessories.png",
+  "Angry.png",
+  "Awesome.png",
+  "Awkward.png",
+  "Birthday.png",
+  "Blow-Rasberry.png",
+  "Boogie.png",
+  "Bored.png",
+  "Care.png",
+  "Celebrate.png",
+  "Cheers.png",
+  "Coffee.png",
+  "Cold.png",
+  "Confused.png",
+  "Cool.png",
+  "Crazy.png",
+  "Eye-Gaze.png",
+  "Face-Palm.png",
+  "Fingers-Crossed.png",
+  "Flirt.png",
+  "Giggle.png",
+  "Go-Away.png",
+  "Hand-Switch.png",
+  "Handshake.png",
+  "Head-Switch.png",
+  "High five couple.png",
+  "High five.png",
+  "High-Five.png",
+  "Hooray.png",
+  "Hot.png",
+  "Hug.png",
+  "Hungry.png",
+  "Idea.png",
+  "Kisses.png",
+  "Laugh.png",
+  "Mic-Drop.png",
+  "MicrosoftTeams-image (1).png",
+  "Middle-Finger.png",
+  "Mind-Blown.png",
+  "Mischievous.png",
+  "No.png",
+  "Not-Listening.png",
+  "Party.png",
+  "Poo.png",
+  "Pumpkin.png",
+  "Quiet.png",
+  "Relieved.png",
+  "Sad.png",
+  "Salute.png",
+  "Shock.png",
+  "Shrug.png",
+  "Shy.png",
+  "Sleepy.png",
+  "Stressed.png",
+  "Strong.png",
+  "Suspicious.png",
+  "Swear.png",
+  "Symoji Kiss.png",
+  "Symoji_FingerHeart 2.png",
+  "Symoji_FingerHeart2 2.png",
+  "Symoji_Reveal_blue.png",
+  "Talk-To-Hand.png",
+  "Thinking.png",
+  "Thumbs up.png",
+  "Thumbs-Down.png",
+  "Thumbs-Up.png",
+  "Unwell.png",
+  "Upset.png",
+  "Vomit.png",
+  "Wave.png",
+  "Wow.png",
+  "Yummy.png"
+];
 
 const THEMES = {
   ocean: {
@@ -1911,10 +1988,75 @@ function readFileAsDataUrl(file) {
   });
 }
 
+let symojiPickerOnSelect = null;
+
+function getSymojiSrc(filename) {
+  return encodeURI(`${SYMOJI_ASSET_ROOT}/${filename}`);
+}
+
+function openSymojiPicker({ title, hint, onSelect }) {
+  const picker = document.getElementById("symojiPicker");
+  if (!picker) return;
+  symojiPickerOnSelect = onSelect;
+  const titleEl = document.getElementById("symojiPickerTitle");
+  const hintEl = document.getElementById("symojiPickerHint");
+  if (titleEl) titleEl.textContent = title || "Choose a Symoji";
+  if (hintEl) hintEl.textContent = hint || "Pick a Symoji from the built-in set.";
+  picker.classList.add("is-open");
+  picker.setAttribute("aria-hidden", "false");
+}
+
+function closeSymojiPicker() {
+  const picker = document.getElementById("symojiPicker");
+  if (!picker) return;
+  picker.classList.remove("is-open");
+  picker.setAttribute("aria-hidden", "true");
+  symojiPickerOnSelect = null;
+}
+
+function initSymojiPicker() {
+  const grid = document.getElementById("symojiPickerGrid");
+  if (grid) {
+    grid.innerHTML = "";
+    SYMOJI_FILES.forEach(filename => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "symoji-grid__item";
+      const src = getSymojiSrc(filename);
+      const image = document.createElement("img");
+      image.src = src;
+      image.alt = filename.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      const label = document.createElement("span");
+      label.className = "symoji-grid__label";
+      label.textContent = filename.replace(/\.[^.]+$/, "");
+
+      button.appendChild(image);
+      button.appendChild(label);
+      button.addEventListener("click", () => {
+        symojiPickerOnSelect?.(src);
+        closeSymojiPicker();
+      });
+      grid.appendChild(button);
+    });
+  }
+
+  document.getElementById("symojiPickerCloseBtn")?.addEventListener("click", () => {
+    closeSymojiPicker();
+  });
+
+  const picker = document.getElementById("symojiPicker");
+  picker?.addEventListener("click", event => {
+    if (event.target === picker) {
+      closeSymojiPicker();
+    }
+  });
+}
+
 async function initOnboardingForm() {
   const form = document.getElementById("onboardingForm");
   const firstNameInput = document.getElementById("userFirstName");
   const mascotInput = document.getElementById("userMascotInput");
+  const symojiPickerBtn = document.getElementById("symojiPickerMascotBtn");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
@@ -1953,6 +2095,19 @@ async function initOnboardingForm() {
       } catch {
         alert("Unable to read that image file.");
       }
+    });
+  }
+  if (symojiPickerBtn) {
+    symojiPickerBtn.addEventListener("click", () => {
+      openSymojiPicker({
+        title: "Choose a profile Symoji",
+        hint: "Select a Symoji from the built-in set for your profile mascot.",
+        onSelect: src => {
+          pendingMascot = src;
+          updateMascotPreview(src);
+          if (mascotInput) mascotInput.value = "";
+        }
+      });
     });
   }
   if (dailyCounterToggle) {
@@ -2455,6 +2610,14 @@ async function saveUserMascot(mascotSrc) {
   await setStoredValue(USER_MASCOT_STORAGE_KEY, mascotSrc);
 }
 
+async function getCornerSymoji() {
+  return await getStoredValue(CORNER_SYMOJI_STORAGE_KEY);
+}
+
+async function saveCornerSymoji(symojiSrc) {
+  await setStoredValue(CORNER_SYMOJI_STORAGE_KEY, symojiSrc);
+}
+
 function updateLandingGreeting(profile) {
   const firstName = (profile?.firstName || "").trim();
   const greeting = firstName ? `Welcome back, ${firstName}!` : "Welcome back!";
@@ -2472,6 +2635,13 @@ function updateMascotPreview(mascotSrc) {
   const image = document.getElementById("userMascotPreview");
   if (image) {
     image.src = mascotSrc || DEFAULT_MASCOT_SRC;
+  }
+}
+
+function updateCornerSymoji(symojiSrc) {
+  const image = document.getElementById("landingCornerSymoji");
+  if (image) {
+    image.src = symojiSrc || DEFAULT_CORNER_SYMOJI_SRC;
   }
 }
 
@@ -2720,6 +2890,8 @@ async function refreshLandingView() {
   updateLandingGreeting(profile);
   const mascot = await getUserMascot();
   updateLandingMascot(mascot);
+  const cornerSymoji = await getCornerSymoji();
+  updateCornerSymoji(cornerSymoji);
   updateLandingVersion();
   await updateDailyCounterVisibility();
   await updateWeeklyCounterVisibility();
@@ -4726,6 +4898,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
 (async function init() {
   watchIdentifierInputs();
+  initSymojiPicker();
   await loadDeviceLookupWorkbooksFromStorage();
   const profile = await getUserProfile();
   if (profile) {
@@ -4822,6 +4995,17 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
     showOnboardingView();
+  });
+
+  document.getElementById("landingCornerSymojiBtn")?.addEventListener("click", () => {
+    openSymojiPicker({
+      title: "Choose a corner Symoji",
+      hint: "Pick a Symoji to show in the landing corner.",
+      onSelect: async src => {
+        await saveCornerSymoji(src);
+        updateCornerSymoji(src);
+      }
+    });
   });
 
   document.getElementById("welcomeContinueBtn")?.addEventListener("click", () => {
