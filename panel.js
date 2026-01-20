@@ -4170,6 +4170,7 @@ async function renderDafRecap() {
 }
 
 let inventoryNextStepVisible = false;
+let inventoryScriptRan = false;
 
 async function updateInventorySearchDisplay() {
   const identifiers = await getLastIdentifiers();
@@ -4181,7 +4182,10 @@ async function updateInventorySearchDisplay() {
   if (display) {
     display.textContent = searchValue || "No stored identifiers. Fill out the first page first.";
   }
-  if (runBtn) runBtn.disabled = !searchValue;
+  if (runBtn) {
+    runBtn.disabled = !searchValue;
+    runBtn.style.display = searchValue && !inventoryScriptRan ? "block" : "none";
+  }
   if (status) status.textContent = "";
 
   setInventoryNextStepVisibility(Boolean(searchValue) && inventoryNextStepVisible);
@@ -4196,6 +4200,11 @@ function setInventoryNextStepVisibility(show) {
   btn.style.display = inventoryNextStepVisible ? "block" : "none";
 }
 
+function setInventoryRunVisibility(show) {
+  const btn = document.getElementById("runInventoryScriptBtn");
+  if (!btn) return;
+  btn.style.display = show ? "block" : "none";
+}
 
 function watchIdentifierInputs() {
   const selectors = ["#deviceNumberInput", "input[name='cameraNumber']", "input[name='luminNumber']"];
@@ -4419,6 +4428,8 @@ function resetAllFieldsAndUI() {
   setText("completeIntro", "");
   setText("inventoryStatus", "");
   setInventoryNextStepVisibility(false);
+  inventoryScriptRan = false;
+  setInventoryRunVisibility(true);
 }
 
 async function finishCheckinAndReset({ returnToLanding = false } = {}) {
@@ -4560,15 +4571,19 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
   const status = document.getElementById("inventoryStatus");
   if (status) status.textContent = `Looking for "${searchValue}"...`;
   setInventoryNextStepVisibility(false);
+  inventoryScriptRan = true;
+  setInventoryRunVisibility(false);
 
   const res = await sendToCrm("RUN_INVENTORY_SCRIPT", { identifiers });
   if (!res.ok) {
     alert(res.message || "Failed to run inventory script.");
     if (status) status.textContent = "";
+    inventoryScriptRan = false;
+    setInventoryRunVisibility(true);
     return;
   }
 
-  if (status) status.textContent = "Script sent to page. Watch the table for the highlighted row.";
+  if (status) status.textContent = "Mark the Device as returned and click update once the page reloads click next step to continue";
   setInventoryNextStepVisibility(true);
 });
 
