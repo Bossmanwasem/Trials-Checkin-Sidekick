@@ -1146,6 +1146,11 @@ body[data-theme="rainbowParty"] .container > * {
   z-index: 1;
 }
 
+body[data-theme="rainbowParty"] .landing-version,
+body[data-theme="rainbowParty"] .landing-corner-symojo {
+  position: absolute;
+}
+
 body[data-theme="rainbowParty"] .container::before,
 body[data-theme="rainbowParty"] .container::after {
   content: "";
@@ -1183,12 +1188,31 @@ body[data-theme="rainbowParty"] button {
   border-color: transparent;
 }
 
+body[data-theme="rainbowParty"] .landing-btn {
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(rgba(18, 18, 28, 0.85), rgba(18, 18, 28, 0.85)),
+    conic-gradient(
+      from var(--rainbow-angle),
+      #ff1b6b,
+      #ff7a18,
+      #ffe400,
+      #2aff6d,
+      #1fc8ff,
+      #7f4dff,
+      #ff1b6b
+    );
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  animation: rainbowFlow 6s linear infinite;
+}
+
 body[data-theme="rainbowParty"] .landing-settings-btn {
   position: absolute;
 }
 
-body[data-theme="rainbowParty"] button::before,
-body[data-theme="rainbowParty"] button::after {
+body[data-theme="rainbowParty"] button:not(.landing-btn)::before,
+body[data-theme="rainbowParty"] button:not(.landing-btn)::after {
   content: "";
   position: absolute;
   inset: -2px;
@@ -1212,7 +1236,7 @@ body[data-theme="rainbowParty"] button::after {
   mask-composite: exclude;
 }
 
-body[data-theme="rainbowParty"] button::after {
+body[data-theme="rainbowParty"] button:not(.landing-btn)::after {
   filter: blur(10px);
   opacity: 0.6;
 }
