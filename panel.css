@@ -1324,6 +1324,10 @@ body[data-theme="rainbowParty"] h3 {
 
 body[data-theme="rainbowParty"] .container {
   position: relative;
+  background-image: url("assets/paint2.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-color: transparent;
 }
 
