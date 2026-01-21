@@ -2999,6 +2999,62 @@ function applyGridClientData(data) {
   setValue("gridCrmId", data.crmId);
 }
 
+const QA_CLIENT_NAME_DEFAULT_PLACEHOLDER = "Client name will appear here";
+
+function buildClientFullName(data) {
+  return [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim();
+}
+
+function updateQaClientName({ name = "", placeholder = QA_CLIENT_NAME_DEFAULT_PLACEHOLDER } = {}) {
+  const field = document.getElementById("qaClientNameField");
+  const button = document.getElementById("qaClientNameCopyBtn");
+  if (field) {
+    field.value = name || "";
+    field.placeholder = name ? "" : placeholder;
+  }
+  if (button) {
+    button.disabled = !name;
+    button.textContent = name ? "Copy name" : "No name";
+  }
+}
+
+async function waitForTabComplete(tabId, timeoutMs = 15000) {
+  if (!tabId) return false;
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab?.status === "complete") return true;
+  } catch (error) {
+    console.warn("Unable to read tab status.", error);
+  }
+
+  return new Promise(resolve => {
+    let timeoutId;
+    const listener = (updatedTabId, info) => {
+      if (updatedTabId !== tabId || info.status !== "complete") return;
+      cleanup(true);
+    };
+    const cleanup = (result) => {
+      clearTimeout(timeoutId);
+      chrome.tabs.onUpdated.removeListener(listener);
+      resolve(result);
+    };
+    timeoutId = setTimeout(() => cleanup(false), timeoutMs);
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+}
+
+async function loadQaClientNameFromTab(tabId) {
+  if (!tabId) {
+    updateQaClientName({ name: "", placeholder: "No CRM tab found" });
+    return;
+  }
+  updateQaClientName({ name: "", placeholder: "Fetching client name..." });
+  await waitForTabComplete(tabId);
+  const res = await fetchClientData(tabId);
+  const fullName = buildClientFullName(res?.data);
+  updateQaClientName({ name: fullName, placeholder: "No name found" });
+}
+
 /* ---------------- UI helpers ---------------- */
 
 function toggleSection(sectionId) {
@@ -4254,10 +4310,10 @@ function buildCrmLink(data) {
   return `${CRM_LINK_BASE}${crmId}`;
 }
 
-function openCrmRecordTab(crmId) {
+async function openCrmRecordTab(crmId) {
   const trimmedId = `${crmId || ""}`.trim();
-  if (!trimmedId) return;
-  chrome.tabs.create({
+  if (!trimmedId) return null;
+  return chrome.tabs.create({
     url: `${CRM_LINK_BASE}${encodeURIComponent(trimmedId)}`
   });
 }
@@ -4949,6 +5005,19 @@ document.getElementById("gridCrmInfoCopyBtn")?.addEventListener("click", async (
   if (status) status.textContent = "CRM Grid info copied to clipboard.";
 });
 
+document.getElementById("qaClientNameCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#qaClientNameField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("qaClientNameCopyBtn");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy name";
+    }, 1200);
+  }
+});
+
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button.copy-btn");
   if (!btn || !btn.dataset.copyValue) return;
@@ -5137,7 +5206,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     if (crmInput) crmInput.value = "";
   });
 
-  document.getElementById("qaCrmNavigatorForm")?.addEventListener("submit", (event) => {
+  document.getElementById("qaCrmNavigatorForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("qaCrmNavigatorInput");
     const crmId = (crmInput?.value || "").trim();
@@ -5145,7 +5214,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Enter a CRM ID to continue.");
       return;
     }
-    openCrmRecordTab(crmId);
+    const tab = await openCrmRecordTab(crmId);
+    void loadQaClientNameFromTab(tab?.id ?? null);
     if (crmInput) crmInput.value = "";
   });
 

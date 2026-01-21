@@ -558,6 +558,10 @@ body[data-theme^="nfl"] h3 {
   margin-top: 12px;
 }
 
+.qa-complete-view .qa-client-copy {
+  margin-top: 12px;
+}
+
 h1 {
   text-align: center;
   color: var(--accent);
