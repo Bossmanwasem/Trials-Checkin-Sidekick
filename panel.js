@@ -3000,6 +3000,7 @@ function applyGridClientData(data) {
 }
 
 const QA_CLIENT_NAME_DEFAULT_PLACEHOLDER = "Client name will appear here";
+const QA_CRM_ID_DEFAULT_PLACEHOLDER = "CRM ID will appear here";
 
 function buildClientFullName(data) {
   return [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim();
@@ -3015,6 +3016,19 @@ function updateQaClientName({ name = "", placeholder = QA_CLIENT_NAME_DEFAULT_PL
   if (button) {
     button.disabled = !name;
     button.textContent = name ? "Copy name" : "No name";
+  }
+}
+
+function updateQaCrmIdCopy({ crmId = "", placeholder = QA_CRM_ID_DEFAULT_PLACEHOLDER } = {}) {
+  const field = document.getElementById("qaCrmIdField");
+  const button = document.getElementById("qaCrmIdCopyBtn");
+  if (field) {
+    field.value = crmId || "";
+    field.placeholder = crmId ? "" : placeholder;
+  }
+  if (button) {
+    button.disabled = !crmId;
+    button.textContent = crmId ? "Copy CRM ID" : "No CRM ID";
   }
 }
 
@@ -5018,6 +5032,19 @@ document.getElementById("qaClientNameCopyBtn")?.addEventListener("click", async 
   }
 });
 
+document.getElementById("qaCrmIdCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#qaCrmIdField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("qaCrmIdCopyBtn");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy CRM ID";
+    }, 1200);
+  }
+});
+
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button.copy-btn");
   if (!btn || !btn.dataset.copyValue) return;
@@ -5183,6 +5210,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
         qaFormTabId = null;
       });
     }
+    updateQaClientName({ name: "", placeholder: QA_CLIENT_NAME_DEFAULT_PLACEHOLDER });
+    updateQaCrmIdCopy({ crmId: "", placeholder: QA_CRM_ID_DEFAULT_PLACEHOLDER });
     showLandingView();
   });
 
@@ -5214,6 +5243,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Enter a CRM ID to continue.");
       return;
     }
+    updateQaCrmIdCopy({ crmId });
     const tab = await openCrmRecordTab(crmId);
     void loadQaClientNameFromTab(tab?.id ?? null);
     if (crmInput) crmInput.value = "";
