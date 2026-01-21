@@ -112,8 +112,36 @@
         </div>
       </div>
 
+      <div class="settings-card">
+        <div class="settings-card__title">Outlook setup</div>
+        <p class="hint-text">Open Outlook in a new tab and walk through the setup checklist.</p>
+        <button class="toggle-btn settings-card__action" id="beginOutlookSetupBtn" type="button">
+          Begin Outlook setup
+        </button>
+      </div>
+
       <button type="submit">Save &amp; Continue</button>
     </form>
+  </div>
+
+  <!-- OUTLOOK SETUP VIEW -->
+  <div class="container outlook-setup-view" id="outlookSetupView" style="display:none;">
+    <h1>Outlook Setup</h1>
+    <p class="complete-intro">We opened Outlook in a new tab. Sign in there, then follow these steps.</p>
+    <ol class="outlook-setup-steps">
+      <li>Once you're logged in, click <strong>File</strong>, then <strong>Settings</strong>.</li>
+      <li>In the new window, click <strong>Mail</strong> on the left side.</li>
+      <li>In the next column, select <strong>Compose and reply</strong>.</li>
+      <li>Under <strong>Message format</strong>, enable the checkbox labeled <strong>Always show From</strong>.</li>
+      <li>Close the settings window, then return here.</li>
+    </ol>
+
+    <div class="outlook-setup-finish">
+      <img class="outlook-setup-thumb" src="assets/Symojis/Thumbs-Up.png" alt="Thumbs up Symoji" />
+      <button id="finishOutlookSetupBtn" class="toggle-btn outlook-setup-finish-btn" type="button">
+        Finish Outlook setup
+      </button>
+    </div>
   </div>
 
   <!-- LANDING VIEW -->
