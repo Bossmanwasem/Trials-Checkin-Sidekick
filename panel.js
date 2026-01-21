@@ -4520,8 +4520,13 @@ async function syncViewForTab(tab) {
 const selectedTrialFiles = [];
 const uploadPrompt = document.getElementById("uploadPrompt");
 const uploadPromptText = document.getElementById("uploadPromptText");
+const zipFilenameRow = document.getElementById("zipFilenameRow");
 const zipFilenameField = document.getElementById("zipFilenameField");
 const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
+const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
+const gridZipFilenameField = document.getElementById("gridZipFilenameField");
+const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
+const GRID_FILE_EXTENSION = ".grid3user";
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
@@ -4547,7 +4552,7 @@ function clearSelectedTrialFiles(messageOverride = null) {
 }
 
 function getVocabTypesFromFiles(files) {
-  const hasGrid = files.some(file => file.name.toLowerCase().endsWith(".grid3user"));
+  const hasGrid = files.some(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
   const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
   const hasSaltillo = files.some(file => file.name.toLowerCase().endsWith(".ce"));
 
@@ -4558,12 +4563,12 @@ function getVocabTypesFromFiles(files) {
   return ordered;
 }
 
-function buildZipFilename() {
+function buildZipFilename(files) {
   const first = sanitizeName(getFormValue("#firstName"));
   const last = sanitizeName(getFormValue("#lastName"));
   const fullName = [first, last].filter(Boolean).join(" ") || "Client";
   const dateStr = formatDateForFilename();
-  const vocabTypes = getVocabTypesFromFiles(selectedTrialFiles);
+  const vocabTypes = getVocabTypesFromFiles(files);
   const typeLabel = vocabTypes.length
     ? `${vocabTypes.join(", ")}`
     : "Vocab";
@@ -4604,15 +4609,23 @@ trialFilesInput?.addEventListener("change", () => {
 function hideUploadPrompt() {
   if (uploadPrompt) uploadPrompt.style.display = "none";
   if (zipFilenameField) zipFilenameField.value = "";
+  if (gridZipFilenameField) gridZipFilenameField.value = "";
+  if (zipFilenameRow) zipFilenameRow.style.display = "none";
+  if (gridZipFilenameRow) gridZipFilenameRow.style.display = "none";
 }
 
-function showUploadPrompt(zipName) {
+function showUploadPrompt(zipName, gridZipName = "") {
   if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
   const displayName = zipName ? zipName.replace(/\.zip$/i, "") : "";
+  const displayGridName = gridZipName ? gridZipName.replace(/\.zip$/i, "") : "";
   zipFilenameField.value = displayName;
-  uploadPromptText.textContent = zipName
-    ? "Upload the downloaded zip file to the CRM Documents tab using the filename below."
-    : "Upload the downloaded zip file to the CRM Documents tab.";
+  if (gridZipFilenameField) gridZipFilenameField.value = displayGridName;
+  if (zipFilenameRow) zipFilenameRow.style.display = zipName ? "flex" : "none";
+  if (gridZipFilenameRow) gridZipFilenameRow.style.display = gridZipName ? "flex" : "none";
+  const promptText = zipName || gridZipName
+    ? "Upload the downloaded zip file(s) to the CRM Documents tab using the filenames below."
+    : "Upload the downloaded zip file(s) to the CRM Documents tab.";
+  uploadPromptText.textContent = promptText;
   uploadPrompt.style.display = "block";
 }
 
@@ -4622,6 +4635,14 @@ copyZipFilenameBtn?.addEventListener("click", async () => {
   await navigator.clipboard.writeText(name);
   copyZipFilenameBtn.textContent = "Copied!";
   setTimeout(() => { copyZipFilenameBtn.textContent = "Copy filename"; }, 1200);
+});
+
+copyGridZipFilenameBtn?.addEventListener("click", async () => {
+  const name = gridZipFilenameField?.value;
+  if (!name) return;
+  await navigator.clipboard.writeText(name);
+  copyGridZipFilenameBtn.textContent = "Copied!";
+  setTimeout(() => { copyGridZipFilenameBtn.textContent = "Copy Grid filename"; }, 1200);
 });
 
 /* ---------------- Reset everything after success ---------------- */
@@ -4702,6 +4723,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
+  let gridZipName = "";
   if (!trialFilesInput?.files?.length) {
     await refreshTrialFilesFromFolder();
   }
@@ -4711,15 +4733,36 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       return;
     }
     updateTrialFilesStatus("Zipping selected files...");
-    const zip = new JSZip();
-    selectedTrialFiles.forEach(file => zip.file(file.name, file));
-    const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
-    const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
-    zipName = buildZipFilename();
+    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+    const downloadMessages = [];
 
-    updateTrialFilesStatus("Prompting download so you can save the zip...");
-    await promptUserDownload(zipBlob, zipName);
-    clearSelectedTrialFiles(`Downloaded "${zipName}". Upload it to the CRM Documents tab.`);
+    if (otherFiles.length) {
+      const zip = new JSZip();
+      otherFiles.forEach(file => zip.file(file.name, file));
+      const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+      const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
+      zipName = buildZipFilename(otherFiles);
+      updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
+      await promptUserDownload(zipBlob, zipName);
+      downloadMessages.push(`"${zipName}"`);
+    }
+
+    if (gridFiles.length) {
+      const gridZip = new JSZip();
+      gridFiles.forEach(file => gridZip.file(file.name, file));
+      const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
+      const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
+      gridZipName = buildZipFilename(gridFiles);
+      updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
+      await promptUserDownload(gridZipBlob, gridZipName);
+      downloadMessages.push(`"${gridZipName}"`);
+    }
+
+    const downloadsNote = downloadMessages.length
+      ? `Downloaded ${downloadMessages.join(" and ")}. Upload to the CRM Documents tab.`
+      : "No files selected.";
+    clearSelectedTrialFiles(downloadsNote);
   } else {
     hideUploadPrompt();
   }
@@ -4761,8 +4804,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
   setText("completeIntro", "CRM note submitted. Review the details below.");
   await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-  if (zipName) {
-    showUploadPrompt(zipName);
+  if (zipName || gridZipName) {
+    showUploadPrompt(zipName, gridZipName);
   }
   showCompleteView();
 });

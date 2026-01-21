@@ -769,9 +769,13 @@
     <div id="uploadPrompt" class="note-preview" style="display:none;">
       <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
       <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
-      <div class="copy-row">
+      <div class="copy-row" id="zipFilenameRow">
         <input type="text" id="zipFilenameField" class="copy-field" readonly />
         <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
+      </div>
+      <div class="copy-row" id="gridZipFilenameRow" style="display:none;">
+        <input type="text" id="gridZipFilenameField" class="copy-field" readonly />
+        <button id="copyGridZipFilenameBtn" class="copy-btn" type="button">Copy Grid filename</button>
       </div>
     </div>
 
