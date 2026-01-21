@@ -536,16 +536,18 @@ body[data-theme^="nfl"] h3 {
 
 .qa-complete-view {
   position: relative;
+  padding-top: 38px;
 }
 
 .qa-return-btn {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 8px;
+  right: 8px;
   width: auto;
   margin-top: 0;
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .qa-complete-view .qa-crm-nav {
