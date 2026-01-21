@@ -1158,16 +1158,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#241311",
-      "container-border": "#000000",
+      "container-border": "#fb4f14",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#fb4f14",
       "accent-strong": "#a4320c",
       "accent-strong-hover": "#c33c0f",
       "input-bg": "#1f140f",
-      "input-border": "#000000",
+      "input-border": "#fb4f14",
       "note-bg": "#120b08",
-      "note-border": "#000000",
-      "error-color": "#000000"
+      "note-border": "#fb4f14",
+      "error-color": "#fb4f14"
     }
   },
   nflBrowns: {
