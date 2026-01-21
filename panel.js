@@ -13,6 +13,7 @@ const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage
 const QA_FORM_URL = "https://forms.office.com/pages/responsepage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&route=shorturl";
 const KG_REQUESTS_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?e=io5Jrk&siteid=%7B551ABA4E-AFDD-40EB-909B-2091F063C2D7%7D&webid=%7BFE759ED0-F9C4-4656-B80C-7ABB6753DE39%7D&uniqueid=%7B332C40DB-DF9D-4F37-81B2-CD90F8E81F9A%7D&env=WebViewList";
 const OUTLOOK_COMPOSE_BASE_URL = "https://outlook.office.com/mail/deeplink/compose";
+const OUTLOOK_SETUP_URL = "https://outlook.office365.com/mail/";
 const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
@@ -50,7 +51,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -135,6 +136,7 @@ function showView(targetId) {
 
 function showWelcomeView() { showView("welcomeView"); }
 function showOnboardingView() { showView("onboardingView"); }
+function showOutlookSetupView() { showView("outlookSetupView"); }
 function showLandingView() {
   showView("landingView");
   void refreshLandingView();
@@ -176,6 +178,7 @@ let hasStartedCheckin = false;
 let smartboxRepairRequired = false;
 let hasStartedGrid = false;
 let outlookEmailTabId = null;
+let outlookSetupTabId = null;
 let hasFinalizedCheckin = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
@@ -2149,6 +2152,33 @@ async function initOnboardingForm() {
   });
 }
 
+async function openOutlookSetupTab() {
+  if (chrome?.tabs?.create) {
+    const tab = await chrome.tabs.create({ url: OUTLOOK_SETUP_URL });
+    outlookSetupTabId = tab?.id ?? null;
+    return;
+  }
+  window.open(OUTLOOK_SETUP_URL, "_blank", "noopener,noreferrer");
+}
+
+function initOutlookSetupFlow() {
+  const beginBtn = document.getElementById("beginOutlookSetupBtn");
+  const finishBtn = document.getElementById("finishOutlookSetupBtn");
+
+  beginBtn?.addEventListener("click", async () => {
+    await openOutlookSetupTab();
+    showOutlookSetupView();
+  });
+
+  finishBtn?.addEventListener("click", async () => {
+    if (chrome?.tabs?.remove && outlookSetupTabId) {
+      await chrome.tabs.remove(outlookSetupTabId);
+    }
+    outlookSetupTabId = null;
+    showOnboardingView();
+  });
+}
+
 async function initDailyCounterSetting() {
   const toggle = document.getElementById("dailyCounterToggle");
   if (!toggle) return;
@@ -2535,6 +2565,7 @@ initThemeControls();
 initChaosControls();
 loadThemePreference();
 initOnboardingForm();
+initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
 initZipFolderSetting();
