@@ -276,6 +276,174 @@ function collectClientData() {
   };
 }
 
+/* ---------------- CRM Name Copy Helper ---------------- */
+
+const CRM_FIRST_NAME_ID = "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientFirstName";
+const CRM_LAST_NAME_ID = "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientLastName";
+const CRM_NAME_COPY_CONTAINER_ID = "ttmt-crm-name-copy";
+const CRM_NAME_COPY_INPUT_ID = "ttmt-crm-name-copy-input";
+const CRM_NAME_COPY_STATUS_ID = "ttmt-crm-name-copy-status";
+const CRM_NAME_COPY_STYLE_ID = "ttmt-crm-name-copy-style";
+
+function isCrmClientPage() {
+  return window.location.host.includes("portal.talktometechnologies.com")
+    && window.location.pathname.toLowerCase().includes("editclient.aspx");
+}
+
+function getCleanClientName() {
+  const firstName = sanitizeName(getInputValueById(CRM_FIRST_NAME_ID));
+  const lastName = sanitizeName(getInputValueById(CRM_LAST_NAME_ID));
+  return [firstName, lastName].filter(Boolean).join(" ").trim();
+}
+
+function updateCrmNameCopyValue() {
+  const input = document.getElementById(CRM_NAME_COPY_INPUT_ID);
+  if (!input) return;
+  const cleanedName = getCleanClientName();
+  input.value = cleanedName;
+  input.placeholder = cleanedName ? "" : "No name found";
+}
+
+function attachCrmNameInputListeners() {
+  const firstInput = document.getElementById(CRM_FIRST_NAME_ID);
+  const lastInput = document.getElementById(CRM_LAST_NAME_ID);
+  if (!firstInput && !lastInput) {
+    setTimeout(attachCrmNameInputListeners, 800);
+    return;
+  }
+
+  const update = () => updateCrmNameCopyValue();
+  if (firstInput) {
+    firstInput.addEventListener("input", update);
+    firstInput.addEventListener("change", update);
+  }
+  if (lastInput) {
+    lastInput.addEventListener("input", update);
+    lastInput.addEventListener("change", update);
+  }
+  update();
+}
+
+function ensureCrmNameCopyStyles() {
+  if (document.getElementById(CRM_NAME_COPY_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = CRM_NAME_COPY_STYLE_ID;
+  style.textContent = `
+    #${CRM_NAME_COPY_CONTAINER_ID} {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 9999;
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: "Segoe UI", sans-serif;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      width: 220px;
+    }
+    #${CRM_NAME_COPY_CONTAINER_ID} .ttmt-crm-name-copy__title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    #${CRM_NAME_COPY_CONTAINER_ID} .ttmt-crm-name-copy__row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #${CRM_NAME_COPY_CONTAINER_ID} input {
+      flex: 1;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 6px 8px;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 12px;
+    }
+    #${CRM_NAME_COPY_CONTAINER_ID} button {
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #${CRM_NAME_COPY_CONTAINER_ID} button:hover {
+      background: #2563eb;
+    }
+    #${CRM_NAME_COPY_CONTAINER_ID} .ttmt-crm-name-copy__status {
+      margin-top: 6px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      min-height: 14px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function initCrmNameCopyWidget() {
+  if (!isCrmClientPage()) return;
+  if (document.getElementById(CRM_NAME_COPY_CONTAINER_ID)) return;
+  ensureCrmNameCopyStyles();
+
+  const container = document.createElement("div");
+  container.id = CRM_NAME_COPY_CONTAINER_ID;
+  container.innerHTML = `
+    <div class="ttmt-crm-name-copy__title">Cleaned client name</div>
+    <div class="ttmt-crm-name-copy__row">
+      <input id="${CRM_NAME_COPY_INPUT_ID}" type="text" readonly />
+      <button type="button" id="ttmt-crm-name-copy-btn">Copy</button>
+    </div>
+    <div class="ttmt-crm-name-copy__status" id="${CRM_NAME_COPY_STATUS_ID}"></div>
+  `;
+  document.body.appendChild(container);
+
+  const copyBtn = container.querySelector("#ttmt-crm-name-copy-btn");
+  const input = container.querySelector(`#${CRM_NAME_COPY_INPUT_ID}`);
+  const status = container.querySelector(`#${CRM_NAME_COPY_STATUS_ID}`);
+
+  const setStatus = (message) => {
+    if (!status) return;
+    status.textContent = message;
+    if (message) {
+      setTimeout(() => {
+        if (status.textContent === message) status.textContent = "";
+      }, 2000);
+    }
+  };
+
+  if (input) {
+    input.addEventListener("click", () => {
+      input.select();
+    });
+  }
+
+  copyBtn?.addEventListener("click", () => {
+    const value = input?.value?.trim();
+    if (!value) {
+      setStatus("No name to copy.");
+      return;
+    }
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(value)
+        .then(() => setStatus("Copied!"))
+        .catch(() => setStatus("Copy failed."));
+      return;
+    }
+    if (input) {
+      input.select();
+      document.execCommand("copy");
+      setStatus("Copied!");
+    }
+  });
+
+  attachCrmNameInputListeners();
+  updateCrmNameCopyValue();
+}
+
 /* ---------------- DOM Actions ---------------- */
 
 function setValueByXPath(xpath, value) {
@@ -750,4 +918,10 @@ async function fillDafFormFromStorage() {
 
 if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initCrmNameCopyWidget);
+} else {
+  initCrmNameCopyWidget();
 }

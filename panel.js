@@ -49,6 +49,7 @@ const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
+let qaFormTabId = null;
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
@@ -4253,6 +4254,14 @@ function buildCrmLink(data) {
   return `${CRM_LINK_BASE}${crmId}`;
 }
 
+function openCrmRecordTab(crmId) {
+  const trimmedId = `${crmId || ""}`.trim();
+  if (!trimmedId) return;
+  chrome.tabs.create({
+    url: `${CRM_LINK_BASE}${encodeURIComponent(trimmedId)}`
+  });
+}
+
 function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
   const fullName = [data?.firstName, data?.lastName].filter(Boolean).join(" ").trim() || "Client";
   const subject = `${data?.aac || "AAC"} | ${fullName} Device Returned.`;
@@ -5092,12 +5101,19 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("qaFormBtn")?.addEventListener("click", () => {
-    chrome.tabs.create({ url: QA_FORM_URL });
+    chrome.tabs.create({ url: QA_FORM_URL }, tab => {
+      qaFormTabId = tab?.id ?? null;
+    });
     showQaCompleteView();
   });
 
   document.getElementById("qaFinishedBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("qas");
+    if (qaFormTabId) {
+      chrome.tabs.remove(qaFormTabId, () => {
+        qaFormTabId = null;
+      });
+    }
     showLandingView();
   });
 
@@ -5117,9 +5133,19 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Enter a CRM ID to continue.");
       return;
     }
-    chrome.tabs.create({
-      url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}`
-    });
+    openCrmRecordTab(crmId);
+    if (crmInput) crmInput.value = "";
+  });
+
+  document.getElementById("qaCrmNavigatorForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const crmInput = document.getElementById("qaCrmNavigatorInput");
+    const crmId = (crmInput?.value || "").trim();
+    if (!crmId) {
+      alert("Enter a CRM ID to continue.");
+      return;
+    }
+    openCrmRecordTab(crmId);
     if (crmInput) crmInput.value = "";
   });
 
