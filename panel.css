@@ -1309,6 +1309,12 @@ input[type="file"] {
 
 body[data-theme="rainbowParty"] {
   color: #ffffff;
+  background-color: #0b0b12;
+  background-image: linear-gradient(rgba(11, 11, 18, 0.75), rgba(11, 11, 18, 0.75)),
+    url("assets/paint2.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 body[data-theme="rainbowParty"] h1,
