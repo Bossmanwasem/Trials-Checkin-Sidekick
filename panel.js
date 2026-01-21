@@ -3032,6 +3032,19 @@ function updateQaCrmIdCopy({ crmId = "", placeholder = QA_CRM_ID_DEFAULT_PLACEHO
   }
 }
 
+function resetQaCompleteFields() {
+  updateQaClientName({ name: "", placeholder: QA_CLIENT_NAME_DEFAULT_PLACEHOLDER });
+  updateQaCrmIdCopy({ crmId: "", placeholder: QA_CRM_ID_DEFAULT_PLACEHOLDER });
+}
+
+function closeQaFormTab() {
+  if (qaFormTabId) {
+    chrome.tabs.remove(qaFormTabId, () => {
+      qaFormTabId = null;
+    });
+  }
+}
+
 async function waitForTabComplete(tabId, timeoutMs = 15000) {
   if (!tabId) return false;
   try {
@@ -5205,13 +5218,14 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("qaFinishedBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("qas");
-    if (qaFormTabId) {
-      chrome.tabs.remove(qaFormTabId, () => {
-        qaFormTabId = null;
-      });
-    }
-    updateQaClientName({ name: "", placeholder: QA_CLIENT_NAME_DEFAULT_PLACEHOLDER });
-    updateQaCrmIdCopy({ crmId: "", placeholder: QA_CRM_ID_DEFAULT_PLACEHOLDER });
+    closeQaFormTab();
+    resetQaCompleteFields();
+    showLandingView();
+  });
+
+  document.getElementById("qaReturnBtn")?.addEventListener("click", () => {
+    closeQaFormTab();
+    resetQaCompleteFields();
     showLandingView();
   });
 
