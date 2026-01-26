@@ -2723,9 +2723,9 @@ async function writeLogEntry({ action, outcome }) {
   const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
   const now = new Date();
   const actionLabel = formatActionLogLabel(action);
-  const filename = `${username} ${actionLabel} logs`;
+  const filename = `${username} ${actionLabel} logs.txt`;
   const fileHandle = await userFolder.getFileHandle(filename, { create: true });
-  const outcomeText = outcome && outcome.trim() ? outcome : "Compleated Successfully";
+  const outcomeText = outcome && outcome.trim() ? outcome : "Completed successfully";
   const line = `${username}--${formatLogDate(now)}--${formatLogTime(now)}--${outcomeText}`;
   const existingFile = await fileHandle.getFile();
   const writable = await fileHandle.createWritable({ keepExistingData: true });
@@ -5057,7 +5057,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   // ✅ SUCCESS
-  await logTaskOutcome("Checkin", "Compleated Successfully");
+  await logTaskOutcome("Checkin", "Completed successfully");
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
   if (isMountOnly) {
@@ -5399,7 +5399,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("qaFinishedBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("qas");
-    await logTaskOutcome("QA", "Compleated Successfully");
+    await logTaskOutcome("QA", "Completed successfully");
     closeQaFormTab();
     resetQaCompleteFields();
     showLandingView();
@@ -5463,7 +5463,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("preps");
-    await logTaskOutcome("Prep", "Compleated Successfully");
+    await logTaskOutcome("Prep", "Completed successfully");
     clearPrepChecklist();
     showLandingView();
   });
