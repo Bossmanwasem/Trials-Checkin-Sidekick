@@ -25,6 +25,8 @@ const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
+const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
+const LOGS_HANDLE_KEY = "logsFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
@@ -2269,6 +2271,8 @@ const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn
 const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
 const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
 const trialFilesStatus = document.getElementById("trialFilesStatus");
+const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
+const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
 
 function normalizeZipFolder(folder) {
   return (folder || "")
@@ -2462,6 +2466,72 @@ async function initCleanupFolderSetting() {
   });
 }
 
+function updateLogFolderStatus(name, messageOverride = null) {
+  if (!logFolderStatusEls.length) return;
+  const message = messageOverride
+    || (name ? `Saving logs to "${name}".` : "No log folder selected yet.");
+  logFolderStatusEls.forEach(el => {
+    el.textContent = message;
+  });
+}
+
+async function setLogFolderName(name) {
+  await setStoredValue(LOGS_FOLDER_NAME_STORAGE_KEY, name || "");
+  updateLogFolderStatus(name);
+}
+
+async function getLogFolderName() {
+  return await getStoredValue(LOGS_FOLDER_NAME_STORAGE_KEY);
+}
+
+async function saveLogFolderHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, LOGS_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadLogFolderHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(LOGS_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function pickLogFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return null;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  } catch {
+    return null;
+  }
+  if (!handle) return null;
+  await saveLogFolderHandle(handle);
+  await setLogFolderName(handle.name || "Selected folder");
+  return handle;
+}
+
+async function initLogFolderSetting() {
+  if (!logFolderPickButtons.length) return;
+  const storedName = await getLogFolderName();
+  updateLogFolderStatus(storedName);
+  logFolderPickButtons.forEach(button => {
+    button.addEventListener("click", async () => {
+      await pickLogFolder();
+    });
+  });
+}
+
 function updateTrialFilesFolderStatus(name, messageOverride = null) {
   if (!trialFilesFolderStatus) return;
   if (messageOverride) {
@@ -2572,6 +2642,7 @@ initDailyCounterSetting();
 initLandingTooltipsSetting();
 initZipFolderSetting();
 initCleanupFolderSetting();
+initLogFolderSetting();
 initTrialFilesFolderSetting();
 
 function setValue(id, val) {
@@ -2589,6 +2660,78 @@ function formatDateForFilename(date = new Date()) {
   const day = String(date.getDate()).padStart(2, "0");
   const year = String(date.getFullYear());
   return `${month}.${day}.${year}`;
+}
+
+function formatLogDate(date = new Date()) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = String(date.getFullYear());
+  return `${month}/${day}/${year}`;
+}
+
+function formatLogTime(date = new Date()) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function formatLogTimestampForFilename(date = new Date()) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${formatDateForFilename(date)} ${hours}-${minutes}-${seconds}`;
+}
+
+function sanitizeLogLabel(name) {
+  return (name || "").replace(/[\\/:*?"<>|]/g, "").trim();
+}
+
+function buildLogUserName(profile) {
+  const first = (profile?.firstName || "").trim();
+  const last = (profile?.lastName || "").trim();
+  const combined = `${first} ${last}`.trim();
+  return sanitizeLogLabel(combined || first || "User");
+}
+
+async function getLogBaseHandle({ promptIfMissing = false } = {}) {
+  let handle = await loadLogFolderHandle().catch(() => null);
+  if (!handle && promptIfMissing) {
+    handle = await pickLogFolder();
+  }
+  if (!handle) return null;
+  const permitted = await verifyFolderPermission(handle, "readwrite");
+  if (!permitted) {
+    const storedName = await getLogFolderName();
+    updateLogFolderStatus(storedName, "Folder access blocked. Click Choose log folder to re-authorize.");
+    return null;
+  }
+  return handle;
+}
+
+async function writeLogEntry({ action, outcome }) {
+  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  if (!baseHandle) return false;
+  const profile = await getUserProfile();
+  const username = buildLogUserName(profile);
+  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
+  const now = new Date();
+  const filename = `${action} - ${formatLogTimestampForFilename(now)}.txt`;
+  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  const outcomeText = outcome && outcome.trim() ? outcome : "Compleated Successfully";
+  const line = `${username}--${formatLogDate(now)}--${formatLogTime(now)}--${outcomeText}`;
+  await writable.write(line);
+  await writable.close();
+  return true;
+}
+
+async function logTaskOutcome(action, outcome) {
+  try {
+    await writeLogEntry({ action, outcome });
+  } catch {
+    // Logging should never block the user flow.
+  }
 }
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
@@ -4807,7 +4950,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
 
   if (!hasValidVocabSelection()) {
-    alert("Select at least one vocab or check \"Vocab NOT returned\" before continuing.");
+    const message = "Select at least one vocab or check \"Vocab NOT returned\" before continuing.";
+    alert(message);
+    await logTaskOutcome("Checkin", message);
     return;
   }
 
@@ -4822,7 +4967,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
   if (selectedTrialFiles.length) {
     if (typeof JSZip === "undefined") {
-      alert("JSZip failed to load. Please reload the panel before submitting.");
+      const message = "JSZip failed to load. Please reload the panel before submitting.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
       return;
     }
     updateTrialFilesStatus("Zipping selected files...");
@@ -4875,17 +5022,33 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
   // 3) Fill note in CRM
   const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
-  if (!setNoteRes.ok) { alert("Failed to fill CRM note box."); return; }
+  if (!setNoteRes.ok) {
+    const message = "Failed to fill CRM note box.";
+    alert(message);
+    await logTaskOutcome("Checkin", message);
+    return;
+  }
 
   // 4) Select category
   const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: "Device Returned" });
-  if (!setCatRes.ok) { alert('Failed to select note category "Device Returned".'); return; }
+  if (!setCatRes.ok) {
+    const message = 'Failed to select note category "Device Returned".';
+    alert(message);
+    await logTaskOutcome("Checkin", message);
+    return;
+  }
 
   // 5) Submit note
   const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
-  if (!clickRes.ok) { alert("Failed to submit the note."); return; }
+  if (!clickRes.ok) {
+    const message = "Failed to submit the note.";
+    alert(message);
+    await logTaskOutcome("Checkin", message);
+    return;
+  }
 
   // ✅ SUCCESS
+  await logTaskOutcome("Checkin", "Compleated Successfully");
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
   if (isMountOnly) {
@@ -5227,6 +5390,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("qaFinishedBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("qas");
+    await logTaskOutcome("QA", "Compleated Successfully");
     closeQaFormTab();
     resetQaCompleteFields();
     showLandingView();
@@ -5290,6 +5454,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
     await incrementDailyCounter("preps");
+    await logTaskOutcome("Prep", "Compleated Successfully");
     clearPrepChecklist();
     showLandingView();
   });
