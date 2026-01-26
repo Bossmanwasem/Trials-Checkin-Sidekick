@@ -2735,9 +2735,43 @@ async function writeLogEntry({ action, outcome }) {
   return true;
 }
 
+function formatSearchLogMessage(message) {
+  return String(message || "").replace(/\s*\n\s*/g, " ").trim();
+}
+
+async function writeDeviceSearchEntry({ serial, serialResult, mountResult }) {
+  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  if (!baseHandle) return false;
+  const profile = await getUserProfile();
+  const username = buildLogUserName(profile);
+  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
+  const filename = `${username} Device Searches.txt`;
+  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+  const now = new Date();
+  const serialLabel = serial || "Unknown";
+  const serialMessage = formatSearchLogMessage(serialResult) || "❌ Serial number not found in Workbook.";
+  const mountMessage = formatSearchLogMessage(mountResult);
+  const details = mountMessage ? `${serialMessage} | ${mountMessage}` : serialMessage;
+  const line = `${username} | ${formatLogDate(now)} -- ${formatLogTime(now)} | ${serialLabel} | ${details}`;
+  const existingFile = await fileHandle.getFile();
+  const writable = await fileHandle.createWritable({ keepExistingData: true });
+  await writable.seek(existingFile.size);
+  await writable.write(`${line}\n`);
+  await writable.close();
+  return true;
+}
+
 async function logTaskOutcome(action, outcome) {
   try {
     await writeLogEntry({ action, outcome });
+  } catch {
+    // Logging should never block the user flow.
+  }
+}
+
+async function logDeviceSearchOutcome({ serial, serialResult, mountResult }) {
+  try {
+    await writeDeviceSearchEntry({ serial, serialResult, mountResult });
   } catch {
     // Logging should never block the user flow.
   }
@@ -3942,6 +3976,11 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Report the invalid scan to pre-prep.", "red");
     resetLookupCopyButtons();
+    await logDeviceSearchOutcome({
+      serial: rawInput || "",
+      serialResult: "❌ Invalid serial scanned.",
+      mountResult: ""
+    });
     return;
   }
 
@@ -3960,6 +3999,11 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
     resetLookupCopyButtons();
+    await logDeviceSearchOutcome({
+      serial: extracted,
+      serialResult: "❌ Workbooks not connected.",
+      mountResult: ""
+    });
     return;
   }
 
@@ -4073,6 +4117,12 @@ async function runDeviceLookupSearch(rawInput) {
     tableMounts: mountResult.table.map(item => item.serial),
     rollingMounts: mountResult.rolling.map(item => item.serial)
   };
+
+  await logDeviceSearchOutcome({
+    serial: extracted,
+    serialResult: serialResult.message,
+    mountResult: mountResult.lines.join(" | ")
+  });
 }
 
 /* ---------------- Grid sidekick ---------------- */
