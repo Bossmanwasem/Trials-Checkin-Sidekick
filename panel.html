@@ -304,10 +304,38 @@
           </div>
         </div>
       </div>
+      <div class="settings-card">
+        <div class="settings-card__title">Update notes</div>
+        <p class="hint-text">See what has changed since the last release.</p>
+        <button id="updateNotesBtn" class="toggle-btn settings-card__action" type="button">
+          View update notes
+        </button>
+      </div>
     </div>
     <div class="crm-nav-footer">
       <button id="settingsReturnBtn" class="toggle-btn" type="button">
         Return to CRM Sidekick
+      </button>
+    </div>
+  </div>
+
+  <!-- UPDATE NOTES VIEW -->
+  <div class="container update-notes-view" id="updateNotesView" style="display:none;">
+    <h1>Update notes</h1>
+    <p class="complete-intro">What’s new since version 1.0.4.</p>
+    <div class="settings-panel">
+      <div class="settings-card">
+        <div class="settings-card__title">Version 1.0.5 highlights</div>
+        <ul class="update-notes-list">
+          <li>Added an Update notes page that summarizes recent changes.</li>
+          <li>Placed a shortcut in User settings to jump straight to the Update notes page.</li>
+          <li>Updated the extension version to 1.0.5.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="updateNotesReturnBtn" class="toggle-btn" type="button">
+        Back to user settings
       </button>
     </div>
   </div>

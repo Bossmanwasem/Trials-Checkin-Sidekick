@@ -52,7 +52,7 @@ const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 let qaFormTabId = null;
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -143,6 +143,7 @@ function showLandingView() {
   void refreshLandingView();
 }
 function showSettingsView() { showView("settingsView"); }
+function showUpdateNotesView() { showView("updateNotesView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
@@ -5183,6 +5184,14 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("settingsReturnBtn")?.addEventListener("click", () => {
     showLandingView();
+  });
+
+  document.getElementById("updateNotesBtn")?.addEventListener("click", () => {
+    showUpdateNotesView();
+  });
+
+  document.getElementById("updateNotesReturnBtn")?.addEventListener("click", () => {
+    showSettingsView();
   });
 
   document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
