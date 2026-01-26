@@ -2687,6 +2687,12 @@ function sanitizeLogLabel(name) {
   return (name || "").replace(/[\\/:*?"<>|]/g, "").trim();
 }
 
+function formatActionLogLabel(action) {
+  const cleaned = sanitizeLogLabel(action || "");
+  if (cleaned.toLowerCase() === "checkin") return "Check-in";
+  return cleaned || "Log";
+}
+
 function buildLogUserName(profile) {
   const first = (profile?.firstName || "").trim();
   const last = (profile?.lastName || "").trim();
@@ -2716,12 +2722,15 @@ async function writeLogEntry({ action, outcome }) {
   const username = buildLogUserName(profile);
   const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
   const now = new Date();
-  const filename = `${action} - ${formatLogTimestampForFilename(now)}.txt`;
+  const actionLabel = formatActionLogLabel(action);
+  const filename = `${username} ${actionLabel} logs`;
   const fileHandle = await userFolder.getFileHandle(filename, { create: true });
-  const writable = await fileHandle.createWritable();
   const outcomeText = outcome && outcome.trim() ? outcome : "Compleated Successfully";
   const line = `${username}--${formatLogDate(now)}--${formatLogTime(now)}--${outcomeText}`;
-  await writable.write(line);
+  const existingFile = await fileHandle.getFile();
+  const writable = await fileHandle.createWritable({ keepExistingData: true });
+  await writable.seek(existingFile.size);
+  await writable.write(`${line}\n`);
   await writable.close();
   return true;
 }
