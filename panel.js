@@ -33,9 +33,12 @@ const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
+const DAILY_MISC_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyMiscTaskCounterEnabled";
+const DAILY_MISC_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyMiscTaskCounterLabel";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
+const DEFAULT_DAILY_MISC_LABEL = "Misc";
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": DEVICE_LOOKUP_EXCEL_WEB_URL,
@@ -2066,6 +2069,8 @@ async function initOnboardingForm() {
   const symojiPickerBtn = document.getElementById("symojiPickerMascotBtn");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
+  const miscCounterToggle = document.getElementById("onboardingMiscCounterToggle");
+  const miscCounterLabelInput = document.getElementById("onboardingMiscCounterLabel");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
   const tooltipToggle = document.getElementById("onboardingTooltipToggle");
   let pendingMascot = null;
@@ -2120,6 +2125,18 @@ async function initOnboardingForm() {
   if (dailyCounterToggle) {
     dailyCounterToggle.checked = await getDailyCounterEnabled();
   }
+  if (miscCounterToggle) {
+    miscCounterToggle.checked = await getMiscCounterEnabled();
+  }
+  if (miscCounterLabelInput) {
+    miscCounterLabelInput.value = await getMiscCounterLabel();
+    miscCounterLabelInput.disabled = !(miscCounterToggle?.checked ?? false);
+  }
+  miscCounterToggle?.addEventListener("change", () => {
+    if (miscCounterLabelInput) {
+      miscCounterLabelInput.disabled = !miscCounterToggle.checked;
+    }
+  });
   if (weeklyCounterToggle) {
     weeklyCounterToggle.checked = await getWeeklyCounterEnabled();
   }
@@ -2134,6 +2151,8 @@ async function initOnboardingForm() {
     const lastName = existingProfile?.lastName || "";
     const themeId = themeSelect?.value || "ocean";
     const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
+    const miscCounterEnabled = miscCounterToggle?.checked ?? false;
+    const miscCounterLabel = (miscCounterLabelInput?.value || "").trim() || DEFAULT_DAILY_MISC_LABEL;
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
     const tooltipsEnabled = tooltipToggle?.checked ?? true;
 
@@ -2148,6 +2167,8 @@ async function initOnboardingForm() {
       updateLandingMascot(pendingMascot);
     }
     await setDailyCounterEnabled(dailyCounterEnabled);
+    await setMiscCounterLabel(miscCounterLabel);
+    await setMiscCounterEnabledWithWeeklyUpdate(miscCounterEnabled);
     await setWeeklyCounterEnabled(weeklyCounterEnabled);
     await setLandingTooltipsEnabled(tooltipsEnabled);
     applyLandingTooltipsEnabled(tooltipsEnabled);
@@ -2874,12 +2895,17 @@ function getDefaultDailyCounters() {
   return {
     checkins: 0,
     qas: 0,
-    preps: 0
+    preps: 0,
+    misc: 0
   };
 }
 
-function getDailyCountersTotal(counters) {
-  return Object.values(counters || {}).reduce((total, value) => total + (Number(value) || 0), 0);
+function getDailyCountersTotal(counters, { includeMisc = true } = {}) {
+  const totals = { ...(counters || {}) };
+  if (!includeMisc) {
+    delete totals.misc;
+  }
+  return Object.values(totals).reduce((total, value) => total + (Number(value) || 0), 0);
 }
 
 async function getDailyCounterEnabled() {
@@ -2890,6 +2916,42 @@ async function getDailyCounterEnabled() {
 
 async function setDailyCounterEnabled(enabled) {
   await setStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function getMiscCounterEnabled() {
+  const stored = await getStoredValue(DAILY_MISC_COUNTER_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setMiscCounterEnabled(enabled) {
+  await setStoredValue(DAILY_MISC_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function setMiscCounterEnabledWithWeeklyUpdate(enabled) {
+  const previous = await getMiscCounterEnabled();
+  if (previous === enabled) {
+    return enabled;
+  }
+  await setMiscCounterEnabled(enabled);
+  const counters = await getDailyCounters();
+  const miscCount = Number(counters.misc) || 0;
+  if (miscCount) {
+    await adjustWeeklyCounterByDelta(enabled ? miscCount : -miscCount);
+  }
+  await updateMiscCounterVisibility();
+  return enabled;
+}
+
+async function getMiscCounterLabel() {
+  const stored = await getStoredValue(DAILY_MISC_COUNTER_LABEL_STORAGE_KEY);
+  return (stored || DEFAULT_DAILY_MISC_LABEL).trim() || DEFAULT_DAILY_MISC_LABEL;
+}
+
+async function setMiscCounterLabel(label) {
+  const normalized = (label || "").trim() || DEFAULT_DAILY_MISC_LABEL;
+  await setStoredValue(DAILY_MISC_COUNTER_LABEL_STORAGE_KEY, normalized);
+  updateMiscCounterLabel(normalized);
 }
 
 async function getWeeklyCounterEnabled() {
@@ -2989,10 +3051,27 @@ function updateDailyCounterDisplay(counters) {
   setText("dailyCheckinsCount", String(counters.checkins ?? 0));
   setText("dailyQasCount", String(counters.qas ?? 0));
   setText("dailyPrepsCount", String(counters.preps ?? 0));
+  setText("dailyMiscCount", String(counters.misc ?? 0));
+}
+
+function updateMiscCounterLabel(label) {
+  setText("dailyMiscLabel", label || DEFAULT_DAILY_MISC_LABEL);
+}
+
+async function updateMiscCounterVisibility() {
+  const enabled = await getMiscCounterEnabled();
+  const item = document.getElementById("dailyMiscCounterItem");
+  if (item) item.style.display = enabled ? "" : "none";
+  return enabled;
 }
 
 function updateWeeklyCounterDisplay(total) {
   setText("weeklyTotalCount", String(total ?? 0));
+}
+
+async function getDailyCountersTotalForWeekly(counters) {
+  const miscEnabled = await getMiscCounterEnabled();
+  return getDailyCountersTotal(counters, { includeMisc: miscEnabled });
 }
 
 function applyCounterCollapseState({ toggleId, contentId }, collapsed) {
@@ -3029,6 +3108,12 @@ async function refreshDailyCounters() {
   const counters = await getDailyCounters();
   updateDailyCounterDisplay(counters);
   return counters;
+}
+
+async function updateMiscCounterSettings() {
+  const label = await getMiscCounterLabel();
+  updateMiscCounterLabel(label);
+  await updateMiscCounterVisibility();
 }
 
 async function refreshWeeklyCounters() {
@@ -3070,25 +3155,25 @@ async function adjustWeeklyCounterByDelta(delta) {
 
 async function incrementDailyCounter(key) {
   const counters = await getDailyCounters();
-  const previousTotal = getDailyCountersTotal(counters);
+  const previousTotal = await getDailyCountersTotalForWeekly(counters);
   const nextValue = (counters[key] ?? 0) + 1;
   const updated = { ...counters, [key]: nextValue };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
-  const nextTotal = getDailyCountersTotal(updated);
+  const nextTotal = await getDailyCountersTotalForWeekly(updated);
   await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
   return updated;
 }
 
 async function adjustDailyCounter(key, delta) {
   const counters = await getDailyCounters();
-  const previousTotal = getDailyCountersTotal(counters);
+  const previousTotal = await getDailyCountersTotalForWeekly(counters);
   const current = counters[key] ?? 0;
   const nextValue = Math.max(0, current + delta);
   const updated = { ...counters, [key]: nextValue };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
-  const nextTotal = getDailyCountersTotal(updated);
+  const nextTotal = await getDailyCountersTotalForWeekly(updated);
   await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
   return updated;
 }
@@ -3113,6 +3198,7 @@ async function refreshLandingView() {
   updateCornerSymoji(cornerSymoji);
   updateLandingVersion();
   await updateDailyCounterVisibility();
+  await updateMiscCounterSettings();
   await updateWeeklyCounterVisibility();
   await updateDailyCounterCollapseState();
   await updateWeeklyCounterCollapseState();
