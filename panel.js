@@ -1548,16 +1548,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#1f1a10",
-      "container-border": "#101820",
+      "container-border": "#c28a00",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#ffb612",
       "accent-strong": "#9a6d00",
       "accent-strong-hover": "#c28a00",
       "input-bg": "#1b1710",
-      "input-border": "#101820",
+      "input-border": "#c28a00",
       "note-bg": "#120f0a",
-      "note-border": "#101820",
-      "error-color": "#101820"
+      "note-border": "#c28a00",
+      "error-color": "#c28a00"
     }
   },
   nfl49ers: {

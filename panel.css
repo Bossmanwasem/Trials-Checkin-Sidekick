@@ -57,13 +57,13 @@ body.chaos-transitioning #themeTransitionLayer {
 
 body[data-theme^="nfl"] {
   --accent: var(--container-border);
-  --muted-text: var(--container-border);
-  --title-color: var(--container-border);
-  --header-color: var(--container-border);
+  --muted-text: #ffffff;
+  --title-color: #ffffff;
+  --header-color: #ffffff;
 }
 
 body[data-theme^="nfl"] h3 {
-  color: var(--container-border);
+  color: #ffffff;
 }
 
 .container {
