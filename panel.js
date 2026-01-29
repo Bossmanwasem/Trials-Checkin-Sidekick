@@ -1225,7 +1225,7 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#241311",
-      "container-border": "#002244",
+      "container-border": "#fb4f14",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#fb4f14",
       "accent-strong": "#a4320c",
