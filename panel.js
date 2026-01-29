@@ -1510,16 +1510,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#14201c",
-      "container-border": "#000000",
+      "container-border": "#ffffff",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#125740",
       "accent-strong": "#0a3225",
       "accent-strong-hover": "#0f4331",
       "input-bg": "#1a2622",
-      "input-border": "#000000",
+      "input-border": "#ffffff",
       "note-bg": "#0d1714",
-      "note-border": "#000000",
-      "error-color": "#000000"
+      "note-border": "#ffffff",
+      "error-color": "#ffffff"
     }
   },
   nflEagles: {
