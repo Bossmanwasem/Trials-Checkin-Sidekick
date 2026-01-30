@@ -5221,6 +5221,11 @@ document.getElementById("qaClientNameCopyBtn")?.addEventListener("click", async 
   }
 });
 
+document.getElementById("qaClientNameRefreshBtn")?.addEventListener("click", async () => {
+  const tabId = await getActiveCrmTabId();
+  await loadQaClientNameFromTab(tabId);
+});
+
 document.getElementById("qaCrmIdCopyBtn")?.addEventListener("click", async () => {
   const value = getFormValue("#qaCrmIdField");
   if (!value) return;
