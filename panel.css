@@ -654,6 +654,12 @@ textarea {
   background-color: var(--accent-strong);
 }
 
+.toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: transparent;
+}
+
 .hidden-section {
   display: none;
   animation: fadeIn 0.3s ease;
