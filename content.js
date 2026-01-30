@@ -313,6 +313,68 @@ function clickByXPath(xpath) {
   return true;
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function waitForCondition(check, { timeoutMs = 7000, pollMs = 150 } = {}) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const tick = () => {
+      try {
+        const result = check();
+        if (result) {
+          resolve(result);
+          return;
+        }
+      } catch (err) {
+        reject(err);
+        return;
+      }
+      if (Date.now() - start >= timeoutMs) {
+        reject(new Error("Timed out waiting for condition."));
+        return;
+      }
+      setTimeout(tick, pollMs);
+    };
+    tick();
+  });
+}
+
+async function waitForEnabledElementByXPath(xpath, options = {}) {
+  const el = await waitForElementByXPath(xpath, options);
+  await waitForCondition(() => !el.disabled, options);
+  return el;
+}
+
+async function setFileInputByXPath(xpath, file) {
+  const input = await waitForElementByXPath(xpath);
+  if (!input || !(input instanceof HTMLInputElement)) {
+    throw new Error("File upload input not found.");
+  }
+  const dataTransfer = new DataTransfer();
+  dataTransfer.items.add(file);
+  input.files = dataTransfer.files;
+  dispatchChangeEvents(input, file.name);
+  return input;
+}
+
+async function uploadDocumentViaCrmUi({ zipArrayBuffer, zipName, documentTitle, xpaths }) {
+  const file = new File([zipArrayBuffer], zipName, { type: "application/zip" });
+  await setFileInputByXPath(xpaths.fileInput, file);
+  await waitForEnabledElementByXPath(xpaths.uploadButton, { visibleOnly: true });
+  clickByXPath(xpaths.uploadButton);
+
+  const titleValue = documentTitle || zipName;
+  await waitForEnabledElementByXPath(xpaths.documentTitle, { visibleOnly: true });
+  const setTitleOk = setValueByXPath(xpaths.documentTitle, titleValue);
+  if (!setTitleOk) throw new Error("Could not set document title.");
+  await waitForEnabledElementByXPath(xpaths.addButton, { visibleOnly: true });
+  clickByXPath(xpaths.addButton);
+  await delay(400);
+  return true;
+}
+
 function findUploadTarget() {
   const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
   if (!fileInputs.length) return null;
@@ -349,6 +411,15 @@ async function uploadZipDirectlyToPage(zipArrayBuffer, zipName) {
     throw new Error(`Upload failed with status ${res.status}.`);
   }
 
+  return true;
+}
+
+async function uploadDocumentsSequentially(uploads, xpaths) {
+  const tasks = Array.isArray(uploads) ? uploads : [];
+  if (!tasks.length) return true;
+  for (const upload of tasks) {
+    await uploadDocumentViaCrmUi({ ...upload, xpaths });
+  }
   return true;
 }
 
@@ -434,6 +505,16 @@ if (runtime?.onMessage?.addListener) {
 
   if (msg.type === "UPLOAD_ZIP_TO_CRM") {
     uploadZipDirectlyToPage(msg.zipArrayBuffer, msg.zipName)
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => {
+        console.error(err);
+        sendResponse({ ok: false, message: err?.message || "Upload failed." });
+      });
+    return true;
+  }
+
+  if (msg.type === "UPLOAD_CRM_DOCUMENTS") {
+    uploadDocumentsSequentially(msg.uploads, msg.xpaths)
       .then(() => sendResponse({ ok: true }))
       .catch(err => {
         console.error(err);
