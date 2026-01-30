@@ -28,6 +28,16 @@ const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
 const LOGS_HANDLE_KEY = "logsFolder";
+const TOOL_BUTTON_IDS = [
+  "deviceLookupBtn",
+  "startCheckinBtn",
+  "gridSidekickBtn",
+  "talkPadPrepBtn",
+  "qaFormBtn",
+  "crmNavigatorBtn",
+  "appOverridesBtn",
+  "kgRequestsBtn"
+];
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
@@ -2540,6 +2550,7 @@ async function pickLogFolder() {
   if (!handle) return null;
   await saveLogFolderHandle(handle);
   await setLogFolderName(handle.name || "Selected folder");
+  await updateToolAccessState();
   return handle;
 }
 
@@ -2550,8 +2561,71 @@ async function initLogFolderSetting() {
   logFolderPickButtons.forEach(button => {
     button.addEventListener("click", async () => {
       await pickLogFolder();
+      await updateToolAccessState({ showMessage: true });
     });
   });
+}
+
+function setToolButtonsDisabled(disabled) {
+  TOOL_BUTTON_IDS.forEach(id => {
+    const button = document.getElementById(id);
+    if (!button) return;
+    button.disabled = disabled;
+    button.setAttribute("aria-disabled", disabled ? "true" : "false");
+  });
+}
+
+async function hasFolderPermission(handle, mode = "read") {
+  if (!handle) return false;
+  if (typeof handle.queryPermission !== "function") return true;
+  const permission = await handle.queryPermission({ mode });
+  return permission === "granted";
+}
+
+async function getLogFolderAccessState() {
+  const handle = await loadLogFolderHandle().catch(() => null);
+  if (!handle) {
+    return { connected: false, reason: "missing" };
+  }
+  const permitted = await hasFolderPermission(handle, "readwrite");
+  if (!permitted) {
+    return { connected: false, reason: "blocked" };
+  }
+  return { connected: true, reason: "connected" };
+}
+
+async function updateToolAccessState({ showMessage = false } = {}) {
+  const { connected, reason } = await getLogFolderAccessState();
+  setToolButtonsDisabled(!connected);
+  if (!connected && showMessage) {
+    const storedName = await getLogFolderName();
+    const message = reason === "blocked"
+      ? "Folder access blocked. Click Choose log folder to re-authorize."
+      : "Log folder connection required. Choose log folder in Settings to use tools.";
+    updateLogFolderStatus(storedName, message);
+  }
+  return connected;
+}
+
+async function ensureLogFolderConnected() {
+  const handle = await loadLogFolderHandle().catch(() => null);
+  if (!handle) {
+    await updateToolAccessState({ showMessage: true });
+    alert("Connect the Logs folder in Settings to use the tools.");
+    showSettingsView();
+    return false;
+  }
+
+  const permitted = await verifyFolderPermission(handle, "readwrite");
+  if (!permitted) {
+    await updateToolAccessState({ showMessage: true });
+    alert("Log folder access is blocked. Reconnect the Logs folder in Settings to continue.");
+    showSettingsView();
+    return false;
+  }
+
+  setToolButtonsDisabled(false);
+  return true;
 }
 
 function updateTrialFilesFolderStatus(name, messageOverride = null) {
@@ -3250,6 +3324,7 @@ async function refreshLandingView() {
   await updateDailyCounterCollapseState();
   await updateWeeklyCounterCollapseState();
   await updateLandingTooltipsEnabled();
+  await updateToolAccessState();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -5486,6 +5561,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     hasStartedCheckin = true;
     showFormView();
     await refreshTrialFilesFromFolder();
@@ -5537,17 +5613,20 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     hasStartedGrid = true;
     showGridView();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
   });
 
-  document.getElementById("talkPadPrepBtn")?.addEventListener("click", () => {
+  document.getElementById("talkPadPrepBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     showPrepView();
   });
 
-  document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
+  document.getElementById("crmNavigatorBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     showCrmNavigatorView();
   });
 
@@ -5583,11 +5662,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     showDeviceLookupView();
     await refreshDeviceLookupWorkbooksFromHandles();
   });
 
-  document.getElementById("qaFormBtn")?.addEventListener("click", () => {
+  document.getElementById("qaFormBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     chrome.tabs.create({ url: QA_FORM_URL }, tab => {
       qaFormTabId = tab?.id ?? null;
     });
@@ -5608,11 +5689,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showLandingView();
   });
 
-  document.getElementById("appOverridesBtn")?.addEventListener("click", () => {
+  document.getElementById("appOverridesBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     showAppOverridesView();
   });
 
-  document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
+  document.getElementById("kgRequestsBtn")?.addEventListener("click", async () => {
+    if (!(await ensureLogFolderConnected())) return;
     chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
 
