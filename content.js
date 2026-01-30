@@ -313,6 +313,45 @@ function clickByXPath(xpath) {
   return true;
 }
 
+function findUploadTarget() {
+  const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
+  if (!fileInputs.length) return null;
+
+  const candidate = fileInputs.find(isVisible) || fileInputs[0];
+  if (!candidate) return null;
+
+  const form = candidate.form || candidate.closest("form");
+  if (!form) return null;
+
+  return { fileInput: candidate, form };
+}
+
+async function uploadZipDirectlyToPage(zipArrayBuffer, zipName) {
+  const target = findUploadTarget();
+  if (!target) throw new Error("Could not find a file upload form on this CRM page.");
+
+  const { fileInput, form } = target;
+  const action = form.getAttribute("action") || window.location.href;
+  const method = (form.getAttribute("method") || "POST").toUpperCase();
+  const resolvedAction = new URL(action, window.location.href).toString();
+
+  const formData = new FormData(form);
+  const zipFile = new File([zipArrayBuffer], zipName, { type: "application/zip" });
+  formData.set(fileInput.name || "file", zipFile);
+
+  const res = await fetch(resolvedAction, {
+    method,
+    body: formData,
+    credentials: "include"
+  });
+
+  if (!res.ok) {
+    throw new Error(`Upload failed with status ${res.status}.`);
+  }
+
+  return true;
+}
+
 /* ---------------- Message Listener ---------------- */
 
 function pickInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminNumber = "" } = {}) {
@@ -369,29 +408,39 @@ if (runtime?.onMessage?.addListener) {
       return true;
     }
 
-    if (msg.type === "SET_CRM_NOTE") {
-      const ok = setValueByXPath(msg.xpath, msg.noteText);
-      sendResponse({ ok });
-      return true;
-    }
+  if (msg.type === "SET_CRM_NOTE") {
+    const ok = setValueByXPath(msg.xpath, msg.noteText);
+    sendResponse({ ok });
+    return true;
+  }
 
-    if (msg.type === "SET_VALUE_BY_XPATH") {
-      const ok = setValueByXPath(msg.xpath, msg.value);
-      sendResponse({ ok });
-      return true;
-    }
+  if (msg.type === "SET_VALUE_BY_XPATH") {
+    const ok = setValueByXPath(msg.xpath, msg.value);
+    sendResponse({ ok });
+    return true;
+  }
 
-    if (msg.type === "SET_DROPDOWN_BY_TEXT") {
-      const ok = setDropdownByVisibleText(msg.xpath, msg.text);
-      sendResponse({ ok });
-      return true;
-    }
+  if (msg.type === "SET_DROPDOWN_BY_TEXT") {
+    const ok = setDropdownByVisibleText(msg.xpath, msg.text);
+    sendResponse({ ok });
+    return true;
+  }
 
-    if (msg.type === "CLICK_BY_XPATH") {
-      const ok = clickByXPath(msg.xpath);
-      sendResponse({ ok });
-      return true;
-    }
+  if (msg.type === "CLICK_BY_XPATH") {
+    const ok = clickByXPath(msg.xpath);
+    sendResponse({ ok });
+    return true;
+  }
+
+  if (msg.type === "UPLOAD_ZIP_TO_CRM") {
+    uploadZipDirectlyToPage(msg.zipArrayBuffer, msg.zipName)
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => {
+        console.error(err);
+        sendResponse({ ok: false, message: err?.message || "Upload failed." });
+      });
+    return true;
+  }
 
     if (msg.type === "RUN_INVENTORY_SCRIPT") {
       const searchValue = pickInventorySearchValue(msg.identifiers);

@@ -57,18 +57,13 @@ body.chaos-transitioning #themeTransitionLayer {
 
 body[data-theme^="nfl"] {
   --accent: var(--container-border);
-  --muted-text: #ffffff;
-  --title-color: #ffffff;
-  --header-color: #ffffff;
+  --muted-text: var(--container-border);
+  --title-color: var(--container-border);
+  --header-color: var(--container-border);
 }
 
 body[data-theme^="nfl"] h3 {
-  color: #ffffff;
-}
-
-body[data-theme="nflBroncos"] {
-  --title-color: #fb4f14;
-  --header-color: #fb4f14;
+  color: var(--container-border);
 }
 
 .container {
@@ -294,7 +289,7 @@ body[data-theme="nflBroncos"] {
 .daily-counter__grid {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -654,12 +649,6 @@ textarea {
   background-color: var(--accent-strong);
 }
 
-.toggle-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: transparent;
-}
-
 .hidden-section {
   display: none;
   animation: fadeIn 0.3s ease;
@@ -827,11 +816,6 @@ button[type="submit"]:hover {
   color: #9aa6b2;
 }
 
-.qa-refresh-btn {
-  padding: 8px 10px;
-  font-size: 0.85rem;
-}
-
 .note-preview__title {
   font-weight: 600;
   color: var(--accent);
@@ -880,6 +864,15 @@ button[type="submit"]:hover {
 
 .grid-toggle__option input {
   accent-color: var(--accent);
+}
+
+.upload-block {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid var(--note-border);
+  border-radius: 8px;
+  background: var(--note-bg);
+  transition: background-color 0.6s ease, border-color 0.6s ease;
 }
 
 input[type="file"] {

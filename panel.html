@@ -21,6 +21,7 @@
     </p>
     <p class="welcome-intro">Instead of one-click check-ins, CRM Sidekick guides you through the process and takes care of repetitive work such as:</p>
     <ul class="welcome-list">
+      <li>Naming and zipping files</li>
       <li>Formatting and submitting your CRM notes</li>
       <li>Eliminating common manual entry tasks</li>
     </ul>
@@ -51,12 +52,6 @@
         <input type="checkbox" id="onboardingDailyCounterToggle" />
         Show daily task counter on the landing page
       </label>
-      <label class="checkbox-row" for="onboardingMiscCounterToggle">
-        <input type="checkbox" id="onboardingMiscCounterToggle" />
-        Enable misc daily counter
-      </label>
-      <label for="onboardingMiscCounterLabel">Misc counter name</label>
-      <input type="text" id="onboardingMiscCounterLabel" placeholder="Misc" />
       <label class="checkbox-row" for="onboardingWeeklyCounterToggle">
         <input type="checkbox" id="onboardingWeeklyCounterToggle" />
         Show weekly task counter on the landing page
@@ -65,6 +60,16 @@
         <input type="checkbox" id="onboardingTooltipToggle" />
         Show tooltips on landing buttons
       </label>
+
+      <div class="settings-card">
+        <div class="settings-card__title">Zip save folder</div>
+        <label for="zipFolderPickBtn">Default zip save folder</label>
+        <p class="hint-text">Move the final folder into Downloads or make a new folder in Downloads and select it here.</p>
+        <button class="toggle-btn settings-card__action" id="zipFolderPickBtn" type="button">
+          Choose zip folder
+        </button>
+        <div id="zipFolderStatus" class="status-line">Saving zips to your default Downloads folder.</div>
+      </div>
 
       <div class="settings-card">
         <div class="settings-card__title">Cleanup folder</div>
@@ -186,14 +191,6 @@
               <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="-1" aria-label="Decrease prep count">-</button>
               <span class="daily-counter__value" id="dailyPrepsCount">0</span>
               <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="1" aria-label="Increase prep count">+</button>
-            </div>
-          </div>
-          <div class="daily-counter__item" id="dailyMiscCounterItem">
-            <span class="daily-counter__label" id="dailyMiscLabel">Misc</span>
-            <div class="daily-counter__controls">
-              <button class="daily-counter__btn" type="button" data-counter="misc" data-delta="-1" aria-label="Decrease misc count">-</button>
-              <span class="daily-counter__value" id="dailyMiscCount">0</span>
-              <button class="daily-counter__btn" type="button" data-counter="misc" data-delta="1" aria-label="Increase misc count">+</button>
             </div>
           </div>
           </div>
@@ -385,7 +382,6 @@
         <label for="qaClientNameField">Client name</label>
         <div class="copy-row">
           <input type="text" id="qaClientNameField" class="copy-field" placeholder="Client name will appear here" readonly />
-          <button id="qaClientNameRefreshBtn" class="copy-btn qa-refresh-btn" type="button">Refresh from CRM</button>
           <button id="qaClientNameCopyBtn" class="copy-btn" type="button" disabled>Copy name</button>
         </div>
       </div>
@@ -816,6 +812,27 @@
         <input type="text" name="accessories" />
       </div>
 
+      <!-- Trial files -->
+      <div class="upload-block">
+        <label>Trial Vocab/Export Files</label>
+        <button class="toggle-btn" id="trialFilesFolderPickBtn" type="button">
+          Choose trial files folder
+        </button>
+        <button class="toggle-btn" id="trialFilesFolderRefreshBtn" type="button">
+          Refresh folder files
+        </button>
+        <div id="trialFilesFolderStatus" class="status-line">No trial files folder selected yet.</div>
+        <div class="hint-text">
+          The Sidekick will pull every file from the selected folder when you click Next Step.
+        </div>
+        <input type="file" id="trialFilesInput" multiple />
+        <div class="hint-text">
+          Select the Grid, Saltillo, and P2G exports you want zipped if you don't use a folder.
+          We'll prompt you to save the zip when you click Next Step.
+        </div>
+        <div id="trialFilesStatus" class="status-line">No files selected.</div>
+      </div>
+
       <button type="submit" id="submitBtn">Next Step</button>
     </form>
 
@@ -826,6 +843,19 @@
   <div class="container" id="completeView" style="display:none;">
     <h1>Next Steps</h1>
     <p id="completeIntro" class="complete-intro"></p>
+
+    <div id="uploadPrompt" class="note-preview" style="display:none;">
+      <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
+      <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
+      <div class="copy-row" id="zipFilenameRow">
+        <input type="text" id="zipFilenameField" class="copy-field" readonly />
+        <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
+      </div>
+      <div class="copy-row" id="gridZipFilenameRow" style="display:none;">
+        <input type="text" id="gridZipFilenameField" class="copy-field" readonly />
+        <button id="copyGridZipFilenameBtn" class="copy-btn" type="button">Copy Grid filename</button>
+      </div>
+    </div>
 
     <div class="note-preview">
       <div class="note-preview__title">CRM note submitted</div>

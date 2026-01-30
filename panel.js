@@ -6,6 +6,7 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
+const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
@@ -17,35 +18,24 @@ const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
+const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
 const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
 const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
-const CHECKIN_PROGRESS_STORAGE_KEY = "ttmtCheckinProgress";
+const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
+const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
 const LOGS_HANDLE_KEY = "logsFolder";
-const TOOL_BUTTON_IDS = [
-  "deviceLookupBtn",
-  "startCheckinBtn",
-  "gridSidekickBtn",
-  "talkPadPrepBtn",
-  "qaFormBtn",
-  "crmNavigatorBtn",
-  "appOverridesBtn",
-  "kgRequestsBtn"
-];
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
-const DAILY_MISC_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyMiscTaskCounterEnabled";
-const DAILY_MISC_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyMiscTaskCounterLabel";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
-const DEFAULT_DAILY_MISC_LABEL = "Misc";
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": DEVICE_LOOKUP_EXCEL_WEB_URL,
@@ -1232,7 +1222,7 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#241311",
-      "container-border": "#fb4f14",
+      "container-border": "#002244",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#fb4f14",
       "accent-strong": "#a4320c",
@@ -1517,16 +1507,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#14201c",
-      "container-border": "#ffffff",
+      "container-border": "#000000",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#125740",
       "accent-strong": "#0a3225",
       "accent-strong-hover": "#0f4331",
       "input-bg": "#1a2622",
-      "input-border": "#ffffff",
+      "input-border": "#000000",
       "note-bg": "#0d1714",
-      "note-border": "#ffffff",
-      "error-color": "#ffffff"
+      "note-border": "#000000",
+      "error-color": "#000000"
     }
   },
   nflEagles: {
@@ -1555,16 +1545,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#1f1a10",
-      "container-border": "#c28a00",
+      "container-border": "#101820",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#ffb612",
       "accent-strong": "#9a6d00",
       "accent-strong-hover": "#c28a00",
       "input-bg": "#1b1710",
-      "input-border": "#c28a00",
+      "input-border": "#101820",
       "note-bg": "#120f0a",
-      "note-border": "#c28a00",
-      "error-color": "#c28a00"
+      "note-border": "#101820",
+      "error-color": "#101820"
     }
   },
   nfl49ers: {
@@ -2076,8 +2066,6 @@ async function initOnboardingForm() {
   const symojiPickerBtn = document.getElementById("symojiPickerMascotBtn");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
-  const miscCounterToggle = document.getElementById("onboardingMiscCounterToggle");
-  const miscCounterLabelInput = document.getElementById("onboardingMiscCounterLabel");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
   const tooltipToggle = document.getElementById("onboardingTooltipToggle");
   let pendingMascot = null;
@@ -2132,18 +2120,6 @@ async function initOnboardingForm() {
   if (dailyCounterToggle) {
     dailyCounterToggle.checked = await getDailyCounterEnabled();
   }
-  if (miscCounterToggle) {
-    miscCounterToggle.checked = await getMiscCounterEnabled();
-  }
-  if (miscCounterLabelInput) {
-    miscCounterLabelInput.value = await getMiscCounterLabel();
-    miscCounterLabelInput.disabled = !(miscCounterToggle?.checked ?? false);
-  }
-  miscCounterToggle?.addEventListener("change", () => {
-    if (miscCounterLabelInput) {
-      miscCounterLabelInput.disabled = !miscCounterToggle.checked;
-    }
-  });
   if (weeklyCounterToggle) {
     weeklyCounterToggle.checked = await getWeeklyCounterEnabled();
   }
@@ -2158,8 +2134,6 @@ async function initOnboardingForm() {
     const lastName = existingProfile?.lastName || "";
     const themeId = themeSelect?.value || "ocean";
     const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
-    const miscCounterEnabled = miscCounterToggle?.checked ?? false;
-    const miscCounterLabel = (miscCounterLabelInput?.value || "").trim() || DEFAULT_DAILY_MISC_LABEL;
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
     const tooltipsEnabled = tooltipToggle?.checked ?? true;
 
@@ -2174,8 +2148,6 @@ async function initOnboardingForm() {
       updateLandingMascot(pendingMascot);
     }
     await setDailyCounterEnabled(dailyCounterEnabled);
-    await setMiscCounterLabel(miscCounterLabel);
-    await setMiscCounterEnabledWithWeeklyUpdate(miscCounterEnabled);
     await setWeeklyCounterEnabled(weeklyCounterEnabled);
     await setLandingTooltipsEnabled(tooltipsEnabled);
     applyLandingTooltipsEnabled(tooltipsEnabled);
@@ -2290,10 +2262,59 @@ function initThemeControls() {
   });
 }
 
+const zipFolderPickBtn = document.getElementById("zipFolderPickBtn");
+const zipFolderStatus = document.getElementById("zipFolderStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
+const trialFilesInput = document.getElementById("trialFilesInput");
+const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn");
+const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
+const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
+const trialFilesStatus = document.getElementById("trialFilesStatus");
 const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
 const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
+
+function normalizeZipFolder(folder) {
+  return (folder || "")
+    .trim()
+    .replace(/^[/\\]+/, "")
+    .replace(/[/\\]+$/, "");
+}
+
+function updateZipFolderStatus(folder) {
+  if (!zipFolderStatus) return;
+  if (folder) {
+    zipFolderStatus.textContent = `Saving zips to Downloads/${folder}`;
+    return;
+  }
+  zipFolderStatus.textContent = "Saving zips to your default Downloads folder.";
+}
+
+async function pickZipFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "read" });
+  } catch {
+    return;
+  }
+  if (!handle) return;
+  const name = normalizeZipFolder(handle.name || "Selected folder");
+  await setStoredValue(ZIP_FOLDER_STORAGE_KEY, name);
+  updateZipFolderStatus(name);
+}
+
+async function initZipFolderSetting() {
+  if (!zipFolderPickBtn) return;
+  const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+  updateZipFolderStatus(storedFolder);
+  zipFolderPickBtn.addEventListener("click", async () => {
+    await pickZipFolder();
+  });
+}
 
 function openCleanupHandleDb() {
   return new Promise((resolve, reject) => {
@@ -2430,7 +2451,7 @@ async function runCleanupFolderFlow({ promptIfMissing = false } = {}) {
     handle = await pickCleanupFolder();
   }
   if (!handle) return false;
-  const permitted = await hasFolderPermission(handle, "readwrite");
+  const permitted = await verifyFolderPermission(handle, "readwrite");
   if (!permitted) return false;
   await clearCleanupFolderContents(handle);
   return true;
@@ -2497,7 +2518,6 @@ async function pickLogFolder() {
   if (!handle) return null;
   await saveLogFolderHandle(handle);
   await setLogFolderName(handle.name || "Selected folder");
-  await updateToolAccessState();
   return handle;
 }
 
@@ -2508,51 +2528,109 @@ async function initLogFolderSetting() {
   logFolderPickButtons.forEach(button => {
     button.addEventListener("click", async () => {
       await pickLogFolder();
-      await updateToolAccessState({ showMessage: true });
     });
   });
 }
 
-function setToolButtonsDisabled(disabled) {
-  TOOL_BUTTON_IDS.forEach(id => {
-    const button = document.getElementById(id);
-    if (!button) return;
-    button.disabled = disabled;
-    button.setAttribute("aria-disabled", disabled ? "true" : "false");
+function updateTrialFilesFolderStatus(name, messageOverride = null) {
+  if (!trialFilesFolderStatus) return;
+  if (messageOverride) {
+    trialFilesFolderStatus.textContent = messageOverride;
+    return;
+  }
+  if (name) {
+    trialFilesFolderStatus.textContent = `Using "${name}" for trial file zips.`;
+    return;
+  }
+  trialFilesFolderStatus.textContent = "No trial files folder selected yet.";
+}
+
+async function setTrialFilesFolderName(name) {
+  await setStoredValue(TRIAL_FILES_FOLDER_NAME_STORAGE_KEY, name || "");
+  updateTrialFilesFolderStatus(name);
+}
+
+async function getTrialFilesFolderName() {
+  return await getStoredValue(TRIAL_FILES_FOLDER_NAME_STORAGE_KEY);
+}
+
+async function saveTrialFilesFolderHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, TRIAL_FILES_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 
-async function hasFolderPermission(handle, mode = "read") {
+async function loadTrialFilesFolderHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(TRIAL_FILES_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getTrialFilesFromFolder(handle) {
+  const files = [];
+  for await (const entry of handle.values()) {
+    if (entry.kind !== "file") continue;
+    const file = await entry.getFile();
+    files.push(file);
+  }
+  return files.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOverride = null } = {}) {
+  let handle = handleOverride ?? await loadTrialFilesFolderHandle().catch(() => null);
+  if (!handle && promptIfMissing) {
+    handle = await pickTrialFilesFolder();
+  }
   if (!handle) return false;
-  if (typeof handle.queryPermission !== "function") return true;
-  const permission = await handle.queryPermission({ mode });
-  return permission === "granted";
-}
-
-async function getLogFolderAccessState() {
-  const handle = await loadLogFolderHandle().catch(() => null);
-  if (!handle) {
-    return { connected: false, reason: "missing" };
-  }
-  const permitted = await hasFolderPermission(handle, "readwrite");
+  const permitted = await verifyFolderPermission(handle, "read");
+  const storedName = await getTrialFilesFolderName();
   if (!permitted) {
-    return { connected: false, reason: "blocked" };
+    updateTrialFilesFolderStatus(storedName, "Folder access blocked. Click Refresh to re-authorize.");
+    return false;
   }
-  return { connected: true, reason: "connected" };
-}
-
-async function updateToolAccessState({ showMessage = false } = {}) {
-  setToolButtonsDisabled(false);
-  if (showMessage) {
-    const storedName = await getLogFolderName();
-    updateLogFolderStatus(storedName);
-  }
+  const files = await getTrialFilesFromFolder(handle);
+  if (trialFilesInput) trialFilesInput.value = "";
+  setSelectedTrialFiles(files, storedName
+    ? `Using "${storedName}" (${files.length} file(s)) for the zip.`
+    : `${files.length} file(s) ready to zip.`);
   return true;
 }
 
-async function ensureLogFolderConnected() {
-  setToolButtonsDisabled(false);
-  return true;
+async function pickTrialFilesFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return null;
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "read" });
+  } catch {
+    return null;
+  }
+  if (!handle) return null;
+  await saveTrialFilesFolderHandle(handle);
+  await setTrialFilesFolderName(handle.name || "Selected folder");
+  await refreshTrialFilesFromFolder({ handleOverride: handle });
+  return handle;
+}
+
+async function initTrialFilesFolderSetting() {
+  const storedName = await getTrialFilesFolderName();
+  updateTrialFilesFolderStatus(storedName);
+  trialFilesFolderPickBtn?.addEventListener("click", async () => {
+    await pickTrialFilesFolder();
+  });
+  trialFilesFolderRefreshBtn?.addEventListener("click", async () => {
+    await refreshTrialFilesFromFolder({ promptIfMissing: true });
+  });
 }
 
 initThemeControls();
@@ -2562,8 +2640,10 @@ initOnboardingForm();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
+initZipFolderSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
+initTrialFilesFolderSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -2626,7 +2706,7 @@ async function getLogBaseHandle({ promptIfMissing = false } = {}) {
     handle = await pickLogFolder();
   }
   if (!handle) return null;
-  const permitted = await hasFolderPermission(handle, "readwrite");
+  const permitted = await verifyFolderPermission(handle, "readwrite");
   if (!permitted) {
     const storedName = await getLogFolderName();
     updateLogFolderStatus(storedName, "Folder access blocked. Click Choose log folder to re-authorize.");
@@ -2636,7 +2716,7 @@ async function getLogBaseHandle({ promptIfMissing = false } = {}) {
 }
 
 async function writeLogEntry({ action, outcome }) {
-  const baseHandle = await getLogBaseHandle();
+  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
   if (!baseHandle) return false;
   const profile = await getUserProfile();
   const username = buildLogUserName(profile);
@@ -2655,43 +2735,9 @@ async function writeLogEntry({ action, outcome }) {
   return true;
 }
 
-function formatSearchLogMessage(message) {
-  return String(message || "").replace(/\s*\n\s*/g, " ").trim();
-}
-
-async function writeDeviceSearchEntry({ serial, serialResult, mountResult }) {
-  const baseHandle = await getLogBaseHandle();
-  if (!baseHandle) return false;
-  const profile = await getUserProfile();
-  const username = buildLogUserName(profile);
-  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
-  const filename = `${username} Device Searches.txt`;
-  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
-  const now = new Date();
-  const serialLabel = serial || "Unknown";
-  const serialMessage = formatSearchLogMessage(serialResult) || "❌ Serial number not found in Workbook.";
-  const mountMessage = formatSearchLogMessage(mountResult);
-  const details = mountMessage ? `${serialMessage} | ${mountMessage}` : serialMessage;
-  const line = `${username} | ${formatLogDate(now)} -- ${formatLogTime(now)} | ${serialLabel} | ${details}`;
-  const existingFile = await fileHandle.getFile();
-  const writable = await fileHandle.createWritable({ keepExistingData: true });
-  await writable.seek(existingFile.size);
-  await writable.write(`${line}\n`);
-  await writable.close();
-  return true;
-}
-
 async function logTaskOutcome(action, outcome) {
   try {
     await writeLogEntry({ action, outcome });
-  } catch {
-    // Logging should never block the user flow.
-  }
-}
-
-async function logDeviceSearchOutcome({ serial, serialResult, mountResult }) {
-  try {
-    await writeDeviceSearchEntry({ serial, serialResult, mountResult });
   } catch {
     // Logging should never block the user flow.
   }
@@ -2733,17 +2779,6 @@ function setStoredValue(key, value) {
   });
 }
 
-function clearStoredValue(key) {
-  return new Promise(resolve => {
-    if (chrome?.storage?.local) {
-      chrome.storage.local.remove(key, () => resolve());
-      return;
-    }
-    localStorage.removeItem(key);
-    resolve();
-  });
-}
-
 async function getUserProfile() {
   return await getStoredValue(USER_PROFILE_STORAGE_KEY);
 }
@@ -2762,41 +2797,6 @@ async function saveUserMascot(mascotSrc) {
 
 async function getCornerSymoji() {
   return await getStoredValue(CORNER_SYMOJI_STORAGE_KEY);
-}
-
-async function getCheckinProgress() {
-  return await getStoredValue(CHECKIN_PROGRESS_STORAGE_KEY);
-}
-
-async function updateCheckinProgress(patch) {
-  const current = (await getCheckinProgress()) || {};
-  const next = { ...current, ...patch };
-  await setStoredValue(CHECKIN_PROGRESS_STORAGE_KEY, next);
-  return next;
-}
-
-async function clearCheckinProgress() {
-  await clearStoredValue(CHECKIN_PROGRESS_STORAGE_KEY);
-}
-
-async function reportIncompleteCheckinIfNeeded() {
-  const progress = await getCheckinProgress();
-  if (!progress?.startedAt) return;
-
-  const missing = [];
-  if (!progress.inventoryComplete) missing.push("Inventory");
-  if (!progress.dafComplete) missing.push("DAF");
-
-  if (!missing.length) {
-    await clearCheckinProgress();
-    return;
-  }
-
-  const deviceLabel = progress.deviceNumber ? ` for device ${progress.deviceNumber}` : "";
-  const stepLabel = missing.length === 1 ? "step" : "steps";
-  const message = `❌ Incomplete check-in${deviceLabel}: ${missing.join(" and ")} ${stepLabel} not completed.`;
-  await logTaskOutcome("Checkin", message);
-  await clearCheckinProgress();
 }
 
 async function saveCornerSymoji(symojiSrc) {
@@ -2840,17 +2840,12 @@ function getDefaultDailyCounters() {
   return {
     checkins: 0,
     qas: 0,
-    preps: 0,
-    misc: 0
+    preps: 0
   };
 }
 
-function getDailyCountersTotal(counters, { includeMisc = true } = {}) {
-  const totals = { ...(counters || {}) };
-  if (!includeMisc) {
-    delete totals.misc;
-  }
-  return Object.values(totals).reduce((total, value) => total + (Number(value) || 0), 0);
+function getDailyCountersTotal(counters) {
+  return Object.values(counters || {}).reduce((total, value) => total + (Number(value) || 0), 0);
 }
 
 async function getDailyCounterEnabled() {
@@ -2861,42 +2856,6 @@ async function getDailyCounterEnabled() {
 
 async function setDailyCounterEnabled(enabled) {
   await setStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
-}
-
-async function getMiscCounterEnabled() {
-  const stored = await getStoredValue(DAILY_MISC_COUNTER_ENABLED_STORAGE_KEY);
-  if (stored === null || typeof stored === "undefined") return false;
-  return Boolean(stored);
-}
-
-async function setMiscCounterEnabled(enabled) {
-  await setStoredValue(DAILY_MISC_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
-}
-
-async function setMiscCounterEnabledWithWeeklyUpdate(enabled) {
-  const previous = await getMiscCounterEnabled();
-  if (previous === enabled) {
-    return enabled;
-  }
-  await setMiscCounterEnabled(enabled);
-  const counters = await getDailyCounters();
-  const miscCount = Number(counters.misc) || 0;
-  if (miscCount) {
-    await adjustWeeklyCounterByDelta(enabled ? miscCount : -miscCount);
-  }
-  await updateMiscCounterVisibility();
-  return enabled;
-}
-
-async function getMiscCounterLabel() {
-  const stored = await getStoredValue(DAILY_MISC_COUNTER_LABEL_STORAGE_KEY);
-  return (stored || DEFAULT_DAILY_MISC_LABEL).trim() || DEFAULT_DAILY_MISC_LABEL;
-}
-
-async function setMiscCounterLabel(label) {
-  const normalized = (label || "").trim() || DEFAULT_DAILY_MISC_LABEL;
-  await setStoredValue(DAILY_MISC_COUNTER_LABEL_STORAGE_KEY, normalized);
-  updateMiscCounterLabel(normalized);
 }
 
 async function getWeeklyCounterEnabled() {
@@ -2996,27 +2955,10 @@ function updateDailyCounterDisplay(counters) {
   setText("dailyCheckinsCount", String(counters.checkins ?? 0));
   setText("dailyQasCount", String(counters.qas ?? 0));
   setText("dailyPrepsCount", String(counters.preps ?? 0));
-  setText("dailyMiscCount", String(counters.misc ?? 0));
-}
-
-function updateMiscCounterLabel(label) {
-  setText("dailyMiscLabel", label || DEFAULT_DAILY_MISC_LABEL);
-}
-
-async function updateMiscCounterVisibility() {
-  const enabled = await getMiscCounterEnabled();
-  const item = document.getElementById("dailyMiscCounterItem");
-  if (item) item.style.display = enabled ? "" : "none";
-  return enabled;
 }
 
 function updateWeeklyCounterDisplay(total) {
   setText("weeklyTotalCount", String(total ?? 0));
-}
-
-async function getDailyCountersTotalForWeekly(counters) {
-  const miscEnabled = await getMiscCounterEnabled();
-  return getDailyCountersTotal(counters, { includeMisc: miscEnabled });
 }
 
 function applyCounterCollapseState({ toggleId, contentId }, collapsed) {
@@ -3053,12 +2995,6 @@ async function refreshDailyCounters() {
   const counters = await getDailyCounters();
   updateDailyCounterDisplay(counters);
   return counters;
-}
-
-async function updateMiscCounterSettings() {
-  const label = await getMiscCounterLabel();
-  updateMiscCounterLabel(label);
-  await updateMiscCounterVisibility();
 }
 
 async function refreshWeeklyCounters() {
@@ -3100,25 +3036,25 @@ async function adjustWeeklyCounterByDelta(delta) {
 
 async function incrementDailyCounter(key) {
   const counters = await getDailyCounters();
-  const previousTotal = await getDailyCountersTotalForWeekly(counters);
+  const previousTotal = getDailyCountersTotal(counters);
   const nextValue = (counters[key] ?? 0) + 1;
   const updated = { ...counters, [key]: nextValue };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
-  const nextTotal = await getDailyCountersTotalForWeekly(updated);
+  const nextTotal = getDailyCountersTotal(updated);
   await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
   return updated;
 }
 
 async function adjustDailyCounter(key, delta) {
   const counters = await getDailyCounters();
-  const previousTotal = await getDailyCountersTotalForWeekly(counters);
+  const previousTotal = getDailyCountersTotal(counters);
   const current = counters[key] ?? 0;
   const nextValue = Math.max(0, current + delta);
   const updated = { ...counters, [key]: nextValue };
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
-  const nextTotal = await getDailyCountersTotalForWeekly(updated);
+  const nextTotal = getDailyCountersTotal(updated);
   await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
   return updated;
 }
@@ -3143,12 +3079,10 @@ async function refreshLandingView() {
   updateCornerSymoji(cornerSymoji);
   updateLandingVersion();
   await updateDailyCounterVisibility();
-  await updateMiscCounterSettings();
   await updateWeeklyCounterVisibility();
   await updateDailyCounterCollapseState();
   await updateWeeklyCounterCollapseState();
   await updateLandingTooltipsEnabled();
-  await updateToolAccessState();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -3299,21 +3233,6 @@ async function loadQaClientNameFromTab(tabId) {
   const res = await fetchClientData(tabId);
   const fullName = buildClientFullName(res?.data);
   updateQaClientName({ name: fullName, placeholder: "No name found" });
-}
-
-async function refreshQaClientNameFromCrm() {
-  const button = document.getElementById("qaClientNameRefreshBtn");
-  const defaultLabel = button?.textContent || "Refresh from CRM";
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Refreshing...";
-  }
-  const tabId = await getActiveCrmTabId();
-  await loadQaClientNameFromTab(tabId);
-  if (button) {
-    button.disabled = false;
-    button.textContent = defaultLabel;
-  }
 }
 
 /* ---------------- UI helpers ---------------- */
@@ -4023,11 +3942,6 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Report the invalid scan to pre-prep.", "red");
     resetLookupCopyButtons();
-    await logDeviceSearchOutcome({
-      serial: rawInput || "",
-      serialResult: "❌ Invalid serial scanned.",
-      mountResult: ""
-    });
     return;
   }
 
@@ -4046,11 +3960,6 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
     resetLookupCopyButtons();
-    await logDeviceSearchOutcome({
-      serial: extracted,
-      serialResult: "❌ Workbooks not connected.",
-      mountResult: ""
-    });
     return;
   }
 
@@ -4164,12 +4073,6 @@ async function runDeviceLookupSearch(rawInput) {
     tableMounts: mountResult.table.map(item => item.serial),
     rollingMounts: mountResult.rolling.map(item => item.serial)
   };
-
-  await logDeviceSearchOutcome({
-    serial: extracted,
-    serialResult: serialResult.message,
-    mountResult: mountResult.lines.join(" | ")
-  });
 }
 
 /* ---------------- Grid sidekick ---------------- */
@@ -4857,6 +4760,136 @@ async function syncViewForTab(tab) {
   }
 }
 
+/* ---------------- Trial file zip + upload ---------------- */
+
+const selectedTrialFiles = [];
+const uploadPrompt = document.getElementById("uploadPrompt");
+const uploadPromptText = document.getElementById("uploadPromptText");
+const zipFilenameRow = document.getElementById("zipFilenameRow");
+const zipFilenameField = document.getElementById("zipFilenameField");
+const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
+const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
+const gridZipFilenameField = document.getElementById("gridZipFilenameField");
+const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
+const GRID_FILE_EXTENSION = ".grid3user";
+
+function updateTrialFilesStatus(message, isError = false) {
+  if (!trialFilesStatus) return;
+  trialFilesStatus.textContent = message;
+  trialFilesStatus.classList.toggle("error-text", isError);
+}
+
+function setSelectedTrialFiles(files, messageOverride = null) {
+  selectedTrialFiles.length = 0;
+  if (files?.length) {
+    selectedTrialFiles.push(...files);
+  }
+  if (!selectedTrialFiles.length) {
+    updateTrialFilesStatus(messageOverride || "No files selected.");
+    return;
+  }
+  updateTrialFilesStatus(messageOverride || `${selectedTrialFiles.length} file(s) ready to zip.`);
+}
+
+function clearSelectedTrialFiles(messageOverride = null) {
+  setSelectedTrialFiles([], messageOverride);
+  if (trialFilesInput) trialFilesInput.value = "";
+}
+
+function getVocabTypesFromFiles(files) {
+  const hasGrid = files.some(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+  const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
+  const hasSaltillo = files.some(file => file.name.toLowerCase().endsWith(".ce"));
+
+  const ordered = [];
+  if (hasGrid) ordered.push("Grid");
+  if (hasP2G) ordered.push("P2G");
+  if (hasSaltillo) ordered.push("Saltillo");
+  return ordered;
+}
+
+function buildZipFilename(files) {
+  const first = sanitizeName(getFormValue("#firstName"));
+  const last = sanitizeName(getFormValue("#lastName"));
+  const fullName = [first, last].filter(Boolean).join(" ") || "Client";
+  const dateStr = formatDateForFilename();
+  const vocabTypes = getVocabTypesFromFiles(files);
+  const typeLabel = vocabTypes.length
+    ? `${vocabTypes.join(", ")}`
+    : "Vocab";
+  return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
+}
+
+async function promptUserDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  try {
+    if (chrome?.downloads?.download) {
+      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
+      await chrome.downloads.download({
+        url,
+        filename: targetFilename,
+        saveAs: !zipFolder
+      });
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
+      link.click();
+    }
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+trialFilesInput?.addEventListener("change", () => {
+  const files = trialFilesInput.files ? Array.from(trialFilesInput.files) : [];
+  setSelectedTrialFiles(files);
+  if (!files.length) {
+    hideUploadPrompt();
+  }
+});
+
+function hideUploadPrompt() {
+  if (uploadPrompt) uploadPrompt.style.display = "none";
+  if (zipFilenameField) zipFilenameField.value = "";
+  if (gridZipFilenameField) gridZipFilenameField.value = "";
+  if (zipFilenameRow) zipFilenameRow.style.display = "none";
+  if (gridZipFilenameRow) gridZipFilenameRow.style.display = "none";
+}
+
+function showUploadPrompt(zipName, gridZipName = "") {
+  if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
+  const displayName = zipName ? zipName.replace(/\.zip$/i, "") : "";
+  const displayGridName = gridZipName ? gridZipName.replace(/\.zip$/i, "") : "";
+  zipFilenameField.value = displayName;
+  if (gridZipFilenameField) gridZipFilenameField.value = displayGridName;
+  if (zipFilenameRow) zipFilenameRow.style.display = zipName ? "flex" : "none";
+  if (gridZipFilenameRow) gridZipFilenameRow.style.display = gridZipName ? "flex" : "none";
+  const promptText = zipName || gridZipName
+    ? "Upload the downloaded zip file(s) to the CRM Documents tab using the filenames below."
+    : "Upload the downloaded zip file(s) to the CRM Documents tab.";
+  uploadPromptText.textContent = promptText;
+  uploadPrompt.style.display = "block";
+}
+
+copyZipFilenameBtn?.addEventListener("click", async () => {
+  const name = zipFilenameField?.value;
+  if (!name) return;
+  await navigator.clipboard.writeText(name);
+  copyZipFilenameBtn.textContent = "Copied!";
+  setTimeout(() => { copyZipFilenameBtn.textContent = "Copy filename"; }, 1200);
+});
+
+copyGridZipFilenameBtn?.addEventListener("click", async () => {
+  const name = gridZipFilenameField?.value;
+  if (!name) return;
+  await navigator.clipboard.writeText(name);
+  copyGridZipFilenameBtn.textContent = "Copied!";
+  setTimeout(() => { copyGridZipFilenameBtn.textContent = "Copy Grid filename"; }, 1200);
+});
+
 /* ---------------- Reset everything after success ---------------- */
 
 function resetAllFieldsAndUI() {
@@ -4896,6 +4929,7 @@ function resetAllFieldsAndUI() {
   const msg = document.getElementById("thankYouMessage");
   if (msg) msg.style.display = "none";
 
+  hideUploadPrompt();
   setText("notePreviewText", "");
   setText("completeIntro", "");
   setText("inventoryStatus", "");
@@ -4908,8 +4942,8 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   resetAllFieldsAndUI();
   hasFinalizedCheckin = false;
   smartboxRepairRequired = false;
+  clearSelectedTrialFiles();
   await clearStoredCheckinData();
-  await clearCheckinProgress();
   await updateInventorySearchDisplay();
   await renderDafRecap();
   if (returnToLanding) {
@@ -4934,7 +4968,55 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const deviceNumber = getFormValue("#deviceNumberInput");
   const isMountOnly = deviceNumber.toLowerCase() === "x";
 
-  // 1) Build note + clipboard backup
+  // 1) Zip vocab files (if any) and prompt download
+  let zipName = "";
+  let gridZipName = "";
+  if (!trialFilesInput?.files?.length) {
+    await refreshTrialFilesFromFolder();
+  }
+  if (selectedTrialFiles.length) {
+    if (typeof JSZip === "undefined") {
+      const message = "JSZip failed to load. Please reload the panel before submitting.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
+    updateTrialFilesStatus("Zipping selected files...");
+    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+    const downloadMessages = [];
+
+    if (otherFiles.length) {
+      const zip = new JSZip();
+      otherFiles.forEach(file => zip.file(file.name, file));
+      const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+      const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
+      zipName = buildZipFilename(otherFiles);
+      updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
+      await promptUserDownload(zipBlob, zipName);
+      downloadMessages.push(`"${zipName}"`);
+    }
+
+    if (gridFiles.length) {
+      const gridZip = new JSZip();
+      gridFiles.forEach(file => gridZip.file(file.name, file));
+      const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
+      const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
+      gridZipName = buildZipFilename(gridFiles);
+      updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
+      await promptUserDownload(gridZipBlob, gridZipName);
+      downloadMessages.push(`"${gridZipName}"`);
+    }
+
+    const downloadsNote = downloadMessages.length
+      ? `Downloaded ${downloadMessages.join(" and ")}. Upload to the CRM Documents tab.`
+      : "No files selected.";
+    clearSelectedTrialFiles(downloadsNote);
+  } else {
+    hideUploadPrompt();
+  }
+
+  // 2) Build note + clipboard backup
   const note = buildCannedNote();
   await navigator.clipboard.writeText(note);
 
@@ -4943,11 +5025,11 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     && condition === "Needs Repair"
     && isSmartboxRepairModel(deviceNumber);
 
-  // 1.5) Remember identifiers for the inventory page + DAF recap
+  // 2.5) Remember identifiers for the inventory page + DAF recap
   await saveLastIdentifiers(getCurrentIdentifiers());
   await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
 
-  // 2) Fill note in CRM
+  // 3) Fill note in CRM
   const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
   if (!setNoteRes.ok) {
     const message = "Failed to fill CRM note box.";
@@ -4956,7 +5038,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     return;
   }
 
-  // 3) Select category
+  // 4) Select category
   const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: "Device Returned" });
   if (!setCatRes.ok) {
     const message = 'Failed to select note category "Device Returned".';
@@ -4965,7 +5047,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     return;
   }
 
-  // 4) Submit note
+  // 5) Submit note
   const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
   if (!clickRes.ok) {
     const message = "Failed to submit the note.";
@@ -4975,12 +5057,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   // ✅ SUCCESS
-  await updateCheckinProgress({
-    startedAt: Date.now(),
-    deviceNumber,
-    inventoryComplete: false,
-    dafComplete: false
-  });
   await logTaskOutcome("Checkin", "Completed successfully");
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
@@ -4992,6 +5068,10 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   setText("completeIntro", "CRM note submitted. Review the details below.");
+  await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
+  if (zipName || gridZipName) {
+    showUploadPrompt(zipName, gridZipName);
+  }
   showCompleteView();
 });
 
@@ -5052,8 +5132,7 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
     return;
   }
 
-  await updateCheckinProgress({ inventoryComplete: true });
-  if (status) status.textContent = "Mark the device as returned, click Update and once the page reloads, click Next Step to continue.";
+  if (status) status.textContent = "Mark the Device as returned and click update once the page reloads click next step to continue";
   setInventoryNextStepVisibility(true);
 });
 
@@ -5065,7 +5144,6 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
   showEmailView();
-  await updateCheckinProgress({ dafComplete: true });
   await finalizeCheckinCleanupAndCounters();
   const dafTabId = await getActiveDafTabId();
   if (dafTabId) {
@@ -5127,10 +5205,6 @@ document.getElementById("gridCrmInfoCopyBtn")?.addEventListener("click", async (
   if (status) status.textContent = "CRM Grid info copied to clipboard.";
 });
 
-document.getElementById("qaClientNameRefreshBtn")?.addEventListener("click", async () => {
-  await refreshQaClientNameFromCrm();
-});
-
 document.getElementById("qaClientNameCopyBtn")?.addEventListener("click", async () => {
   const value = getFormValue("#qaClientNameField");
   if (!value) return;
@@ -5182,7 +5256,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     return;
   }
 
-  await updateCheckinProgress({ dafComplete: true });
   if (status) status.textContent = "Autofill triggered. Check the DAF form tab.";
 });
 
@@ -5198,7 +5271,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   } else {
     showWelcomeView();
   }
-  await reportIncompleteCheckinIfNeeded();
 
   document.querySelectorAll("[data-collapsible]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -5217,9 +5289,9 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
     hasStartedCheckin = true;
     showFormView();
+    await refreshTrialFilesFromFolder();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
   });
@@ -5268,20 +5340,17 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
     hasStartedGrid = true;
     showGridView();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
   });
 
-  document.getElementById("talkPadPrepBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
+  document.getElementById("talkPadPrepBtn")?.addEventListener("click", () => {
     showPrepView();
   });
 
-  document.getElementById("crmNavigatorBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
+  document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
     showCrmNavigatorView();
   });
 
@@ -5317,13 +5386,11 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
     showDeviceLookupView();
     await refreshDeviceLookupWorkbooksFromHandles();
   });
 
-  document.getElementById("qaFormBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
+  document.getElementById("qaFormBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: QA_FORM_URL }, tab => {
       qaFormTabId = tab?.id ?? null;
     });
@@ -5344,13 +5411,11 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showLandingView();
   });
 
-  document.getElementById("appOverridesBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
+  document.getElementById("appOverridesBtn")?.addEventListener("click", () => {
     showAppOverridesView();
   });
 
-  document.getElementById("kgRequestsBtn")?.addEventListener("click", async () => {
-    if (!(await ensureLogFolderConnected())) return;
+  document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
 
