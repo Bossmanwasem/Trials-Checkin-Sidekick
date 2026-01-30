@@ -827,6 +827,11 @@ button[type="submit"]:hover {
   color: #9aa6b2;
 }
 
+.qa-refresh-btn {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
 .note-preview__title {
   font-weight: 600;
   color: var(--accent);
