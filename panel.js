@@ -23,6 +23,7 @@ const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
 const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
+const CHECKIN_PROGRESS_STORAGE_KEY = "ttmtCheckinProgress";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
@@ -2834,6 +2835,17 @@ function setStoredValue(key, value) {
   });
 }
 
+function clearStoredValue(key) {
+  return new Promise(resolve => {
+    if (chrome?.storage?.local) {
+      chrome.storage.local.remove(key, () => resolve());
+      return;
+    }
+    localStorage.removeItem(key);
+    resolve();
+  });
+}
+
 async function getUserProfile() {
   return await getStoredValue(USER_PROFILE_STORAGE_KEY);
 }
@@ -2852,6 +2864,41 @@ async function saveUserMascot(mascotSrc) {
 
 async function getCornerSymoji() {
   return await getStoredValue(CORNER_SYMOJI_STORAGE_KEY);
+}
+
+async function getCheckinProgress() {
+  return await getStoredValue(CHECKIN_PROGRESS_STORAGE_KEY);
+}
+
+async function updateCheckinProgress(patch) {
+  const current = (await getCheckinProgress()) || {};
+  const next = { ...current, ...patch };
+  await setStoredValue(CHECKIN_PROGRESS_STORAGE_KEY, next);
+  return next;
+}
+
+async function clearCheckinProgress() {
+  await clearStoredValue(CHECKIN_PROGRESS_STORAGE_KEY);
+}
+
+async function reportIncompleteCheckinIfNeeded() {
+  const progress = await getCheckinProgress();
+  if (!progress?.startedAt) return;
+
+  const missing = [];
+  if (!progress.inventoryComplete) missing.push("Inventory");
+  if (!progress.dafComplete) missing.push("DAF");
+
+  if (!missing.length) {
+    await clearCheckinProgress();
+    return;
+  }
+
+  const deviceLabel = progress.deviceNumber ? ` for device ${progress.deviceNumber}` : "";
+  const stepLabel = missing.length === 1 ? "step" : "steps";
+  const message = `❌ Incomplete check-in${deviceLabel}: ${missing.join(" and ")} ${stepLabel} not completed.`;
+  await logTaskOutcome("Checkin", message);
+  await clearCheckinProgress();
 }
 
 async function saveCornerSymoji(symojiSrc) {
@@ -5080,6 +5127,7 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   smartboxRepairRequired = false;
   clearSelectedTrialFiles();
   await clearStoredCheckinData();
+  await clearCheckinProgress();
   await updateInventorySearchDisplay();
   await renderDafRecap();
   if (returnToLanding) {
@@ -5193,6 +5241,12 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   // ✅ SUCCESS
+  await updateCheckinProgress({
+    startedAt: Date.now(),
+    deviceNumber,
+    inventoryComplete: false,
+    dafComplete: false
+  });
   await logTaskOutcome("Checkin", "Completed successfully");
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
@@ -5268,6 +5322,7 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
     return;
   }
 
+  await updateCheckinProgress({ inventoryComplete: true });
   if (status) status.textContent = "Mark the Device as returned and click update once the page reloads click next step to continue";
   setInventoryNextStepVisibility(true);
 });
@@ -5280,6 +5335,7 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
   showEmailView();
+  await updateCheckinProgress({ dafComplete: true });
   await finalizeCheckinCleanupAndCounters();
   const dafTabId = await getActiveDafTabId();
   if (dafTabId) {
@@ -5392,6 +5448,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     return;
   }
 
+  await updateCheckinProgress({ dafComplete: true });
   if (status) status.textContent = "Autofill triggered. Check the DAF form tab.";
 });
 
@@ -5407,6 +5464,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   } else {
     showWelcomeView();
   }
+  await reportIncompleteCheckinIfNeeded();
 
   document.querySelectorAll("[data-collapsible]").forEach(btn => {
     btn.addEventListener("click", () => {
