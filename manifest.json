@@ -33,7 +33,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://portal.talktometechnologies.com/*",
+        "https://portal.talktometechnologies.com/admin/*",
         "https://talktometechnologies2com.sharepoint.com/*",
         "https://forms.office.com/*"
       ],

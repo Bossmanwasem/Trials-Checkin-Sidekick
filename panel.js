@@ -3319,6 +3319,11 @@ function isCrmUrl(url) {
     url.startsWith("https://portal.talktometechnologies.com/");
 }
 
+function isCrmAdminUrl(url) {
+  return typeof url === "string" &&
+    url.startsWith("https://portal.talktometechnologies.com/admin/");
+}
+
 async function getActiveCrmTabId() {
   const tab = await getActiveCrmTab();
   if (tab?.id && isCrmUrl(tab.url)) return tab.id;
@@ -3327,6 +3332,71 @@ async function getActiveCrmTabId() {
     url: "https://portal.talktometechnologies.com/*"
   });
   return tabs?.[0]?.id || null;
+}
+
+/* ---------------- CRM document uploader ---------------- */
+
+const crmUploadFilesInput = document.getElementById("crmUploadFiles");
+const crmUploadTitleInput = document.getElementById("crmUploadTitle");
+const crmUploadBtn = document.getElementById("crmUploadBtn");
+const crmUploadList = document.getElementById("crmUploadList");
+const crmUploadSummary = document.getElementById("crmUploadSummary");
+
+function setCrmUploadSummary(message, isError = false) {
+  if (!crmUploadSummary) return;
+  crmUploadSummary.textContent = message;
+  crmUploadSummary.classList.toggle("error-text", isError);
+}
+
+function buildCrmUploadItems() {
+  const files = crmUploadFilesInput?.files ? Array.from(crmUploadFilesInput.files) : [];
+  const titleOverride = (crmUploadTitleInput?.value || "").trim();
+  return files.map(file => ({
+    file,
+    filename: file.name,
+    title: titleOverride || file.name
+  }));
+}
+
+function renderCrmUploadQueue(items) {
+  if (crmUploadList) crmUploadList.innerHTML = "";
+  if (!items.length) {
+    setCrmUploadSummary("No files queued.");
+    return;
+  }
+
+  items.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = `⏳ ${item.filename} — ${item.title} (queued)`;
+    crmUploadList?.appendChild(li);
+  });
+
+  setCrmUploadSummary(`Queued ${items.length} file(s).`);
+}
+
+function updateCrmUploadQueue() {
+  const items = buildCrmUploadItems();
+  renderCrmUploadQueue(items);
+  return items;
+}
+
+function renderCrmUploadResults(results) {
+  if (crmUploadList) crmUploadList.innerHTML = "";
+  if (!results?.length) {
+    setCrmUploadSummary("No results returned.", true);
+    return;
+  }
+
+  let successCount = 0;
+  results.forEach(result => {
+    const li = document.createElement("li");
+    const icon = result.success ? "✅" : "⚠️";
+    if (result.success) successCount += 1;
+    li.textContent = `${icon} ${result.filename} — ${result.title} (HTTP ${result.status})`;
+    crmUploadList?.appendChild(li);
+  });
+
+  setCrmUploadSummary(`Uploaded ${successCount}/${results.length} file(s).`, successCount !== results.length);
 }
 
 async function getActiveDafTabId() {
@@ -5557,6 +5627,50 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     const button = event.target?.closest?.("button");
     if (!button || !landingView.contains(button)) return;
     triggerSurprisePartyThemeChange();
+  });
+
+  crmUploadFilesInput?.addEventListener("change", () => {
+    updateCrmUploadQueue();
+  });
+
+  crmUploadTitleInput?.addEventListener("input", () => {
+    updateCrmUploadQueue();
+  });
+
+  crmUploadBtn?.addEventListener("click", async () => {
+    const items = updateCrmUploadQueue();
+    if (!items.length) {
+      setCrmUploadSummary("Select at least one file to upload.", true);
+      return;
+    }
+
+    const tab = await getActiveCrmTab();
+    if (!tab?.id || !isCrmAdminUrl(tab.url)) {
+      setCrmUploadSummary("Open an EditClient page under /admin/ and try again.", true);
+      return;
+    }
+
+    crmUploadBtn.disabled = true;
+    setCrmUploadSummary(`Uploading ${items.length} file(s)...`);
+
+    try {
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        action: "crmUpload",
+        items
+      });
+
+      if (!response?.results?.length) {
+        setCrmUploadSummary(response?.error || "No response from CRM page.", true);
+        return;
+      }
+
+      renderCrmUploadResults(response.results);
+    } catch (error) {
+      console.error("CRM upload failed", error);
+      setCrmUploadSummary("Upload failed. Check the CRM tab and try again.", true);
+    } finally {
+      crmUploadBtn.disabled = false;
+    }
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
