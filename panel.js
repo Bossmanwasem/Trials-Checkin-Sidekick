@@ -3477,6 +3477,21 @@ async function loadQaClientNameFromTab(tabId) {
   updateQaClientName({ name: fullName, placeholder: "No name found" });
 }
 
+async function refreshQaClientNameFromCrm() {
+  const button = document.getElementById("qaClientNameRefreshBtn");
+  const defaultLabel = button?.textContent || "Refresh from CRM";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Refreshing...";
+  }
+  const tabId = await getActiveCrmTabId();
+  await loadQaClientNameFromTab(tabId);
+  if (button) {
+    button.disabled = false;
+    button.textContent = defaultLabel;
+  }
+}
+
 /* ---------------- UI helpers ---------------- */
 
 function toggleSection(sectionId) {
@@ -5473,6 +5488,10 @@ document.getElementById("gridCrmInfoCopyBtn")?.addEventListener("click", async (
     }, 1200);
   }
   if (status) status.textContent = "CRM Grid info copied to clipboard.";
+});
+
+document.getElementById("qaClientNameRefreshBtn")?.addEventListener("click", async () => {
+  await refreshQaClientNameFromCrm();
 });
 
 document.getElementById("qaClientNameCopyBtn")?.addEventListener("click", async () => {
