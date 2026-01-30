@@ -7,6 +7,10 @@ const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
+const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
+const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
+const DOCUMENT_TITLE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
+const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
@@ -4393,6 +4397,19 @@ async function sendToCrm(type, payload = {}) {
   return res || { ok: false };
 }
 
+async function uploadDocumentsToCrm(uploads) {
+  if (!uploads?.length) return { ok: true };
+  return sendToCrm("UPLOAD_CRM_DOCUMENTS", {
+    uploads,
+    xpaths: {
+      fileInput: DOCUMENT_UPLOAD_INPUT_XPATH,
+      uploadButton: DOCUMENT_UPLOAD_BUTTON_XPATH,
+      documentTitle: DOCUMENT_TITLE_INPUT_XPATH,
+      addButton: DOCUMENT_ADD_BUTTON_XPATH
+    }
+  });
+}
+
 /* ---------------- Inventory identifiers storage ---------------- */
 
 function getCurrentIdentifiers() {
@@ -4862,7 +4879,7 @@ function hideUploadPrompt() {
   if (gridZipFilenameRow) gridZipFilenameRow.style.display = "none";
 }
 
-function showUploadPrompt(zipName, gridZipName = "") {
+function showUploadPrompt(zipName, gridZipName = "", { message } = {}) {
   if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
   const displayName = zipName ? zipName.replace(/\.zip$/i, "") : "";
   const displayGridName = gridZipName ? gridZipName.replace(/\.zip$/i, "") : "";
@@ -4870,9 +4887,9 @@ function showUploadPrompt(zipName, gridZipName = "") {
   if (gridZipFilenameField) gridZipFilenameField.value = displayGridName;
   if (zipFilenameRow) zipFilenameRow.style.display = zipName ? "flex" : "none";
   if (gridZipFilenameRow) gridZipFilenameRow.style.display = gridZipName ? "flex" : "none";
-  const promptText = zipName || gridZipName
+  const promptText = message || (zipName || gridZipName
     ? "Upload the downloaded zip file(s) to the CRM Documents tab using the filenames below."
-    : "Upload the downloaded zip file(s) to the CRM Documents tab.";
+    : "Upload the downloaded zip file(s) to the CRM Documents tab.");
   uploadPromptText.textContent = promptText;
   uploadPrompt.style.display = "block";
 }
@@ -4974,6 +4991,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
   let gridZipName = "";
+  const zipUploads = [];
   if (!trialFilesInput?.files?.length) {
     await refreshTrialFilesFromFolder();
   }
@@ -4997,6 +5015,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       zipName = buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
       await promptUserDownload(zipBlob, zipName);
+      zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
       downloadMessages.push(`"${zipName}"`);
     }
 
@@ -5008,11 +5027,12 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       gridZipName = buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
       await promptUserDownload(gridZipBlob, gridZipName);
+      zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
       downloadMessages.push(`"${gridZipName}"`);
     }
 
     const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Upload to the CRM Documents tab.`
+      ? `Downloaded ${downloadMessages.join(" and ")}. Preparing CRM upload.`
       : "No files selected.";
     clearSelectedTrialFiles(downloadsNote);
   } else {
@@ -5070,11 +5090,21 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     return;
   }
 
-  setText("completeIntro", "CRM note submitted. Review the details below.");
+  let uploadMessage = "CRM note submitted. Review the details below.";
   await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-  if (zipName || gridZipName) {
+  if (zipUploads.length) {
+    const uploadRes = await uploadDocumentsToCrm(zipUploads);
+    if (uploadRes.ok) {
+      uploadMessage = "CRM note submitted. Vocab zip(s) uploaded to the Documents tab.";
+    } else {
+      const message = uploadRes.message || "Auto-upload failed. Please upload the zip file(s) manually.";
+      uploadMessage = `CRM note submitted. ${message}`;
+      showUploadPrompt(zipName, gridZipName, { message });
+    }
+  } else if (zipName || gridZipName) {
     showUploadPrompt(zipName, gridZipName);
   }
+  setText("completeIntro", uploadMessage);
   showCompleteView();
 });
 
