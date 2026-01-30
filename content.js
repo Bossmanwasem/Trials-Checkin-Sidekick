@@ -196,28 +196,44 @@ function scoreNameSimilarity(target, candidate) {
   return maxLen ? 1 - distance / maxLen : 0;
 }
 
-function collectHiddenFields(doc) {
+function collectFormFields(doc) {
   const fields = [];
-  const hiddenInputs = Array.from(doc.querySelectorAll('input[type="hidden"]'));
-  hiddenInputs.forEach(input => {
-    if (!input.name) return;
-    fields.push({ name: input.name, value: input.value ?? "" });
+  const elements = Array.from(doc.querySelectorAll("input, select, textarea"));
+  elements.forEach(el => {
+    if (!el.name || el.disabled) return;
+    if (el instanceof HTMLInputElement && el.type === "file") return;
+    if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) {
+      if (!el.checked) return;
+    }
+    fields.push({ name: el.name, value: el.value ?? "" });
   });
-
-  if (!fields.some(field => field.name === "__EVENTTARGET")) {
-    fields.push({ name: "__EVENTTARGET", value: "" });
-  }
-  if (!fields.some(field => field.name === "__EVENTARGUMENT")) {
-    fields.push({ name: "__EVENTARGUMENT", value: "" });
-  }
-
   return fields;
 }
 
-function appendHiddenFields(formData, fields) {
+function getFormAction(doc) {
+  const form = doc.querySelector("form");
+  if (!form) return location.href;
+  const action = form.getAttribute("action") || location.href;
+  return new URL(action, location.href).toString();
+}
+
+function buildFormDataFromDoc(doc) {
+  const formData = new FormData();
+  const fields = collectFormFields(doc);
+  const hasEventTarget = fields.some(field => field.name === "__EVENTTARGET");
+  const hasEventArgument = fields.some(field => field.name === "__EVENTARGUMENT");
   fields.forEach(field => {
     formData.append(field.name, field.value ?? "");
   });
+  if (!hasEventTarget) formData.append("__EVENTTARGET", "");
+  if (!hasEventArgument) formData.append("__EVENTARGUMENT", "");
+  return formData;
+}
+
+function setEventTarget(formData, target) {
+  if (!target) return;
+  formData.set("__EVENTTARGET", target);
+  formData.set("__EVENTARGUMENT", "");
 }
 
 function getButtonValue(doc, fieldName, fallbackValue) {
@@ -232,16 +248,15 @@ async function runCrmDocumentUpload(items) {
     const title = (item?.title || "").trim() || filename;
 
     try {
-      const initialHiddenFields = collectHiddenFields(document);
-      const uploadFormData = new FormData();
-      appendHiddenFields(uploadFormData, initialHiddenFields);
+      const uploadFormData = buildFormDataFromDoc(document);
       uploadFormData.append(CRM_DOC_FILE_FIELD, item.file, filename);
       uploadFormData.append(
         CRM_DOC_UPLOAD_BUTTON,
         getButtonValue(document, CRM_DOC_UPLOAD_BUTTON, "Upload")
       );
+      setEventTarget(uploadFormData, CRM_DOC_UPLOAD_BUTTON);
 
-      const uploadResponse = await fetch(location.href, {
+      const uploadResponse = await fetch(getFormAction(document), {
         method: "POST",
         body: uploadFormData,
         credentials: "same-origin"
@@ -254,17 +269,15 @@ async function runCrmDocumentUpload(items) {
 
       const uploadHtml = await uploadResponse.text();
       const uploadDoc = new DOMParser().parseFromString(uploadHtml, "text/html");
-      const addHiddenFields = collectHiddenFields(uploadDoc);
-
-      const addFormData = new FormData();
-      appendHiddenFields(addFormData, addHiddenFields);
+      const addFormData = buildFormDataFromDoc(uploadDoc);
       addFormData.append(CRM_DOC_TITLE_FIELD, title);
       addFormData.append(
         CRM_DOC_ADD_BUTTON,
         getButtonValue(uploadDoc, CRM_DOC_ADD_BUTTON, "Add Document")
       );
+      setEventTarget(addFormData, CRM_DOC_ADD_BUTTON);
 
-      const addResponse = await fetch(location.href, {
+      const addResponse = await fetch(getFormAction(uploadDoc), {
         method: "POST",
         body: addFormData,
         credentials: "same-origin"
