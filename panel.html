@@ -281,6 +281,18 @@
           </button>
         </div>
       </div>
+      <div class="settings-card" id="crmUploadCard">
+        <div class="settings-card__title">CRM Document Uploader</div>
+        <label for="crmUploadFiles">Files</label>
+        <input type="file" id="crmUploadFiles" multiple />
+        <label for="crmUploadTitle">Title (optional)</label>
+        <input type="text" id="crmUploadTitle" placeholder="Title (optional)" />
+        <button id="crmUploadBtn" class="toggle-btn settings-card__action" type="button">
+          Upload to Client
+        </button>
+        <div id="crmUploadSummary" class="status-line">No files queued.</div>
+        <ul id="crmUploadList"></ul>
+      </div>
     </div>
     <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
       <span class="landing-settings-icon" aria-hidden="true">⚙</span>

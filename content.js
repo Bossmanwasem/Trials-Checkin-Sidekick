@@ -83,6 +83,10 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
+const CRM_DOC_FILE_FIELD = "ctl00$MainContent$Tabs$tpDocuments$filUpload";
+const CRM_DOC_UPLOAD_BUTTON = "ctl00$MainContent$Tabs$tpDocuments$btnUpload";
+const CRM_DOC_TITLE_FIELD = "ctl00$MainContent$Tabs$tpDocuments$txtDocumentTitle";
+const CRM_DOC_ADD_BUTTON = "ctl00$MainContent$Tabs$tpDocuments$btnAddDocument";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div'
@@ -190,6 +194,96 @@ function scoreNameSimilarity(target, candidate) {
   const distance = levenshteinDistance(normalizedTarget, normalizedCandidate);
   const maxLen = Math.max(normalizedTarget.length, normalizedCandidate.length);
   return maxLen ? 1 - distance / maxLen : 0;
+}
+
+function collectHiddenFields(doc) {
+  const fields = [];
+  const hiddenInputs = Array.from(doc.querySelectorAll('input[type="hidden"]'));
+  hiddenInputs.forEach(input => {
+    if (!input.name) return;
+    fields.push({ name: input.name, value: input.value ?? "" });
+  });
+
+  if (!fields.some(field => field.name === "__EVENTTARGET")) {
+    fields.push({ name: "__EVENTTARGET", value: "" });
+  }
+  if (!fields.some(field => field.name === "__EVENTARGUMENT")) {
+    fields.push({ name: "__EVENTARGUMENT", value: "" });
+  }
+
+  return fields;
+}
+
+function appendHiddenFields(formData, fields) {
+  fields.forEach(field => {
+    formData.append(field.name, field.value ?? "");
+  });
+}
+
+function getButtonValue(doc, fieldName, fallbackValue) {
+  const button = doc.querySelector(`[name="${fieldName}"]`);
+  return button?.value || fallbackValue;
+}
+
+async function runCrmDocumentUpload(items) {
+  const results = [];
+  for (const item of items || []) {
+    const filename = item?.filename || item?.file?.name || "unknown";
+    const title = (item?.title || "").trim() || filename;
+
+    try {
+      const initialHiddenFields = collectHiddenFields(document);
+      const uploadFormData = new FormData();
+      appendHiddenFields(uploadFormData, initialHiddenFields);
+      uploadFormData.append(CRM_DOC_FILE_FIELD, item.file, filename);
+      uploadFormData.append(
+        CRM_DOC_UPLOAD_BUTTON,
+        getButtonValue(document, CRM_DOC_UPLOAD_BUTTON, "Upload")
+      );
+
+      const uploadResponse = await fetch(location.href, {
+        method: "POST",
+        body: uploadFormData,
+        credentials: "same-origin"
+      });
+
+      if (!uploadResponse.ok) {
+        results.push({ filename, title, success: false, status: uploadResponse.status });
+        continue;
+      }
+
+      const uploadHtml = await uploadResponse.text();
+      const uploadDoc = new DOMParser().parseFromString(uploadHtml, "text/html");
+      const addHiddenFields = collectHiddenFields(uploadDoc);
+
+      const addFormData = new FormData();
+      appendHiddenFields(addFormData, addHiddenFields);
+      addFormData.append(CRM_DOC_TITLE_FIELD, title);
+      addFormData.append(
+        CRM_DOC_ADD_BUTTON,
+        getButtonValue(uploadDoc, CRM_DOC_ADD_BUTTON, "Add Document")
+      );
+
+      const addResponse = await fetch(location.href, {
+        method: "POST",
+        body: addFormData,
+        credentials: "same-origin"
+      });
+
+      const addHtml = await addResponse.text();
+      const success = /view documents|documents/i.test(addHtml);
+      results.push({
+        filename,
+        title,
+        success,
+        status: addResponse.status
+      });
+    } catch (error) {
+      console.error("CRM upload failed for", filename, error);
+      results.push({ filename, title, success: false, status: 0 });
+    }
+  }
+  return results;
 }
 
 function selectClosestConsultantFromListBox(listBox, targetName) {
@@ -408,39 +502,49 @@ if (runtime?.onMessage?.addListener) {
       return true;
     }
 
-  if (msg.type === "SET_CRM_NOTE") {
-    const ok = setValueByXPath(msg.xpath, msg.noteText);
-    sendResponse({ ok });
-    return true;
-  }
+    if (msg.action === "crmUpload") {
+      runCrmDocumentUpload(msg.items)
+        .then(results => sendResponse({ results }))
+        .catch(error => {
+          console.error("CRM upload failed", error);
+          sendResponse({ results: [], error: error?.message || "Upload failed." });
+        });
+      return true;
+    }
 
-  if (msg.type === "SET_VALUE_BY_XPATH") {
-    const ok = setValueByXPath(msg.xpath, msg.value);
-    sendResponse({ ok });
-    return true;
-  }
+    if (msg.type === "SET_CRM_NOTE") {
+      const ok = setValueByXPath(msg.xpath, msg.noteText);
+      sendResponse({ ok });
+      return true;
+    }
 
-  if (msg.type === "SET_DROPDOWN_BY_TEXT") {
-    const ok = setDropdownByVisibleText(msg.xpath, msg.text);
-    sendResponse({ ok });
-    return true;
-  }
+    if (msg.type === "SET_VALUE_BY_XPATH") {
+      const ok = setValueByXPath(msg.xpath, msg.value);
+      sendResponse({ ok });
+      return true;
+    }
 
-  if (msg.type === "CLICK_BY_XPATH") {
-    const ok = clickByXPath(msg.xpath);
-    sendResponse({ ok });
-    return true;
-  }
+    if (msg.type === "SET_DROPDOWN_BY_TEXT") {
+      const ok = setDropdownByVisibleText(msg.xpath, msg.text);
+      sendResponse({ ok });
+      return true;
+    }
 
-  if (msg.type === "UPLOAD_ZIP_TO_CRM") {
-    uploadZipDirectlyToPage(msg.zipArrayBuffer, msg.zipName)
-      .then(() => sendResponse({ ok: true }))
-      .catch(err => {
-        console.error(err);
-        sendResponse({ ok: false, message: err?.message || "Upload failed." });
-      });
-    return true;
-  }
+    if (msg.type === "CLICK_BY_XPATH") {
+      const ok = clickByXPath(msg.xpath);
+      sendResponse({ ok });
+      return true;
+    }
+
+    if (msg.type === "UPLOAD_ZIP_TO_CRM") {
+      uploadZipDirectlyToPage(msg.zipArrayBuffer, msg.zipName)
+        .then(() => sendResponse({ ok: true }))
+        .catch(err => {
+          console.error(err);
+          sendResponse({ ok: false, message: err?.message || "Upload failed." });
+        });
+      return true;
+    }
 
     if (msg.type === "RUN_INVENTORY_SCRIPT") {
       const searchValue = pickInventorySearchValue(msg.identifiers);
