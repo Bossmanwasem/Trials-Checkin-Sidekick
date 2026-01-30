@@ -21,7 +21,6 @@
     </p>
     <p class="welcome-intro">Instead of one-click check-ins, CRM Sidekick guides you through the process and takes care of repetitive work such as:</p>
     <ul class="welcome-list">
-      <li>Naming and zipping files</li>
       <li>Formatting and submitting your CRM notes</li>
       <li>Eliminating common manual entry tasks</li>
     </ul>
@@ -66,16 +65,6 @@
         <input type="checkbox" id="onboardingTooltipToggle" />
         Show tooltips on landing buttons
       </label>
-
-      <div class="settings-card">
-        <div class="settings-card__title">Zip save folder</div>
-        <label for="zipFolderPickBtn">Default zip save folder</label>
-        <p class="hint-text">Move the final folder into Downloads or make a new folder in Downloads and select it here.</p>
-        <button class="toggle-btn settings-card__action" id="zipFolderPickBtn" type="button">
-          Choose zip folder
-        </button>
-        <div id="zipFolderStatus" class="status-line">Saving zips to your default Downloads folder.</div>
-      </div>
 
       <div class="settings-card">
         <div class="settings-card__title">Cleanup folder</div>
@@ -280,18 +269,6 @@
             KG Requests
           </button>
         </div>
-      </div>
-      <div class="settings-card" id="crmUploadCard">
-        <div class="settings-card__title">CRM Document Uploader</div>
-        <label for="crmUploadFiles">Files</label>
-        <input type="file" id="crmUploadFiles" multiple />
-        <label for="crmUploadTitle">Title (optional)</label>
-        <input type="text" id="crmUploadTitle" placeholder="Title (optional)" />
-        <button id="crmUploadBtn" class="toggle-btn settings-card__action" type="button">
-          Upload to Client
-        </button>
-        <div id="crmUploadSummary" class="status-line">No files queued.</div>
-        <ul id="crmUploadList"></ul>
       </div>
     </div>
     <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
@@ -839,27 +816,6 @@
         <input type="text" name="accessories" />
       </div>
 
-      <!-- Trial files -->
-      <div class="upload-block">
-        <label>Trial Vocab/Export Files</label>
-        <button class="toggle-btn" id="trialFilesFolderPickBtn" type="button">
-          Choose trial files folder
-        </button>
-        <button class="toggle-btn" id="trialFilesFolderRefreshBtn" type="button">
-          Refresh folder files
-        </button>
-        <div id="trialFilesFolderStatus" class="status-line">No trial files folder selected yet.</div>
-        <div class="hint-text">
-          The Sidekick will pull every file from the selected folder when you click Next Step.
-        </div>
-        <input type="file" id="trialFilesInput" multiple />
-        <div class="hint-text">
-          Select the Grid, Saltillo, and P2G exports you want zipped if you don't use a folder.
-          We'll prompt you to save the zip when you click Next Step.
-        </div>
-        <div id="trialFilesStatus" class="status-line">No files selected.</div>
-      </div>
-
       <button type="submit" id="submitBtn">Next Step</button>
     </form>
 
@@ -870,19 +826,6 @@
   <div class="container" id="completeView" style="display:none;">
     <h1>Next Steps</h1>
     <p id="completeIntro" class="complete-intro"></p>
-
-    <div id="uploadPrompt" class="note-preview" style="display:none;">
-      <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
-      <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
-      <div class="copy-row" id="zipFilenameRow">
-        <input type="text" id="zipFilenameField" class="copy-field" readonly />
-        <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
-      </div>
-      <div class="copy-row" id="gridZipFilenameRow" style="display:none;">
-        <input type="text" id="gridZipFilenameField" class="copy-field" readonly />
-        <button id="copyGridZipFilenameBtn" class="copy-btn" type="button">Copy Grid filename</button>
-      </div>
-    </div>
 
     <div class="note-preview">
       <div class="note-preview__title">CRM note submitted</div>

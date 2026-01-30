@@ -6,7 +6,6 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
-const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
@@ -18,14 +17,11 @@ const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
-const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
 const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
 const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const CHECKIN_PROGRESS_STORAGE_KEY = "ttmtCheckinProgress";
-const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
-const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
 const LOGS_HANDLE_KEY = "logsFolder";
 const TOOL_BUTTON_IDS = [
@@ -2294,59 +2290,10 @@ function initThemeControls() {
   });
 }
 
-const zipFolderPickBtn = document.getElementById("zipFolderPickBtn");
-const zipFolderStatus = document.getElementById("zipFolderStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
-const trialFilesInput = document.getElementById("trialFilesInput");
-const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn");
-const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
-const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
-const trialFilesStatus = document.getElementById("trialFilesStatus");
 const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
 const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
-
-function normalizeZipFolder(folder) {
-  return (folder || "")
-    .trim()
-    .replace(/^[/\\]+/, "")
-    .replace(/[/\\]+$/, "");
-}
-
-function updateZipFolderStatus(folder) {
-  if (!zipFolderStatus) return;
-  if (folder) {
-    zipFolderStatus.textContent = `Saving zips to Downloads/${folder}`;
-    return;
-  }
-  zipFolderStatus.textContent = "Saving zips to your default Downloads folder.";
-}
-
-async function pickZipFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("Folder picking isn't supported in this browser.");
-    return;
-  }
-  let handle;
-  try {
-    handle = await window.showDirectoryPicker({ mode: "read" });
-  } catch {
-    return;
-  }
-  if (!handle) return;
-  const name = normalizeZipFolder(handle.name || "Selected folder");
-  await setStoredValue(ZIP_FOLDER_STORAGE_KEY, name);
-  updateZipFolderStatus(name);
-}
-
-async function initZipFolderSetting() {
-  if (!zipFolderPickBtn) return;
-  const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-  updateZipFolderStatus(storedFolder);
-  zipFolderPickBtn.addEventListener("click", async () => {
-    await pickZipFolder();
-  });
-}
 
 function openCleanupHandleDb() {
   return new Promise((resolve, reject) => {
@@ -2608,107 +2555,6 @@ async function ensureLogFolderConnected() {
   return true;
 }
 
-function updateTrialFilesFolderStatus(name, messageOverride = null) {
-  if (!trialFilesFolderStatus) return;
-  if (messageOverride) {
-    trialFilesFolderStatus.textContent = messageOverride;
-    return;
-  }
-  if (name) {
-    trialFilesFolderStatus.textContent = `Using "${name}" for trial file zips.`;
-    return;
-  }
-  trialFilesFolderStatus.textContent = "No trial files folder selected yet.";
-}
-
-async function setTrialFilesFolderName(name) {
-  await setStoredValue(TRIAL_FILES_FOLDER_NAME_STORAGE_KEY, name || "");
-  updateTrialFilesFolderStatus(name);
-}
-
-async function getTrialFilesFolderName() {
-  return await getStoredValue(TRIAL_FILES_FOLDER_NAME_STORAGE_KEY);
-}
-
-async function saveTrialFilesFolderHandle(handle) {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
-    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, TRIAL_FILES_HANDLE_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function loadTrialFilesFolderHandle() {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
-    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(TRIAL_FILES_HANDLE_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function getTrialFilesFromFolder(handle) {
-  const files = [];
-  for await (const entry of handle.values()) {
-    if (entry.kind !== "file") continue;
-    const file = await entry.getFile();
-    files.push(file);
-  }
-  return files.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOverride = null } = {}) {
-  let handle = handleOverride ?? await loadTrialFilesFolderHandle().catch(() => null);
-  if (!handle && promptIfMissing) {
-    handle = await pickTrialFilesFolder();
-  }
-  if (!handle) return false;
-  const permitted = await verifyFolderPermission(handle, "read");
-  const storedName = await getTrialFilesFolderName();
-  if (!permitted) {
-    updateTrialFilesFolderStatus(storedName, "Folder access blocked. Click Refresh to re-authorize.");
-    return false;
-  }
-  const files = await getTrialFilesFromFolder(handle);
-  if (trialFilesInput) trialFilesInput.value = "";
-  setSelectedTrialFiles(files, storedName
-    ? `Using "${storedName}" (${files.length} file(s)) for the zip.`
-    : `${files.length} file(s) ready to zip.`);
-  return true;
-}
-
-async function pickTrialFilesFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("Folder picking isn't supported in this browser.");
-    return null;
-  }
-  let handle;
-  try {
-    handle = await window.showDirectoryPicker({ mode: "read" });
-  } catch {
-    return null;
-  }
-  if (!handle) return null;
-  await saveTrialFilesFolderHandle(handle);
-  await setTrialFilesFolderName(handle.name || "Selected folder");
-  await refreshTrialFilesFromFolder({ handleOverride: handle });
-  return handle;
-}
-
-async function initTrialFilesFolderSetting() {
-  const storedName = await getTrialFilesFolderName();
-  updateTrialFilesFolderStatus(storedName);
-  trialFilesFolderPickBtn?.addEventListener("click", async () => {
-    await pickTrialFilesFolder();
-  });
-  trialFilesFolderRefreshBtn?.addEventListener("click", async () => {
-    await refreshTrialFilesFromFolder({ promptIfMissing: true });
-  });
-}
-
 initThemeControls();
 initChaosControls();
 loadThemePreference();
@@ -2716,10 +2562,8 @@ initOnboardingForm();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
-initZipFolderSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
-initTrialFilesFolderSetting();
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -3319,11 +3163,6 @@ function isCrmUrl(url) {
     url.startsWith("https://portal.talktometechnologies.com/");
 }
 
-function isCrmAdminUrl(url) {
-  return typeof url === "string" &&
-    url.startsWith("https://portal.talktometechnologies.com/admin/");
-}
-
 async function getActiveCrmTabId() {
   const tab = await getActiveCrmTab();
   if (tab?.id && isCrmUrl(tab.url)) return tab.id;
@@ -3332,71 +3171,6 @@ async function getActiveCrmTabId() {
     url: "https://portal.talktometechnologies.com/*"
   });
   return tabs?.[0]?.id || null;
-}
-
-/* ---------------- CRM document uploader ---------------- */
-
-const crmUploadFilesInput = document.getElementById("crmUploadFiles");
-const crmUploadTitleInput = document.getElementById("crmUploadTitle");
-const crmUploadBtn = document.getElementById("crmUploadBtn");
-const crmUploadList = document.getElementById("crmUploadList");
-const crmUploadSummary = document.getElementById("crmUploadSummary");
-
-function setCrmUploadSummary(message, isError = false) {
-  if (!crmUploadSummary) return;
-  crmUploadSummary.textContent = message;
-  crmUploadSummary.classList.toggle("error-text", isError);
-}
-
-function buildCrmUploadItems() {
-  const files = crmUploadFilesInput?.files ? Array.from(crmUploadFilesInput.files) : [];
-  const titleOverride = (crmUploadTitleInput?.value || "").trim();
-  return files.map(file => ({
-    file,
-    filename: file.name,
-    title: titleOverride || file.name
-  }));
-}
-
-function renderCrmUploadQueue(items) {
-  if (crmUploadList) crmUploadList.innerHTML = "";
-  if (!items.length) {
-    setCrmUploadSummary("No files queued.");
-    return;
-  }
-
-  items.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = `⏳ ${item.filename} — ${item.title} (queued)`;
-    crmUploadList?.appendChild(li);
-  });
-
-  setCrmUploadSummary(`Queued ${items.length} file(s).`);
-}
-
-function updateCrmUploadQueue() {
-  const items = buildCrmUploadItems();
-  renderCrmUploadQueue(items);
-  return items;
-}
-
-function renderCrmUploadResults(results) {
-  if (crmUploadList) crmUploadList.innerHTML = "";
-  if (!results?.length) {
-    setCrmUploadSummary("No results returned.", true);
-    return;
-  }
-
-  let successCount = 0;
-  results.forEach(result => {
-    const li = document.createElement("li");
-    const icon = result.success ? "✅" : "⚠️";
-    if (result.success) successCount += 1;
-    li.textContent = `${icon} ${result.filename} — ${result.title} (HTTP ${result.status})`;
-    crmUploadList?.appendChild(li);
-  });
-
-  setCrmUploadSummary(`Uploaded ${successCount}/${results.length} file(s).`, successCount !== results.length);
 }
 
 async function getActiveDafTabId() {
@@ -5083,139 +4857,6 @@ async function syncViewForTab(tab) {
   }
 }
 
-/* ---------------- Trial file zip + upload ---------------- */
-
-const selectedTrialFiles = [];
-const uploadPrompt = document.getElementById("uploadPrompt");
-const uploadPromptText = document.getElementById("uploadPromptText");
-const zipFilenameRow = document.getElementById("zipFilenameRow");
-const zipFilenameField = document.getElementById("zipFilenameField");
-const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
-const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
-const gridZipFilenameField = document.getElementById("gridZipFilenameField");
-const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
-const GRID_FILE_EXTENSION = ".grid3user";
-
-function updateTrialFilesStatus(message, isError = false) {
-  if (!trialFilesStatus) return;
-  trialFilesStatus.textContent = message;
-  trialFilesStatus.classList.toggle("error-text", isError);
-}
-
-function setSelectedTrialFiles(files, messageOverride = null) {
-  selectedTrialFiles.length = 0;
-  if (files?.length) {
-    selectedTrialFiles.push(...files);
-  }
-  if (!selectedTrialFiles.length) {
-    updateTrialFilesStatus(messageOverride || "No files selected.");
-    return;
-  }
-  updateTrialFilesStatus(messageOverride || `${selectedTrialFiles.length} file(s) ready to zip.`);
-}
-
-function clearSelectedTrialFiles(messageOverride = null) {
-  setSelectedTrialFiles([], messageOverride);
-  if (trialFilesInput) trialFilesInput.value = "";
-}
-
-function getVocabTypesFromFiles(files) {
-  const hasGrid = files.some(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-  const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
-  const hasSaltillo = files.some(file => {
-    const lowerName = file.name.toLowerCase();
-    return lowerName.endsWith(".ce") || lowerName.endsWith(".wf");
-  });
-
-  const ordered = [];
-  if (hasGrid) ordered.push("Grid");
-  if (hasP2G) ordered.push("P2G");
-  if (hasSaltillo) ordered.push("Saltillo");
-  return ordered;
-}
-
-function buildZipFilename(files) {
-  const first = sanitizeName(getFormValue("#firstName"));
-  const last = sanitizeName(getFormValue("#lastName"));
-  const fullName = [first, last].filter(Boolean).join(" ") || "Client";
-  const dateStr = formatDateForFilename();
-  const vocabTypes = getVocabTypesFromFiles(files);
-  const typeLabel = vocabTypes.length
-    ? `${vocabTypes.join(", ")}`
-    : "Vocab";
-  return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
-}
-
-async function promptUserDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  try {
-    if (chrome?.downloads?.download) {
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
-      await chrome.downloads.download({
-        url,
-        filename: targetFilename,
-        saveAs: !zipFolder
-      });
-    } else {
-      const link = document.createElement("a");
-      link.href = url;
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
-      link.click();
-    }
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-trialFilesInput?.addEventListener("change", () => {
-  const files = trialFilesInput.files ? Array.from(trialFilesInput.files) : [];
-  setSelectedTrialFiles(files);
-  if (!files.length) {
-    hideUploadPrompt();
-  }
-});
-
-function hideUploadPrompt() {
-  if (uploadPrompt) uploadPrompt.style.display = "none";
-  if (zipFilenameField) zipFilenameField.value = "";
-  if (gridZipFilenameField) gridZipFilenameField.value = "";
-  if (zipFilenameRow) zipFilenameRow.style.display = "none";
-  if (gridZipFilenameRow) gridZipFilenameRow.style.display = "none";
-}
-
-function showUploadPrompt(zipName, gridZipName = "") {
-  if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
-  const displayName = zipName ? zipName.replace(/\.zip$/i, "") : "";
-  const displayGridName = gridZipName ? gridZipName.replace(/\.zip$/i, "") : "";
-  zipFilenameField.value = displayName;
-  if (gridZipFilenameField) gridZipFilenameField.value = displayGridName;
-  if (zipFilenameRow) zipFilenameRow.style.display = zipName ? "flex" : "none";
-  if (gridZipFilenameRow) gridZipFilenameRow.style.display = gridZipName ? "flex" : "none";
-  const promptText = zipName || gridZipName
-    ? "Upload the downloaded zip file(s) to the CRM Documents tab using the filenames below."
-    : "Upload the downloaded zip file(s) to the CRM Documents tab.";
-  uploadPromptText.textContent = promptText;
-  uploadPrompt.style.display = "block";
-}
-
-copyZipFilenameBtn?.addEventListener("click", async () => {
-  const name = zipFilenameField?.value;
-  if (!name) return;
-  await navigator.clipboard.writeText(name);
-  copyZipFilenameBtn.textContent = "Copied!";
-  setTimeout(() => { copyZipFilenameBtn.textContent = "Copy filename"; }, 1200);
-});
-
-copyGridZipFilenameBtn?.addEventListener("click", async () => {
-  const name = gridZipFilenameField?.value;
-  if (!name) return;
-  await navigator.clipboard.writeText(name);
-  copyGridZipFilenameBtn.textContent = "Copied!";
-  setTimeout(() => { copyGridZipFilenameBtn.textContent = "Copy Grid filename"; }, 1200);
-});
-
 /* ---------------- Reset everything after success ---------------- */
 
 function resetAllFieldsAndUI() {
@@ -5255,7 +4896,6 @@ function resetAllFieldsAndUI() {
   const msg = document.getElementById("thankYouMessage");
   if (msg) msg.style.display = "none";
 
-  hideUploadPrompt();
   setText("notePreviewText", "");
   setText("completeIntro", "");
   setText("inventoryStatus", "");
@@ -5268,7 +4908,6 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   resetAllFieldsAndUI();
   hasFinalizedCheckin = false;
   smartboxRepairRequired = false;
-  clearSelectedTrialFiles();
   await clearStoredCheckinData();
   await clearCheckinProgress();
   await updateInventorySearchDisplay();
@@ -5295,55 +4934,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const deviceNumber = getFormValue("#deviceNumberInput");
   const isMountOnly = deviceNumber.toLowerCase() === "x";
 
-  // 1) Zip vocab files (if any) and prompt download
-  let zipName = "";
-  let gridZipName = "";
-  if (!trialFilesInput?.files?.length) {
-    await refreshTrialFilesFromFolder();
-  }
-  if (selectedTrialFiles.length) {
-    if (typeof JSZip === "undefined") {
-      const message = "JSZip failed to load. Please reload the panel before submitting.";
-      alert(message);
-      await logTaskOutcome("Checkin", message);
-      return;
-    }
-    updateTrialFilesStatus("Zipping selected files...");
-    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const downloadMessages = [];
-
-    if (otherFiles.length) {
-      const zip = new JSZip();
-      otherFiles.forEach(file => zip.file(file.name, file));
-      const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
-      const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
-      zipName = buildZipFilename(otherFiles);
-      updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
-      await promptUserDownload(zipBlob, zipName);
-      downloadMessages.push(`"${zipName}"`);
-    }
-
-    if (gridFiles.length) {
-      const gridZip = new JSZip();
-      gridFiles.forEach(file => gridZip.file(file.name, file));
-      const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
-      const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
-      gridZipName = buildZipFilename(gridFiles);
-      updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
-      await promptUserDownload(gridZipBlob, gridZipName);
-      downloadMessages.push(`"${gridZipName}"`);
-    }
-
-    const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Upload to the CRM Documents tab.`
-      : "No files selected.";
-    clearSelectedTrialFiles(downloadsNote);
-  } else {
-    hideUploadPrompt();
-  }
-
-  // 2) Build note + clipboard backup
+  // 1) Build note + clipboard backup
   const note = buildCannedNote();
   await navigator.clipboard.writeText(note);
 
@@ -5352,11 +4943,11 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     && condition === "Needs Repair"
     && isSmartboxRepairModel(deviceNumber);
 
-  // 2.5) Remember identifiers for the inventory page + DAF recap
+  // 1.5) Remember identifiers for the inventory page + DAF recap
   await saveLastIdentifiers(getCurrentIdentifiers());
   await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
 
-  // 3) Fill note in CRM
+  // 2) Fill note in CRM
   const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
   if (!setNoteRes.ok) {
     const message = "Failed to fill CRM note box.";
@@ -5365,7 +4956,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     return;
   }
 
-  // 4) Select category
+  // 3) Select category
   const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: "Device Returned" });
   if (!setCatRes.ok) {
     const message = 'Failed to select note category "Device Returned".';
@@ -5374,7 +4965,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     return;
   }
 
-  // 5) Submit note
+  // 4) Submit note
   const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
   if (!clickRes.ok) {
     const message = "Failed to submit the note.";
@@ -5401,10 +4992,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   setText("completeIntro", "CRM note submitted. Review the details below.");
-  await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-  if (zipName || gridZipName) {
-    showUploadPrompt(zipName, gridZipName);
-  }
   showCompleteView();
 });
 
@@ -5629,55 +5216,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     triggerSurprisePartyThemeChange();
   });
 
-  crmUploadFilesInput?.addEventListener("change", () => {
-    updateCrmUploadQueue();
-  });
-
-  crmUploadTitleInput?.addEventListener("input", () => {
-    updateCrmUploadQueue();
-  });
-
-  crmUploadBtn?.addEventListener("click", async () => {
-    const items = updateCrmUploadQueue();
-    if (!items.length) {
-      setCrmUploadSummary("Select at least one file to upload.", true);
-      return;
-    }
-
-    const tab = await getActiveCrmTab();
-    if (!tab?.id || !isCrmAdminUrl(tab.url)) {
-      setCrmUploadSummary("Open an EditClient page under /admin/ and try again.", true);
-      return;
-    }
-
-    crmUploadBtn.disabled = true;
-    setCrmUploadSummary(`Uploading ${items.length} file(s)...`);
-
-    try {
-      const response = await chrome.tabs.sendMessage(tab.id, {
-        action: "crmUpload",
-        items
-      });
-
-      if (!response?.results?.length) {
-        setCrmUploadSummary(response?.error || "No response from CRM page.", true);
-        return;
-      }
-
-      renderCrmUploadResults(response.results);
-    } catch (error) {
-      console.error("CRM upload failed", error);
-      setCrmUploadSummary("Upload failed. Check the CRM tab and try again.", true);
-    } finally {
-      crmUploadBtn.disabled = false;
-    }
-  });
-
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
     if (!(await ensureLogFolderConnected())) return;
     hasStartedCheckin = true;
     showFormView();
-    await refreshTrialFilesFromFolder();
     const activeTab = await getActiveCrmTab();
     await syncViewForTab(activeTab);
   });

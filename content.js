@@ -83,10 +83,6 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
-const CRM_DOC_FILE_FIELD = "ctl00$MainContent$Tabs$tpDocuments$filUpload";
-const CRM_DOC_UPLOAD_BUTTON = "ctl00$MainContent$Tabs$tpDocuments$btnUpload";
-const CRM_DOC_TITLE_FIELD = "ctl00$MainContent$Tabs$tpDocuments$txtDocumentTitle";
-const CRM_DOC_ADD_BUTTON = "ctl00$MainContent$Tabs$tpDocuments$btnAddDocument";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div'
@@ -194,109 +190,6 @@ function scoreNameSimilarity(target, candidate) {
   const distance = levenshteinDistance(normalizedTarget, normalizedCandidate);
   const maxLen = Math.max(normalizedTarget.length, normalizedCandidate.length);
   return maxLen ? 1 - distance / maxLen : 0;
-}
-
-function collectFormFields(doc) {
-  const fields = [];
-  const elements = Array.from(doc.querySelectorAll("input, select, textarea"));
-  elements.forEach(el => {
-    if (!el.name || el.disabled) return;
-    if (el instanceof HTMLInputElement && el.type === "file") return;
-    if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) {
-      if (!el.checked) return;
-    }
-    fields.push({ name: el.name, value: el.value ?? "" });
-  });
-  return fields;
-}
-
-function getFormAction(doc) {
-  const form = doc.querySelector("form");
-  if (!form) return location.href;
-  const action = form.getAttribute("action") || location.href;
-  return new URL(action, location.href).toString();
-}
-
-function buildFormDataFromDoc(doc) {
-  const formData = new FormData();
-  const fields = collectFormFields(doc);
-  const hasEventTarget = fields.some(field => field.name === "__EVENTTARGET");
-  const hasEventArgument = fields.some(field => field.name === "__EVENTARGUMENT");
-  fields.forEach(field => {
-    formData.append(field.name, field.value ?? "");
-  });
-  if (!hasEventTarget) formData.append("__EVENTTARGET", "");
-  if (!hasEventArgument) formData.append("__EVENTARGUMENT", "");
-  return formData;
-}
-
-function setEventTarget(formData, target) {
-  if (!target) return;
-  formData.set("__EVENTTARGET", target);
-  formData.set("__EVENTARGUMENT", "");
-}
-
-function getButtonValue(doc, fieldName, fallbackValue) {
-  const button = doc.querySelector(`[name="${fieldName}"]`);
-  return button?.value || fallbackValue;
-}
-
-async function runCrmDocumentUpload(items) {
-  const results = [];
-  for (const item of items || []) {
-    const filename = item?.filename || item?.file?.name || "unknown";
-    const title = (item?.title || "").trim() || filename;
-
-    try {
-      const uploadFormData = buildFormDataFromDoc(document);
-      uploadFormData.append(CRM_DOC_FILE_FIELD, item.file, filename);
-      uploadFormData.append(
-        CRM_DOC_UPLOAD_BUTTON,
-        getButtonValue(document, CRM_DOC_UPLOAD_BUTTON, "Upload")
-      );
-      setEventTarget(uploadFormData, CRM_DOC_UPLOAD_BUTTON);
-
-      const uploadResponse = await fetch(getFormAction(document), {
-        method: "POST",
-        body: uploadFormData,
-        credentials: "same-origin"
-      });
-
-      if (!uploadResponse.ok) {
-        results.push({ filename, title, success: false, status: uploadResponse.status });
-        continue;
-      }
-
-      const uploadHtml = await uploadResponse.text();
-      const uploadDoc = new DOMParser().parseFromString(uploadHtml, "text/html");
-      const addFormData = buildFormDataFromDoc(uploadDoc);
-      addFormData.append(CRM_DOC_TITLE_FIELD, title);
-      addFormData.append(
-        CRM_DOC_ADD_BUTTON,
-        getButtonValue(uploadDoc, CRM_DOC_ADD_BUTTON, "Add Document")
-      );
-      setEventTarget(addFormData, CRM_DOC_ADD_BUTTON);
-
-      const addResponse = await fetch(getFormAction(uploadDoc), {
-        method: "POST",
-        body: addFormData,
-        credentials: "same-origin"
-      });
-
-      const addHtml = await addResponse.text();
-      const success = /view documents|documents/i.test(addHtml);
-      results.push({
-        filename,
-        title,
-        success,
-        status: addResponse.status
-      });
-    } catch (error) {
-      console.error("CRM upload failed for", filename, error);
-      results.push({ filename, title, success: false, status: 0 });
-    }
-  }
-  return results;
 }
 
 function selectClosestConsultantFromListBox(listBox, targetName) {
@@ -420,45 +313,6 @@ function clickByXPath(xpath) {
   return true;
 }
 
-function findUploadTarget() {
-  const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
-  if (!fileInputs.length) return null;
-
-  const candidate = fileInputs.find(isVisible) || fileInputs[0];
-  if (!candidate) return null;
-
-  const form = candidate.form || candidate.closest("form");
-  if (!form) return null;
-
-  return { fileInput: candidate, form };
-}
-
-async function uploadZipDirectlyToPage(zipArrayBuffer, zipName) {
-  const target = findUploadTarget();
-  if (!target) throw new Error("Could not find a file upload form on this CRM page.");
-
-  const { fileInput, form } = target;
-  const action = form.getAttribute("action") || window.location.href;
-  const method = (form.getAttribute("method") || "POST").toUpperCase();
-  const resolvedAction = new URL(action, window.location.href).toString();
-
-  const formData = new FormData(form);
-  const zipFile = new File([zipArrayBuffer], zipName, { type: "application/zip" });
-  formData.set(fileInput.name || "file", zipFile);
-
-  const res = await fetch(resolvedAction, {
-    method,
-    body: formData,
-    credentials: "include"
-  });
-
-  if (!res.ok) {
-    throw new Error(`Upload failed with status ${res.status}.`);
-  }
-
-  return true;
-}
-
 /* ---------------- Message Listener ---------------- */
 
 function pickInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminNumber = "" } = {}) {
@@ -515,16 +369,6 @@ if (runtime?.onMessage?.addListener) {
       return true;
     }
 
-    if (msg.action === "crmUpload") {
-      runCrmDocumentUpload(msg.items)
-        .then(results => sendResponse({ results }))
-        .catch(error => {
-          console.error("CRM upload failed", error);
-          sendResponse({ results: [], error: error?.message || "Upload failed." });
-        });
-      return true;
-    }
-
     if (msg.type === "SET_CRM_NOTE") {
       const ok = setValueByXPath(msg.xpath, msg.noteText);
       sendResponse({ ok });
@@ -546,16 +390,6 @@ if (runtime?.onMessage?.addListener) {
     if (msg.type === "CLICK_BY_XPATH") {
       const ok = clickByXPath(msg.xpath);
       sendResponse({ ok });
-      return true;
-    }
-
-    if (msg.type === "UPLOAD_ZIP_TO_CRM") {
-      uploadZipDirectlyToPage(msg.zipArrayBuffer, msg.zipName)
-        .then(() => sendResponse({ ok: true }))
-        .catch(err => {
-          console.error(err);
-          sendResponse({ ok: false, message: err?.message || "Upload failed." });
-        });
       return true;
     }
 
