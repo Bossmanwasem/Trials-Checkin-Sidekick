@@ -2483,7 +2483,7 @@ async function runCleanupFolderFlow({ promptIfMissing = false } = {}) {
     handle = await pickCleanupFolder();
   }
   if (!handle) return false;
-  const permitted = await verifyFolderPermission(handle, "readwrite");
+  const permitted = await hasFolderPermission(handle, "readwrite");
   if (!permitted) return false;
   await clearCleanupFolderContents(handle);
   return true;
@@ -2608,24 +2608,20 @@ async function updateToolAccessState({ showMessage = false } = {}) {
 }
 
 async function ensureLogFolderConnected() {
-  const handle = await loadLogFolderHandle().catch(() => null);
-  if (!handle) {
-    await updateToolAccessState({ showMessage: true });
-    alert("Connect the Logs folder in Settings to use the tools.");
-    showSettingsView();
-    return false;
+  const { connected, reason } = await getLogFolderAccessState();
+  if (connected) {
+    setToolButtonsDisabled(false);
+    return true;
   }
 
-  const permitted = await verifyFolderPermission(handle, "readwrite");
-  if (!permitted) {
-    await updateToolAccessState({ showMessage: true });
+  await updateToolAccessState({ showMessage: true });
+  if (reason === "blocked") {
     alert("Log folder access is blocked. Reconnect the Logs folder in Settings to continue.");
-    showSettingsView();
-    return false;
+  } else {
+    alert("Connect the Logs folder in Settings to use the tools.");
   }
-
-  setToolButtonsDisabled(false);
-  return true;
+  showSettingsView();
+  return false;
 }
 
 function updateTrialFilesFolderStatus(name, messageOverride = null) {
@@ -2802,7 +2798,7 @@ async function getLogBaseHandle({ promptIfMissing = false } = {}) {
     handle = await pickLogFolder();
   }
   if (!handle) return null;
-  const permitted = await verifyFolderPermission(handle, "readwrite");
+  const permitted = await hasFolderPermission(handle, "readwrite");
   if (!permitted) {
     const storedName = await getLogFolderName();
     updateLogFolderStatus(storedName, "Folder access blocked. Click Choose log folder to re-authorize.");
@@ -2812,7 +2808,7 @@ async function getLogBaseHandle({ promptIfMissing = false } = {}) {
 }
 
 async function writeLogEntry({ action, outcome }) {
-  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  const baseHandle = await getLogBaseHandle();
   if (!baseHandle) return false;
   const profile = await getUserProfile();
   const username = buildLogUserName(profile);
@@ -2836,7 +2832,7 @@ function formatSearchLogMessage(message) {
 }
 
 async function writeDeviceSearchEntry({ serial, serialResult, mountResult }) {
-  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  const baseHandle = await getLogBaseHandle();
   if (!baseHandle) return false;
   const profile = await getUserProfile();
   const username = buildLogUserName(profile);
