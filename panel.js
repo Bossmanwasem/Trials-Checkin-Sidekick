@@ -5326,7 +5326,7 @@ document.getElementById("runInventoryScriptBtn")?.addEventListener("click", asyn
   }
 
   await updateCheckinProgress({ inventoryComplete: true });
-  if (status) status.textContent = "Mark the Device as returned and click update once the page reloads click next step to continue";
+  if (status) status.textContent = "Mark the device as returned, click Update and once the page reloads, click Next Step to continue.";
   setInventoryNextStepVisibility(true);
 });
 
