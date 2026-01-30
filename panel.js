@@ -5044,6 +5044,10 @@ const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
 const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
 const gridZipFilenameField = document.getElementById("gridZipFilenameField");
 const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
+const uploadScriptCommandField = document.getElementById("uploadScriptCommandField");
+const copyUploadScriptCommandBtn = document.getElementById("copyUploadScriptCommandBtn");
+const runUploadScriptBtn = document.getElementById("runUploadScriptBtn");
+const uploadScriptStatus = document.getElementById("uploadScriptStatus");
 const GRID_FILE_EXTENSION = ".grid3user";
 
 function updateTrialFilesStatus(message, isError = false) {
@@ -5131,6 +5135,8 @@ function hideUploadPrompt() {
   if (uploadPrompt) uploadPrompt.style.display = "none";
   if (zipFilenameField) zipFilenameField.value = "";
   if (gridZipFilenameField) gridZipFilenameField.value = "";
+  if (uploadScriptCommandField) uploadScriptCommandField.value = "";
+  if (uploadScriptStatus) uploadScriptStatus.textContent = "";
   if (zipFilenameRow) zipFilenameRow.style.display = "none";
   if (gridZipFilenameRow) gridZipFilenameRow.style.display = "none";
 }
@@ -5148,6 +5154,17 @@ function showUploadPrompt(zipName, gridZipName = "") {
     : "Upload the downloaded zip file(s) to the CRM Documents tab.";
   uploadPromptText.textContent = promptText;
   uploadPrompt.style.display = "block";
+  if (uploadScriptStatus) uploadScriptStatus.textContent = "";
+  void updateUploadScriptCommand();
+}
+
+async function updateUploadScriptCommand() {
+  if (!uploadScriptCommandField) return;
+  const data = await getLastCheckinDataForDaf();
+  const crmId = `${data?.crmId || ""}`.trim() || "<CRM_ID>";
+  const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+  const zipDir = storedFolder ? `"${storedFolder}"` : "\"<zip folder>\"";
+  uploadScriptCommandField.value = `python tools/upload_checkin_zips.py --client-id ${crmId} --zip-dir ${zipDir}`;
 }
 
 copyZipFilenameBtn?.addEventListener("click", async () => {
@@ -5164,6 +5181,21 @@ copyGridZipFilenameBtn?.addEventListener("click", async () => {
   await navigator.clipboard.writeText(name);
   copyGridZipFilenameBtn.textContent = "Copied!";
   setTimeout(() => { copyGridZipFilenameBtn.textContent = "Copy Grid filename"; }, 1200);
+});
+
+copyUploadScriptCommandBtn?.addEventListener("click", async () => {
+  const value = uploadScriptCommandField?.value;
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  copyUploadScriptCommandBtn.textContent = "Copied!";
+  if (uploadScriptStatus) uploadScriptStatus.textContent = "Command copied to clipboard.";
+  setTimeout(() => { copyUploadScriptCommandBtn.textContent = "Copy command"; }, 1200);
+});
+
+runUploadScriptBtn?.addEventListener("click", () => {
+  const url = chrome.runtime.getURL("tools/upload_checkin_zips.py");
+  chrome.tabs.create({ url });
+  if (uploadScriptStatus) uploadScriptStatus.textContent = "Opened upload script in a new tab.";
 });
 
 /* ---------------- Reset everything after success ---------------- */
