@@ -364,6 +364,9 @@ async function uploadDocumentViaCrmUi({ zipArrayBuffer, zipName, documentTitle, 
   await setFileInputByXPath(xpaths.fileInput, file);
   await waitForEnabledElementByXPath(xpaths.uploadButton, { visibleOnly: true });
   clickByXPath(xpaths.uploadButton);
+  if (xpaths.uploadSuccessMessage) {
+    await waitForElementByXPath(xpaths.uploadSuccessMessage, { visibleOnly: true });
+  }
 
   const titleValue = documentTitle || zipName;
   await waitForEnabledElementByXPath(xpaths.documentTitle, { visibleOnly: true });

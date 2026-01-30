@@ -9,6 +9,7 @@ const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]'
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
 const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
+const DOCUMENT_UPLOAD_SUCCESS_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_lblFileUploadSuccess"]';
 const DOCUMENT_TITLE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
 const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
@@ -4404,6 +4405,7 @@ async function uploadDocumentsToCrm(uploads) {
     xpaths: {
       fileInput: DOCUMENT_UPLOAD_INPUT_XPATH,
       uploadButton: DOCUMENT_UPLOAD_BUTTON_XPATH,
+      uploadSuccessMessage: DOCUMENT_UPLOAD_SUCCESS_XPATH,
       documentTitle: DOCUMENT_TITLE_INPUT_XPATH,
       addButton: DOCUMENT_ADD_BUTTON_XPATH
     }
