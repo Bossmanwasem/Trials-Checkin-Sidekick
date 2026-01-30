@@ -4799,7 +4799,10 @@ function clearSelectedTrialFiles(messageOverride = null) {
 function getVocabTypesFromFiles(files) {
   const hasGrid = files.some(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
   const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
-  const hasSaltillo = files.some(file => file.name.toLowerCase().endsWith(".ce"));
+  const hasSaltillo = files.some(file => {
+    const name = file.name.toLowerCase();
+    return name.endsWith(".ce") || name.endsWith(".wf");
+  });
 
   const ordered = [];
   if (hasGrid) ordered.push("Grid");
