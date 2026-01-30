@@ -5093,17 +5093,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   let uploadMessage = "CRM note submitted. Review the details below.";
-  await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-  if (zipUploads.length) {
-    const uploadRes = await uploadDocumentsToCrm(zipUploads);
-    if (uploadRes.ok) {
-      uploadMessage = "CRM note submitted. Vocab zip(s) uploaded to the Documents tab.";
-    } else {
-      const message = uploadRes.message || "Auto-upload failed. Please upload the zip file(s) manually.";
-      uploadMessage = `CRM note submitted. ${message}`;
-      showUploadPrompt(zipName, gridZipName, { message });
-    }
-  } else if (zipName || gridZipName) {
+  if (zipUploads.length || zipName || gridZipName) {
+    uploadMessage = "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
     showUploadPrompt(zipName, gridZipName);
   }
   setText("completeIntro", uploadMessage);
