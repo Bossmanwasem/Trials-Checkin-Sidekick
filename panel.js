@@ -22,6 +22,7 @@ const OUTLOOK_SETUP_URL = "https://outlook.office365.com/mail/";
 const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
+const CUSTOM_THEME_STORAGE_KEY = "ttmtSidekickCustomTheme";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
 const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
 const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
@@ -43,6 +44,8 @@ const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
+const CUSTOM_THEME_ID = "customTheme";
+const DEFAULT_CUSTOM_THEME_NAME = "Custom Theme";
 const DEFAULT_CUSTOM_COUNTER_LABEL = "Custom";
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
@@ -62,7 +65,7 @@ const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 let qaFormTabId = null;
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -128,7 +131,7 @@ const NFL_THEME_IDS = new Set([
   "nflTitans",
   "nflCommanders"
 ]);
-const SPECIAL_THEME_IDS = new Set(["chaos", "surpriseParty", "rainbowParty"]);
+const SPECIAL_THEME_IDS = new Set(["chaos", "surpriseParty", "rainbowParty", CUSTOM_THEME_ID]);
 const THEME_CATEGORY_LABELS = {
   single: "Single Color Themes",
   multi: "Multi Color Themes",
@@ -136,6 +139,21 @@ const THEME_CATEGORY_LABELS = {
   special: "Special Themes"
 };
 const THEME_CATEGORY_ORDER = ["single", "multi", "nfl", "special"];
+const CUSTOM_THEME_FIELDS = [
+  { key: "bg-color", label: "Background" },
+  { key: "text-color", label: "Text" },
+  { key: "muted-text", label: "Muted text" },
+  { key: "container-bg", label: "Container background" },
+  { key: "container-border", label: "Container border" },
+  { key: "accent", label: "Accent" },
+  { key: "accent-strong", label: "Accent strong" },
+  { key: "accent-strong-hover", label: "Accent hover" },
+  { key: "input-bg", label: "Input background" },
+  { key: "input-border", label: "Input border" },
+  { key: "note-bg", label: "Note background" },
+  { key: "note-border", label: "Note border" },
+  { key: "error-color", label: "Error color" }
+];
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -153,6 +171,7 @@ function showLandingView() {
   void refreshLandingView();
 }
 function showSettingsView() { showView("settingsView"); }
+function showThemeBuilderView() { showView("themeBuilderView"); }
 function showUpdateNotesView() { showView("updateNotesView"); }
 function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
@@ -276,6 +295,23 @@ const SYMOJI_FILES = [
   "Yummy.png"
 ];
 
+const CUSTOM_THEME_DEFAULT_VARS = {
+  "bg-color": "#121212",
+  "text-color": "#e0e0e0",
+  "muted-text": "#d5e9ff",
+  "container-bg": "#1e1e2f",
+  "container-border": "#81cfff",
+  "container-shadow": "0 0 20px rgba(0, 128, 255, 0.25)",
+  "accent": "#81cfff",
+  "accent-strong": "#003366",
+  "accent-strong-hover": "#005599",
+  "input-bg": "#2a2a3a",
+  "input-border": "#555555",
+  "note-bg": "#0f1b2b",
+  "note-border": "#2f4b6f",
+  "error-color": "#ff7b7b"
+};
+
 const THEMES = {
   ocean: {
     label: "Ocean Blue",
@@ -295,6 +331,10 @@ const THEMES = {
       "note-border": "#2f4b6f",
       "error-color": "#ff7b7b"
     }
+  },
+  [CUSTOM_THEME_ID]: {
+    label: DEFAULT_CUSTOM_THEME_NAME,
+    vars: { ...CUSTOM_THEME_DEFAULT_VARS }
   },
   sunset: {
     label: "Sunset Ember",
@@ -1729,6 +1769,12 @@ let activeThemeId = "ocean";
 let currentChaosThemeId = null;
 let currentSurpriseThemeId = null;
 let chaosTransitionTimeoutId = null;
+let customThemeConfig = {
+  name: DEFAULT_CUSTOM_THEME_NAME,
+  vars: { ...CUSTOM_THEME_DEFAULT_VARS },
+  containerImage: ""
+};
+let customThemeDraft = null;
 
 function ensureThemeTransitionLayer() {
   let layer = document.getElementById("themeTransitionLayer");
@@ -1744,6 +1790,43 @@ function setThemeVars(vars) {
   Object.entries(vars).forEach(([key, value]) => {
     document.documentElement.style.setProperty(`--${key}`, value);
   });
+}
+
+function normalizeHexColor(value) {
+  if (!value) return "#000000";
+  if (value.startsWith("#") && (value.length === 7 || value.length === 4)) {
+    if (value.length === 4) {
+      return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`.toLowerCase();
+    }
+    return value.toLowerCase();
+  }
+  return "#000000";
+}
+
+function hexToRgb(value) {
+  const hex = normalizeHexColor(value).replace("#", "");
+  const full = hex.length === 3
+    ? hex.split("").map(ch => ch + ch).join("")
+    : hex.padStart(6, "0");
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return { r, g, b };
+}
+
+function rgbToHex({ r, g, b }) {
+  const toHex = channel => Math.max(0, Math.min(255, Number(channel) || 0)).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function deriveContainerShadow(hexColor) {
+  const { r, g, b } = hexToRgb(hexColor);
+  return `0 0 20px rgba(${r}, ${g}, ${b}, 0.25)`;
+}
+
+function setCustomContainerImage(image) {
+  const value = image ? `url("${image}")` : "none";
+  document.documentElement.style.setProperty("--custom-container-bg-image", value);
 }
 
 function setBodyThemeAttribute(themeId) {
@@ -1763,6 +1846,31 @@ function getThemeCategory(themeId) {
   if (NFL_THEME_IDS.has(themeId)) return "nfl";
   if (MULTI_THEME_IDS.has(themeId)) return "multi";
   return "single";
+}
+
+function updateCustomThemeConfig(config) {
+  const name = config?.name?.trim() || DEFAULT_CUSTOM_THEME_NAME;
+  const vars = {
+    ...CUSTOM_THEME_DEFAULT_VARS,
+    ...(config?.vars || {})
+  };
+  vars["container-shadow"] = deriveContainerShadow(vars["container-border"]);
+  customThemeConfig = {
+    name,
+    vars,
+    containerImage: config?.containerImage || ""
+  };
+  THEMES[CUSTOM_THEME_ID].label = name;
+  THEMES[CUSTOM_THEME_ID].vars = { ...vars };
+}
+
+async function loadCustomThemeFromStorage() {
+  const stored = await getStoredValue(CUSTOM_THEME_STORAGE_KEY);
+  if (stored) {
+    updateCustomThemeConfig(stored);
+  } else {
+    updateCustomThemeConfig(customThemeConfig);
+  }
 }
 
 function getThemesByCategory() {
@@ -1940,6 +2048,11 @@ function applyTheme(themeId, { persist = true } = {}) {
   }
   const theme = THEMES[resolvedTheme];
   setThemeVars(theme.vars);
+  if (resolvedTheme === CUSTOM_THEME_ID) {
+    setCustomContainerImage(customThemeConfig.containerImage);
+  } else {
+    setCustomContainerImage("");
+  }
   setBodyThemeAttribute(resolvedTheme);
   setButtonTextColor(resolvedTheme, theme);
   updateThemeSelection(resolvedTheme);
@@ -1995,6 +2108,14 @@ function populateThemeSelect(selectEl) {
   });
 }
 
+function refreshThemeSelects() {
+  const themeSelect = document.getElementById("onboardingThemeSelect");
+  populateThemeSelect(themeSelect);
+  if (themeSelect && THEMES[activeThemeId]) {
+    themeSelect.value = activeThemeId;
+  }
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -2004,6 +2125,174 @@ function readFileAsDataUrl(file) {
     };
     reader.onerror = () => reject(new Error("Unable to read file."));
     reader.readAsDataURL(file);
+  });
+}
+
+function applyThemeBuilderPreview() {
+  const preview = document.getElementById("themeBuilderPreview");
+  if (!preview || !customThemeDraft) return;
+  Object.entries(customThemeDraft.vars).forEach(([key, value]) => {
+    preview.style.setProperty(`--${key}`, value);
+  });
+  preview.style.setProperty("--button-border", customThemeDraft.vars["container-border"]);
+  preview.style.setProperty("--button-text-color", customThemeDraft.vars["accent"]);
+  preview.style.setProperty(
+    "--custom-container-bg-image",
+    customThemeDraft.containerImage ? `url("${customThemeDraft.containerImage}")` : "none"
+  );
+}
+
+function buildThemeBuilderControls() {
+  const controls = document.getElementById("themeBuilderControls");
+  if (!controls || !customThemeDraft) return;
+  controls.innerHTML = "";
+  CUSTOM_THEME_FIELDS.forEach(field => {
+    const row = document.createElement("div");
+    row.className = "theme-builder-control";
+    const label = document.createElement("label");
+    label.textContent = field.label;
+    label.setAttribute("for", `theme-builder-${field.key}`);
+
+    const inputs = document.createElement("div");
+    inputs.className = "theme-builder-control__inputs";
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.id = `theme-builder-${field.key}`;
+    colorInput.value = normalizeHexColor(customThemeDraft.vars[field.key]);
+
+    const rgbInputs = document.createElement("div");
+    rgbInputs.className = "theme-builder-control__rgb";
+    const channels = ["R", "G", "B"];
+    const rgbValues = hexToRgb(colorInput.value);
+    const rgbFields = channels.map((labelText, index) => {
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.max = "255";
+      input.step = "1";
+      input.value = String([rgbValues.r, rgbValues.g, rgbValues.b][index]);
+      input.setAttribute("aria-label", `${field.label} ${labelText}`);
+      return input;
+    });
+
+    let isSyncing = false;
+    const syncInputs = hex => {
+      const normalized = normalizeHexColor(hex);
+      const rgb = hexToRgb(normalized);
+      isSyncing = true;
+      colorInput.value = normalized;
+      rgbFields[0].value = String(rgb.r);
+      rgbFields[1].value = String(rgb.g);
+      rgbFields[2].value = String(rgb.b);
+      isSyncing = false;
+      customThemeDraft.vars[field.key] = normalized;
+      if (field.key === "container-border") {
+        customThemeDraft.vars["container-shadow"] = deriveContainerShadow(normalized);
+      }
+      applyThemeBuilderPreview();
+    };
+
+    colorInput.addEventListener("input", () => {
+      if (isSyncing) return;
+      syncInputs(colorInput.value);
+    });
+
+    rgbFields.forEach(input => {
+      input.addEventListener("input", () => {
+        if (isSyncing) return;
+        const hex = rgbToHex({
+          r: rgbFields[0].value,
+          g: rgbFields[1].value,
+          b: rgbFields[2].value
+        });
+        syncInputs(hex);
+      });
+    });
+
+    rgbFields.forEach(input => rgbInputs.appendChild(input));
+    inputs.appendChild(colorInput);
+    inputs.appendChild(rgbInputs);
+    row.appendChild(label);
+    row.appendChild(inputs);
+    controls.appendChild(row);
+  });
+}
+
+async function initThemeBuilder() {
+  const nameInput = document.getElementById("themeBuilderNameInput");
+  const imageInput = document.getElementById("themeBuilderImageInput");
+  const clearImageBtn = document.getElementById("themeBuilderClearImageBtn");
+  const saveBtn = document.getElementById("themeBuilderSaveBtn");
+  const saveStatus = document.getElementById("themeBuilderSaveStatus");
+  const imageStatus = document.getElementById("themeBuilderImageStatus");
+  const returnBtn = document.getElementById("themeBuilderReturnBtn");
+
+  customThemeDraft = {
+    name: customThemeConfig.name,
+    vars: { ...customThemeConfig.vars },
+    containerImage: customThemeConfig.containerImage
+  };
+
+  if (nameInput) {
+    nameInput.value = customThemeDraft.name;
+  }
+
+  buildThemeBuilderControls();
+  applyThemeBuilderPreview();
+
+  const updateImageStatus = () => {
+    if (!imageStatus) return;
+    imageStatus.textContent = customThemeDraft.containerImage ? "Custom image selected." : "No image uploaded.";
+  };
+  updateImageStatus();
+
+  imageInput?.addEventListener("change", async () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      imageInput.value = "";
+      return;
+    }
+    try {
+      customThemeDraft.containerImage = await readFileAsDataUrl(file);
+      applyThemeBuilderPreview();
+      updateImageStatus();
+    } catch {
+      alert("Unable to read that image file.");
+    }
+  });
+
+  clearImageBtn?.addEventListener("click", () => {
+    customThemeDraft.containerImage = "";
+    if (imageInput) imageInput.value = "";
+    applyThemeBuilderPreview();
+    updateImageStatus();
+  });
+
+  saveBtn?.addEventListener("click", async () => {
+    const name = (nameInput?.value || "").trim() || DEFAULT_CUSTOM_THEME_NAME;
+    const savedVars = { ...customThemeDraft.vars };
+    savedVars["container-shadow"] = deriveContainerShadow(savedVars["container-border"]);
+    const savedConfig = {
+      name,
+      vars: savedVars,
+      containerImage: customThemeDraft.containerImage || ""
+    };
+    await setStoredValue(CUSTOM_THEME_STORAGE_KEY, savedConfig);
+    updateCustomThemeConfig(savedConfig);
+    setCustomContainerImage(customThemeConfig.containerImage);
+    renderThemeOptions();
+    refreshThemeSelects();
+    applyTheme(CUSTOM_THEME_ID);
+    if (saveStatus) {
+      saveStatus.textContent = `Saved "${name}" and applied it as your active theme.`;
+    }
+  });
+
+  returnBtn?.addEventListener("click", () => {
+    showSettingsView();
   });
 }
 
@@ -2236,67 +2525,76 @@ async function initDailyCounterSetting() {
   });
 }
 
+function renderThemeOptions() {
+  const themeOptions = document.getElementById("themeOptions");
+  if (!themeOptions) return;
+  themeOptions.innerHTML = "";
+  const groupedThemes = getThemesByCategory();
+  THEME_CATEGORY_ORDER.forEach(category => {
+    const themes = groupedThemes[category];
+    if (!themes || !themes.length) return;
+    const section = document.createElement("div");
+    section.className = "theme-options__section";
+    const sectionKey = `theme-${category}`;
+    const heading = document.createElement("button");
+    heading.type = "button";
+    heading.className = "toggle-btn theme-options__toggle";
+    heading.dataset.collapsible = sectionKey;
+    heading.setAttribute("aria-expanded", category === "single" ? "true" : "false");
+    heading.innerHTML = `
+        <span>${THEME_CATEGORY_LABELS[category] || category}</span>
+        <span class="theme-options__chevron" aria-hidden="true">▾</span>
+      `;
+    const grid = document.createElement("div");
+    grid.className = "theme-options__grid";
+    themes.forEach(({ id, theme }) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "theme-option";
+      button.dataset.theme = id;
+      button.setAttribute("aria-pressed", "false");
+
+      const swatch = document.createElement("span");
+      swatch.className = "theme-swatch";
+      swatch.style.setProperty("--theme-swatch", theme.vars["accent"] || "");
+
+      const label = document.createElement("span");
+      label.className = "theme-option__label";
+      label.textContent = theme.label;
+
+      button.appendChild(swatch);
+      button.appendChild(label);
+      grid.appendChild(button);
+    });
+    const content = document.createElement("div");
+    content.className = "theme-options__content";
+    content.dataset.collapsibleContent = sectionKey;
+    content.hidden = category !== "single";
+    content.appendChild(grid);
+    section.appendChild(heading);
+    section.appendChild(content);
+    themeOptions.appendChild(section);
+  });
+
+  themeOptions.querySelectorAll(".theme-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      applyTheme(btn.dataset.theme);
+    });
+  });
+
+}
+
 function initThemeControls() {
   const menuBtn = document.getElementById("themeMenuBtn");
   menuBtn?.addEventListener("click", () => {
     showSettingsView();
   });
 
-  const themeOptions = document.getElementById("themeOptions");
-  if (themeOptions) {
-    themeOptions.innerHTML = "";
-    const groupedThemes = getThemesByCategory();
-    THEME_CATEGORY_ORDER.forEach(category => {
-      const themes = groupedThemes[category];
-      if (!themes || !themes.length) return;
-      const section = document.createElement("div");
-      section.className = "theme-options__section";
-      const sectionKey = `theme-${category}`;
-      const heading = document.createElement("button");
-      heading.type = "button";
-      heading.className = "toggle-btn theme-options__toggle";
-      heading.dataset.collapsible = sectionKey;
-      heading.setAttribute("aria-expanded", category === "single" ? "true" : "false");
-      heading.innerHTML = `
-        <span>${THEME_CATEGORY_LABELS[category] || category}</span>
-        <span class="theme-options__chevron" aria-hidden="true">▾</span>
-      `;
-      const grid = document.createElement("div");
-      grid.className = "theme-options__grid";
-      themes.forEach(({ id, theme }) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "theme-option";
-        button.dataset.theme = id;
-        button.setAttribute("aria-pressed", "false");
+  renderThemeOptions();
 
-        const swatch = document.createElement("span");
-        swatch.className = "theme-swatch";
-        swatch.style.setProperty("--theme-swatch", theme.vars["accent"] || "");
-
-        const label = document.createElement("span");
-        label.className = "theme-option__label";
-        label.textContent = theme.label;
-
-        button.appendChild(swatch);
-        button.appendChild(label);
-        grid.appendChild(button);
-      });
-      const content = document.createElement("div");
-      content.className = "theme-options__content";
-      content.dataset.collapsibleContent = sectionKey;
-      content.hidden = category !== "single";
-      content.appendChild(grid);
-      section.appendChild(heading);
-      section.appendChild(content);
-      themeOptions.appendChild(section);
-    });
-  }
-
-  document.querySelectorAll(".theme-option").forEach(btn => {
-    btn.addEventListener("click", () => {
-      applyTheme(btn.dataset.theme);
-    });
+  const openThemeBuilderBtn = document.getElementById("openThemeBuilderBtn");
+  openThemeBuilderBtn?.addEventListener("click", () => {
+    showThemeBuilderView();
   });
 
   const surprisePartyBtn = document.getElementById("surprisePartyBtn");
@@ -2676,10 +2974,16 @@ async function initTrialFilesFolderSetting() {
   });
 }
 
-initThemeControls();
-initChaosControls();
-loadThemePreference();
-initOnboardingForm();
+async function initThemeSystem() {
+  await loadCustomThemeFromStorage();
+  initThemeControls();
+  initChaosControls();
+  loadThemePreference();
+  initOnboardingForm();
+  await initThemeBuilder();
+}
+
+void initThemeSystem();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
@@ -5444,13 +5748,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showWelcomeView();
   }
 
-  document.querySelectorAll("[data-collapsible]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.collapsible;
-      if (!key) return;
-      const isExpanded = btn.getAttribute("aria-expanded") === "true";
-      setCollapsibleState(key, !isExpanded);
-    });
+  document.addEventListener("click", event => {
+    const btn = event.target?.closest?.("[data-collapsible]");
+    if (!btn) return;
+    const key = btn.dataset.collapsible;
+    if (!key) return;
+    const isExpanded = btn.getAttribute("aria-expanded") === "true";
+    setCollapsibleState(key, !isExpanded);
   });
 
   const landingView = document.getElementById("landingView");
