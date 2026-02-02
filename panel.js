@@ -4363,12 +4363,27 @@ function buildCannedNote() {
   const first = sanitizeName(getFormValue("#firstName"));
   const last = sanitizeName(getFormValue("#lastName"));
   const deviceNum = getFormValue("#deviceNumberInput");
+  const clampMount = getFormValue('input[name="clampMount"]');
+  const rollingMount = getFormValue('input[name="rollingMount"]');
+  const tableMount = getFormValue('input[name="tableMount"]');
 
   const fullName = [first, last].filter(Boolean).join(" ") || "Client";
   const isMountOnly = deviceNum.toLowerCase() === "x";
   const modelName = detectDeviceModel(deviceNum);
 
-  if (isMountOnly) return buildMountsReturnedOnlyNote();
+  if (isMountOnly) {
+    const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
+    const cameraNumber = getFormValue('input[name="cameraNumber"]');
+    const luminNumber = getFormValue('input[name="luminNumber"]');
+    const hasMounts = Boolean(clampMount || rollingMount || tableMount);
+    const cameraIdentifiers = [cameraNumber, luminNumber].filter(Boolean);
+
+    if (vocabNotReturned && !hasMounts && cameraIdentifiers.length) {
+      return `Camera returned.\n\nCamera number: ${cameraIdentifiers.join(", ")}`;
+    }
+
+    return buildMountsReturnedOnlyNote();
+  }
 
   const condition = getFormValue("#conditionSelect");
   const repairs = getFormValue("#repairsTextBox");
