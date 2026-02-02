@@ -135,6 +135,31 @@ body[data-theme^="customTheme-"] .container > * {
   width: 100%;
 }
 
+.landing-layout--freeform {
+  display: block;
+  position: relative;
+  min-height: 520px;
+  padding-bottom: 24px;
+}
+
+.landing-layout--freeform > .landing-section,
+.landing-layout--freeform > .daily-counter,
+.landing-layout--freeform > .landing-btn,
+.landing-layout--freeform > .landing-settings-btn {
+  width: clamp(220px, 70%, 360px);
+}
+
+.theme-builder-preview .landing-layout [data-layout-item] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.theme-builder-preview .landing-layout [data-layout-item].is-preview-dragging {
+  cursor: grabbing;
+  z-index: 2;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
 .landing-layout > .landing-section,
 .landing-layout > .daily-counter,
 .landing-layout > .landing-btn {

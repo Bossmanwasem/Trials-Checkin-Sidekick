@@ -46,6 +46,7 @@ const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
+const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
 const LANDING_MASCOT_VISIBLE_STORAGE_KEY = "ttmtLandingMascotVisible";
 const LANDING_SYMOJI_VISIBLE_STORAGE_KEY = "ttmtLandingSymojiVisible";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
@@ -169,6 +170,10 @@ const LANDING_LAYOUT_ITEMS = [
   { id: "trialsLinks", label: "Trials links button" },
   { id: "userSettings", label: "User settings button" }
 ];
+
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function showView(targetId) {
   VIEW_IDS.forEach(id => {
@@ -2341,6 +2346,78 @@ function buildThemeBuilderLayoutList({ container, order, onOrderChange }) {
   }
 }
 
+function initThemeBuilderPreviewDrag({ container, onPositionsChange }) {
+  if (!container || container.dataset.previewDragReady) return;
+  container.dataset.previewDragReady = "true";
+  let dragState = null;
+
+  const updateItemPosition = (item, leftPercent, topPercent) => {
+    item.style.position = "absolute";
+    item.style.left = `${leftPercent}%`;
+    item.style.top = `${topPercent}%`;
+  };
+
+  const handlePointerMove = event => {
+    if (!dragState) return;
+    const rect = dragState.containerRect;
+    const item = dragState.item;
+    const width = dragState.itemWidth;
+    const height = dragState.itemHeight;
+    const rawLeft = event.clientX - rect.left - dragState.offsetX;
+    const rawTop = event.clientY - rect.top - dragState.offsetY;
+    const left = clampNumber(rawLeft, 0, rect.width - width);
+    const top = clampNumber(rawTop, 0, rect.height - height);
+    const leftPercent = (left / rect.width) * 100;
+    const topPercent = (top / rect.height) * 100;
+    updateItemPosition(item, leftPercent, topPercent);
+    dragState.positions[item.dataset.layoutItem] = {
+      x: leftPercent,
+      y: topPercent
+    };
+  };
+
+  const handlePointerUp = async () => {
+    if (!dragState) return;
+    dragState.item.classList.remove("is-preview-dragging");
+    container.releasePointerCapture(dragState.pointerId);
+    const nextPositions = normalizeLandingLayoutPositions(dragState.positions);
+    onPositionsChange?.(nextPositions);
+    dragState = null;
+  };
+
+  container.addEventListener("pointerdown", async event => {
+    const target = event.target.closest("[data-layout-item]");
+    if (!target || !container.contains(target)) return;
+    if (event.button !== 0) return;
+    event.preventDefault();
+    let positions = await getLandingLayoutPositions();
+    if (!Object.keys(positions).length || !container.classList.contains("landing-layout--freeform")) {
+      positions = captureLandingLayoutPositions(container);
+      await onPositionsChange?.(positions);
+      applyLandingLayoutPositions(container, positions);
+    }
+    const rect = container.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const itemRect = target.getBoundingClientRect();
+    dragState = {
+      item: target,
+      containerRect: rect,
+      itemWidth: itemRect.width,
+      itemHeight: itemRect.height,
+      offsetX: event.clientX - itemRect.left,
+      offsetY: event.clientY - itemRect.top,
+      pointerId: event.pointerId,
+      positions: { ...positions }
+    };
+    target.classList.add("is-preview-dragging");
+    container.setPointerCapture(event.pointerId);
+  });
+
+  container.addEventListener("pointermove", handlePointerMove);
+  container.addEventListener("pointerup", handlePointerUp);
+  container.addEventListener("pointercancel", handlePointerUp);
+}
+
 function buildThemeBuilderControls() {
   const controls = document.getElementById("themeBuilderControls");
   if (!controls || !customThemeDraft) return;
@@ -2491,6 +2568,7 @@ async function initThemeBuilder() {
   const layoutList = document.getElementById("themeBuilderLayoutList");
   const mascotToggle = document.getElementById("themeBuilderMascotToggle");
   const symojiToggle = document.getElementById("themeBuilderSymojiToggle");
+  const previewLayout = document.getElementById("themeBuilderLayout");
 
   const syncThemeBuilderDraft = config => {
     customThemeConfig = { ...config };
@@ -2523,6 +2601,16 @@ async function initThemeBuilder() {
     container: layoutList,
     order: initialLayoutOrder,
     onOrderChange: syncLandingLayout
+  });
+  const initialLayoutPositions = await getLandingLayoutPositions();
+  applyLandingLayoutPositions(previewLayout, initialLayoutPositions);
+  initThemeBuilderPreviewDrag({
+    container: previewLayout,
+    onPositionsChange: async positions => {
+      await setLandingLayoutPositions(positions);
+      applyLandingLayoutPositions(document.getElementById("landingLayout"), positions);
+      applyLandingLayoutPositions(previewLayout, positions);
+    }
   });
 
   if (mascotToggle) {
@@ -3604,6 +3692,48 @@ async function setLandingLayoutOrder(order) {
   await setStoredValue(LANDING_LAYOUT_STORAGE_KEY, normalizeLandingLayoutOrder(order));
 }
 
+function normalizeLandingLayoutPositions(positions) {
+  if (!positions || typeof positions !== "object") return {};
+  return LANDING_LAYOUT_ITEMS.reduce((acc, item) => {
+    const pos = positions[item.id];
+    if (!pos || typeof pos !== "object") return acc;
+    const x = Number(pos.x);
+    const y = Number(pos.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return acc;
+    acc[item.id] = {
+      x: clampNumber(x, 0, 100),
+      y: clampNumber(y, 0, 100)
+    };
+    return acc;
+  }, {});
+}
+
+async function getLandingLayoutPositions() {
+  const stored = await getStoredValue(LANDING_LAYOUT_POSITIONS_STORAGE_KEY);
+  return normalizeLandingLayoutPositions(stored);
+}
+
+async function setLandingLayoutPositions(positions) {
+  await setStoredValue(LANDING_LAYOUT_POSITIONS_STORAGE_KEY, normalizeLandingLayoutPositions(positions));
+}
+
+function captureLandingLayoutPositions(container) {
+  if (!container) return {};
+  const rect = container.getBoundingClientRect();
+  if (!rect.width || !rect.height) return {};
+  const positions = {};
+  container.querySelectorAll("[data-layout-item]").forEach(item => {
+    const id = item.dataset.layoutItem;
+    if (!id) return;
+    const itemRect = item.getBoundingClientRect();
+    positions[id] = {
+      x: ((itemRect.left - rect.left) / rect.width) * 100,
+      y: ((itemRect.top - rect.top) / rect.height) * 100
+    };
+  });
+  return normalizeLandingLayoutPositions(positions);
+}
+
 async function getLandingMascotVisible() {
   const stored = await getStoredValue(LANDING_MASCOT_VISIBLE_STORAGE_KEY);
   if (stored === null || typeof stored === "undefined") return true;
@@ -3646,6 +3776,26 @@ function applyLandingLayoutOrder(order) {
 
 function applyThemeBuilderLayoutOrder(order) {
   applyLandingLayoutToContainer(document.getElementById("themeBuilderLayout"), order);
+}
+
+function applyLandingLayoutPositions(container, positions) {
+  if (!container) return;
+  const normalized = normalizeLandingLayoutPositions(positions);
+  const hasPositions = Object.keys(normalized).length > 0;
+  container.classList.toggle("landing-layout--freeform", hasPositions);
+  container.querySelectorAll("[data-layout-item]").forEach(item => {
+    const id = item.dataset.layoutItem;
+    const pos = id ? normalized[id] : null;
+    if (pos) {
+      item.style.position = "absolute";
+      item.style.left = `${pos.x}%`;
+      item.style.top = `${pos.y}%`;
+    } else {
+      item.style.position = "";
+      item.style.left = "";
+      item.style.top = "";
+    }
+  });
 }
 
 function applyElementVisibility(element, visible) {
@@ -4018,12 +4168,14 @@ async function refreshLandingView() {
   applyLandingMascotSize(mascotSize);
   const cornerSymoji = await getCornerSymoji();
   updateCornerSymoji(cornerSymoji);
-  const [layoutOrder, mascotVisible, symojiVisible] = await Promise.all([
+  const [layoutOrder, layoutPositions, mascotVisible, symojiVisible] = await Promise.all([
     getLandingLayoutOrder(),
+    getLandingLayoutPositions(),
     getLandingMascotVisible(),
     getLandingSymojiVisible()
   ]);
   applyLandingLayoutOrder(layoutOrder);
+  applyLandingLayoutPositions(document.getElementById("landingLayout"), layoutPositions);
   applyLandingMascotVisibility(mascotVisible);
   applyLandingSymojiVisibility(symojiVisible);
   updateLandingVersion();
