@@ -127,6 +127,20 @@ body[data-theme^="customTheme-"] .container > * {
   padding-bottom: 90px;
 }
 
+.landing-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.landing-layout > .landing-section,
+.landing-layout > .daily-counter,
+.landing-layout > .landing-btn {
+  width: 100%;
+}
+
 .landing-header {
   display: flex;
   align-items: center;
@@ -456,9 +470,6 @@ body[data-theme^="customTheme-"] .container > * {
 }
 
 .landing-settings-btn {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -466,7 +477,7 @@ body[data-theme^="customTheme-"] .container > * {
   width: auto;
   max-width: max-content;
   align-self: flex-start;
-  margin-top: 0;
+  margin: 4px auto 0;
   padding: 2px 8px;
   font-size: 11px;
   line-height: 1;
@@ -1325,6 +1336,45 @@ input[type="file"] {
 .theme-builder-controls__list {
   display: grid;
   gap: 10px;
+}
+
+.theme-builder-layout {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--input-border);
+  background: rgba(0, 0, 0, 0.2);
+  display: grid;
+  gap: 10px;
+}
+
+.theme-builder-layout__list {
+  display: grid;
+  gap: 8px;
+}
+
+.theme-builder-layout__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: rgba(0, 0, 0, 0.15);
+  cursor: grab;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.theme-builder-layout__item.is-dragging {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+.theme-builder-layout__handle {
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--muted-text);
 }
 
 .theme-builder-control {
