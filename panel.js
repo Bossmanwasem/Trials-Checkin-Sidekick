@@ -69,8 +69,7 @@ const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 let qaFormTabId = null;
-let landingLayoutEditMode = false;
-let landingLayoutReturnViewId = null;
+const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
@@ -188,10 +187,9 @@ function showView(targetId) {
 function showWelcomeView() { showView("welcomeView"); }
 function showOnboardingView() { showView("onboardingView"); }
 function showOutlookSetupView() { showView("outlookSetupView"); }
-function showLandingView({ editMode = false, returnViewId = null } = {}) {
+function showLandingView() {
   showView("landingView");
   void refreshLandingView();
-  setLandingLayoutEditMode(editMode, { returnViewId });
 }
 function showSettingsView() { showView("settingsView"); }
 function showThemeBuilderView() {
@@ -2281,190 +2279,6 @@ function applyThemeBuilderPreview() {
   );
 }
 
-function initThemeBuilderPreviewDrag({ container, onPositionsChange }) {
-  if (!container || container.dataset.previewDragReady) return;
-  container.dataset.previewDragReady = "true";
-  let dragState = null;
-
-  const updateItemPosition = (item, leftPercent, topPercent) => {
-    item.style.position = "absolute";
-    item.style.left = `${leftPercent}%`;
-    item.style.top = `${topPercent}%`;
-  };
-
-  const handlePointerMove = event => {
-    if (!dragState) return;
-    const rect = dragState.containerRect;
-    const item = dragState.item;
-    const width = dragState.itemWidth;
-    const height = dragState.itemHeight;
-    const rawLeft = event.clientX - rect.left - dragState.offsetX;
-    const rawTop = event.clientY - rect.top - dragState.offsetY;
-    const left = clampNumber(rawLeft, 0, rect.width - width);
-    const top = clampNumber(rawTop, 0, rect.height - height);
-    const leftPercent = (left / rect.width) * 100;
-    const topPercent = (top / rect.height) * 100;
-    updateItemPosition(item, leftPercent, topPercent);
-    dragState.positions[item.dataset.layoutItem] = {
-      x: leftPercent,
-      y: topPercent
-    };
-  };
-
-  const handlePointerUp = async () => {
-    if (!dragState) return;
-    dragState.item.classList.remove("is-preview-dragging");
-    container.releasePointerCapture(dragState.pointerId);
-    const nextPositions = normalizeLandingLayoutPositions(dragState.positions);
-    onPositionsChange?.(nextPositions);
-    dragState = null;
-  };
-
-  container.addEventListener("pointerdown", async event => {
-    const target = event.target.closest("[data-layout-item]");
-    if (!target || !container.contains(target)) return;
-    if (event.button !== 0) return;
-    event.preventDefault();
-    let positions = await getLandingLayoutPositions();
-    if (!Object.keys(positions).length || !container.classList.contains("landing-layout--freeform")) {
-      positions = captureLandingLayoutPositions(container);
-      await onPositionsChange?.(positions);
-      applyLandingLayoutPositions(container, positions);
-    }
-    const rect = container.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const itemRect = target.getBoundingClientRect();
-    dragState = {
-      item: target,
-      containerRect: rect,
-      itemWidth: itemRect.width,
-      itemHeight: itemRect.height,
-      offsetX: event.clientX - itemRect.left,
-      offsetY: event.clientY - itemRect.top,
-      pointerId: event.pointerId,
-      positions: { ...positions }
-    };
-    target.classList.add("is-preview-dragging");
-    container.setPointerCapture(event.pointerId);
-  });
-
-  container.addEventListener("pointermove", handlePointerMove);
-  container.addEventListener("pointerup", handlePointerUp);
-  container.addEventListener("pointercancel", handlePointerUp);
-}
-
-function setLandingLayoutEditMode(enabled, { returnViewId = null } = {}) {
-  landingLayoutEditMode = enabled;
-  landingLayoutReturnViewId = enabled ? returnViewId : null;
-  const landingView = document.getElementById("landingView");
-  const saveBtn = document.getElementById("landingLayoutSaveBtn");
-  const landingLayout = document.getElementById("landingLayout");
-  landingView?.classList.toggle("landing-view--layout-edit", enabled);
-  landingLayout?.classList.toggle("landing-layout--editing", enabled);
-  if (saveBtn) {
-    saveBtn.style.display = enabled ? "inline-flex" : "none";
-  }
-}
-
-function initLandingLayoutEditor() {
-  const container = document.getElementById("landingLayout");
-  if (!container || container.dataset.layoutDragReady) return;
-  container.dataset.layoutDragReady = "true";
-  let dragState = null;
-  const saveBtn = document.getElementById("landingLayoutSaveBtn");
-
-  const updateItemPosition = (item, leftPercent, topPercent) => {
-    item.style.position = "absolute";
-    item.style.left = `${leftPercent}%`;
-    item.style.top = `${topPercent}%`;
-  };
-
-  const handlePointerMove = event => {
-    if (!dragState) return;
-    const rect = dragState.containerRect;
-    const item = dragState.item;
-    const width = dragState.itemWidth;
-    const height = dragState.itemHeight;
-    const rawLeft = event.clientX - rect.left - dragState.offsetX;
-    const rawTop = event.clientY - rect.top - dragState.offsetY;
-    const left = clampNumber(rawLeft, 0, rect.width - width);
-    const top = clampNumber(rawTop, 0, rect.height - height);
-    const leftPercent = (left / rect.width) * 100;
-    const topPercent = (top / rect.height) * 100;
-    updateItemPosition(item, leftPercent, topPercent);
-    dragState.positions[item.dataset.layoutItem] = {
-      x: leftPercent,
-      y: topPercent
-    };
-  };
-
-  const handlePointerUp = async () => {
-    if (!dragState) return;
-    dragState.item.classList.remove("is-layout-dragging");
-    container.releasePointerCapture(dragState.pointerId);
-    const nextPositions = normalizeLandingLayoutPositions(dragState.positions);
-    await setLandingLayoutPositions(nextPositions);
-    applyLandingLayoutPositions(container, nextPositions);
-    applyLandingLayoutPositions(document.getElementById("themeBuilderLayout"), nextPositions);
-    dragState = null;
-  };
-
-  container.addEventListener("pointerdown", async event => {
-    if (!landingLayoutEditMode) return;
-    const target = event.target.closest("[data-layout-item]");
-    if (!target || !container.contains(target)) return;
-    if (event.button !== 0) return;
-    event.preventDefault();
-    let positions = await getLandingLayoutPositions();
-    if (!Object.keys(positions).length || !container.classList.contains("landing-layout--freeform")) {
-      positions = captureLandingLayoutPositions(container);
-      await setLandingLayoutPositions(positions);
-      applyLandingLayoutPositions(container, positions);
-    }
-    const rect = container.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const itemRect = target.getBoundingClientRect();
-    dragState = {
-      item: target,
-      containerRect: rect,
-      itemWidth: itemRect.width,
-      itemHeight: itemRect.height,
-      offsetX: event.clientX - itemRect.left,
-      offsetY: event.clientY - itemRect.top,
-      pointerId: event.pointerId,
-      positions: { ...positions }
-    };
-    target.classList.add("is-layout-dragging");
-    container.setPointerCapture(event.pointerId);
-  });
-
-  container.addEventListener("pointermove", handlePointerMove);
-  container.addEventListener("pointerup", handlePointerUp);
-  container.addEventListener("pointercancel", handlePointerUp);
-  container.addEventListener("click", event => {
-    if (!landingLayoutEditMode) return;
-    const target = event.target.closest("[data-layout-item]");
-    if (!target || !container.contains(target)) return;
-    event.preventDefault();
-    event.stopPropagation();
-  });
-
-  saveBtn?.addEventListener("click", async () => {
-    if (!landingLayoutEditMode) return;
-    let positions = await getLandingLayoutPositions();
-    if (!Object.keys(positions).length) {
-      positions = captureLandingLayoutPositions(container);
-      await setLandingLayoutPositions(positions);
-    }
-    applyLandingLayoutPositions(container, positions);
-    applyLandingLayoutPositions(document.getElementById("themeBuilderLayout"), positions);
-    const returnViewId = landingLayoutReturnViewId;
-    setLandingLayoutEditMode(false);
-    if (returnViewId === "themeBuilderView") {
-      showThemeBuilderView();
-    }
-  });
-}
 
 function buildThemeBuilderControls() {
   const controls = document.getElementById("themeBuilderControls");
@@ -2616,7 +2430,6 @@ async function initThemeBuilder() {
   const mascotToggle = document.getElementById("themeBuilderMascotToggle");
   const symojiToggle = document.getElementById("themeBuilderSymojiToggle");
   const previewLayout = document.getElementById("themeBuilderLayout");
-  const editLayoutBtn = document.getElementById("themeBuilderEditLayoutBtn");
 
   const syncThemeBuilderDraft = config => {
     customThemeConfig = { ...config };
@@ -2636,14 +2449,9 @@ async function initThemeBuilder() {
 
   refreshThemeBuilderFromActiveTheme();
 
-  const initialLayoutOrder = await getLandingLayoutOrder();
+  const initialLayoutOrder = getDefaultLandingLayoutOrder();
   applyThemeBuilderLayoutOrder(initialLayoutOrder);
-  const initialLayoutPositions = await getLandingLayoutPositions();
-  applyLandingLayoutPositions(previewLayout, initialLayoutPositions);
-
-  editLayoutBtn?.addEventListener("click", () => {
-    showLandingView({ editMode: true, returnViewId: "themeBuilderView" });
-  });
+  applyLandingLayoutPositions(previewLayout, DEFAULT_LANDING_LAYOUT_POSITIONS);
 
   if (mascotToggle) {
     mascotToggle.checked = await getLandingMascotVisible();
@@ -3503,8 +3311,8 @@ async function initThemeSystem() {
   initChaosControls();
   loadThemePreference();
   initOnboardingForm();
+  await resetLandingLayoutOverrides();
   await initThemeBuilder();
-  initLandingLayoutEditor();
 }
 
 void initThemeSystem();
@@ -3716,6 +3524,10 @@ function normalizeLandingLayoutOrder(order) {
   return normalized;
 }
 
+function getDefaultLandingLayoutOrder() {
+  return normalizeLandingLayoutOrder();
+}
+
 async function getLandingLayoutOrder() {
   const stored = await getStoredValue(LANDING_LAYOUT_STORAGE_KEY);
   return normalizeLandingLayoutOrder(stored);
@@ -3829,6 +3641,18 @@ function applyLandingLayoutPositions(container, positions) {
       item.style.top = "";
     }
   });
+}
+
+async function resetLandingLayoutOverrides() {
+  await Promise.all([
+    removeStoredValue(LANDING_LAYOUT_STORAGE_KEY),
+    removeStoredValue(LANDING_LAYOUT_POSITIONS_STORAGE_KEY)
+  ]);
+  const defaultOrder = getDefaultLandingLayoutOrder();
+  applyLandingLayoutOrder(defaultOrder);
+  applyThemeBuilderLayoutOrder(defaultOrder);
+  applyLandingLayoutPositions(document.getElementById("landingLayout"), DEFAULT_LANDING_LAYOUT_POSITIONS);
+  applyLandingLayoutPositions(document.getElementById("themeBuilderLayout"), DEFAULT_LANDING_LAYOUT_POSITIONS);
 }
 
 async function nudgeLandingLayoutForCollapsible(container, anchorRect, deltaHeight) {
@@ -4224,14 +4048,12 @@ async function refreshLandingView() {
   applyLandingMascotSize(mascotSize);
   const cornerSymoji = await getCornerSymoji();
   updateCornerSymoji(cornerSymoji);
-  const [layoutOrder, layoutPositions, mascotVisible, symojiVisible] = await Promise.all([
-    getLandingLayoutOrder(),
-    getLandingLayoutPositions(),
+  const [mascotVisible, symojiVisible] = await Promise.all([
     getLandingMascotVisible(),
     getLandingSymojiVisible()
   ]);
-  applyLandingLayoutOrder(layoutOrder);
-  applyLandingLayoutPositions(document.getElementById("landingLayout"), layoutPositions);
+  applyLandingLayoutOrder(getDefaultLandingLayoutOrder());
+  applyLandingLayoutPositions(document.getElementById("landingLayout"), DEFAULT_LANDING_LAYOUT_POSITIONS);
   applyLandingMascotVisibility(mascotVisible);
   applyLandingSymojiVisibility(symojiVisible);
   updateLandingVersion();
