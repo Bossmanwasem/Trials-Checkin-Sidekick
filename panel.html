@@ -175,6 +175,11 @@
       <img class="landing-symojo" id="landingMascot" src="assets/sparknsymoji.png" alt="Spark mascot" />
       <p class="landing-greeting" id="landingGreeting"></p>
       <p class="landing-subtitle">Pick a workflow to get started.</p>
+      <div class="landing-layout-edit-bar">
+        <button id="landingLayoutSaveBtn" class="toggle-btn landing-layout-save-btn" type="button">
+          Save layout
+        </button>
+      </div>
       <div class="landing-layout" id="landingLayout">
       <div class="daily-counter" id="dailyCounterSection" data-layout-item="dailyCounter" aria-label="Daily task counter">
         <div class="daily-counter__header">
@@ -380,7 +385,10 @@
         <div class="theme-builder-controls__title">Theme colors</div>
         <div id="themeBuilderControls" class="theme-builder-controls__list"></div>
         <div class="theme-builder-controls__title">Landing layout</div>
-        <p class="hint-text">Drag items in the preview to reposition the landing buttons.</p>
+        <p class="hint-text">Open the landing page to rearrange where each button sits.</p>
+        <button id="themeBuilderEditLayoutBtn" class="toggle-btn theme-builder-layout-btn" type="button">
+          Rearrange on landing page
+        </button>
         <div class="theme-builder-layout">
           <label class="checkbox-row" for="themeBuilderMascotToggle">
             <input type="checkbox" id="themeBuilderMascotToggle" />
