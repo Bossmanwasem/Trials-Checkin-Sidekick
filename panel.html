@@ -328,6 +328,15 @@
           <div class="theme-menu__title">Pick a theme</div>
           <div id="themeCurrentLabel" class="theme-current">Current theme: —</div>
           <div id="themeOptions" class="theme-options"></div>
+          <div class="theme-menu__title">Import a theme key</div>
+          <p class="hint-text">Paste a theme key to add it to your custom themes.</p>
+          <div class="theme-menu__row">
+            <input type="text" id="themeMenuKeyInput" placeholder="Paste a theme key" />
+            <button id="themeMenuKeyApplyBtn" class="toggle-btn" type="button">
+              Import key
+            </button>
+          </div>
+          <div class="status-line" id="themeMenuKeyStatus"></div>
           <button id="openThemeBuilderBtn" class="toggle-btn theme-menu__action" type="button">
             Build your own theme
           </button>
@@ -425,8 +434,11 @@
       <div class="theme-builder-share__title">Share your theme</div>
       <p class="hint-text">Generate a theme key to share or load a key from someone else.</p>
       <label for="themeBuilderKeyOutput">Theme key</label>
-      <div class="theme-builder-share__row">
+      <div class="theme-builder-share__row theme-builder-share__row--triple">
         <input type="text" id="themeBuilderKeyOutput" readonly />
+        <button id="themeBuilderKeyGenerateBtn" class="toggle-btn" type="button">
+          Generate key
+        </button>
         <button id="themeBuilderKeyCopyBtn" class="toggle-btn" type="button">
           Copy key
         </button>
