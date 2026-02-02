@@ -67,7 +67,7 @@ body[data-theme^="nfl"] h3 {
   color: var(--container-border);
 }
 
-body[data-theme="customTheme"] .container {
+body[data-theme^="customTheme-"] .container {
   position: relative;
   background-image: var(--custom-container-bg-image);
   background-size: cover;
@@ -75,7 +75,7 @@ body[data-theme="customTheme"] .container {
   background-repeat: no-repeat;
 }
 
-body[data-theme="customTheme"] .container > * {
+body[data-theme^="customTheme-"] .container > * {
   position: relative;
   z-index: 1;
 }
@@ -1233,6 +1233,18 @@ input[type="file"] {
   margin-top: 16px;
 }
 
+.theme-menu__row {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.theme-menu__row input {
+  width: 100%;
+}
+
 .theme-current {
   margin-top: 6px;
   font-size: 13px;
@@ -1401,6 +1413,10 @@ input[type="file"] {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+}
+
+.theme-builder-share__row--triple {
+  grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
 .theme-builder-share__row input {
