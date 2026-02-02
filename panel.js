@@ -34,6 +34,8 @@ const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
 const LOGS_HANDLE_KEY = "logsFolder";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
+const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
+const DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyCustomCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
@@ -41,6 +43,7 @@ const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
+const DEFAULT_CUSTOM_COUNTER_LABEL = "Custom";
 const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": DEVICE_LOOKUP_EXCEL_WEB_URL,
@@ -2071,6 +2074,8 @@ async function initOnboardingForm() {
   const symojiPickerBtn = document.getElementById("symojiPickerMascotBtn");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
+  const customDailyCounterToggle = document.getElementById("onboardingCustomDailyCounterToggle");
+  const customDailyCounterNameInput = document.getElementById("onboardingCustomDailyCounterName");
   const weeklyCounterToggle = document.getElementById("onboardingWeeklyCounterToggle");
   const tooltipToggle = document.getElementById("onboardingTooltipToggle");
   let pendingMascot = null;
@@ -2125,11 +2130,24 @@ async function initOnboardingForm() {
   if (dailyCounterToggle) {
     dailyCounterToggle.checked = await getDailyCounterEnabled();
   }
+  if (customDailyCounterToggle) {
+    customDailyCounterToggle.checked = await getDailyCustomCounterEnabled();
+  }
+  if (customDailyCounterNameInput) {
+    customDailyCounterNameInput.value = await getDailyCustomCounterLabel();
+    customDailyCounterNameInput.disabled = !customDailyCounterToggle?.checked;
+  }
   if (weeklyCounterToggle) {
     weeklyCounterToggle.checked = await getWeeklyCounterEnabled();
   }
   if (tooltipToggle) {
     tooltipToggle.checked = await getLandingTooltipsEnabled();
+  }
+
+  if (customDailyCounterToggle && customDailyCounterNameInput) {
+    customDailyCounterToggle.addEventListener("change", () => {
+      customDailyCounterNameInput.disabled = !customDailyCounterToggle.checked;
+    });
   }
 
   if (!form) return;
@@ -2139,6 +2157,8 @@ async function initOnboardingForm() {
     const lastName = existingProfile?.lastName || "";
     const themeId = themeSelect?.value || "ocean";
     const dailyCounterEnabled = dailyCounterToggle?.checked ?? true;
+    const customDailyCounterEnabled = customDailyCounterToggle?.checked ?? false;
+    const customDailyCounterLabel = customDailyCounterNameInput?.value || "";
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
     const tooltipsEnabled = tooltipToggle?.checked ?? true;
 
@@ -2153,9 +2173,12 @@ async function initOnboardingForm() {
       updateLandingMascot(pendingMascot);
     }
     await setDailyCounterEnabled(dailyCounterEnabled);
+    await setDailyCustomCounterEnabled(customDailyCounterEnabled);
+    await setDailyCustomCounterLabel(customDailyCounterLabel);
     await setWeeklyCounterEnabled(weeklyCounterEnabled);
     await setLandingTooltipsEnabled(tooltipsEnabled);
     applyLandingTooltipsEnabled(tooltipsEnabled);
+    await updateDailyCustomCounterSettings();
     applyTheme(themeId);
     showLandingView();
   });
@@ -2845,12 +2868,18 @@ function getDefaultDailyCounters() {
   return {
     checkins: 0,
     qas: 0,
-    preps: 0
+    preps: 0,
+    custom: 0
   };
 }
 
 function getDailyCountersTotal(counters) {
   return Object.values(counters || {}).reduce((total, value) => total + (Number(value) || 0), 0);
+}
+
+function normalizeCustomCounterLabel(label) {
+  const trimmed = (label || "").trim();
+  return trimmed || DEFAULT_CUSTOM_COUNTER_LABEL;
 }
 
 async function getDailyCounterEnabled() {
@@ -2861,6 +2890,25 @@ async function getDailyCounterEnabled() {
 
 async function setDailyCounterEnabled(enabled) {
   await setStoredValue(DAILY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function getDailyCustomCounterEnabled() {
+  const stored = await getStoredValue(DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setDailyCustomCounterEnabled(enabled) {
+  await setStoredValue(DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function getDailyCustomCounterLabel() {
+  const stored = await getStoredValue(DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY);
+  return normalizeCustomCounterLabel(stored);
+}
+
+async function setDailyCustomCounterLabel(label) {
+  await setStoredValue(DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY, normalizeCustomCounterLabel(label));
 }
 
 async function getWeeklyCounterEnabled() {
@@ -2960,6 +3008,7 @@ function updateDailyCounterDisplay(counters) {
   setText("dailyCheckinsCount", String(counters.checkins ?? 0));
   setText("dailyQasCount", String(counters.qas ?? 0));
   setText("dailyPrepsCount", String(counters.preps ?? 0));
+  setText("dailyCustomCount", String(counters.custom ?? 0));
 }
 
 function updateWeeklyCounterDisplay(total) {
@@ -3015,6 +3064,21 @@ async function updateDailyCounterVisibility() {
   if (enabled) {
     await refreshDailyCounters();
   }
+  return enabled;
+}
+
+function updateDailyCustomLabel(label) {
+  setText("dailyCustomLabel", normalizeCustomCounterLabel(label));
+}
+
+async function updateDailyCustomCounterSettings() {
+  const [enabled, label] = await Promise.all([
+    getDailyCustomCounterEnabled(),
+    getDailyCustomCounterLabel()
+  ]);
+  const item = document.getElementById("dailyCustomCounterItem");
+  if (item) item.style.display = enabled ? "" : "none";
+  updateDailyCustomLabel(label);
   return enabled;
 }
 
@@ -3084,6 +3148,7 @@ async function refreshLandingView() {
   updateCornerSymoji(cornerSymoji);
   updateLandingVersion();
   await updateDailyCounterVisibility();
+  await updateDailyCustomCounterSettings();
   await updateWeeklyCounterVisibility();
   await updateDailyCounterCollapseState();
   await updateWeeklyCounterCollapseState();
