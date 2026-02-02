@@ -3831,6 +3831,29 @@ function applyLandingLayoutPositions(container, positions) {
   });
 }
 
+async function nudgeLandingLayoutForCollapsible(container, anchorRect, deltaHeight) {
+  if (!container || !anchorRect || !deltaHeight) return;
+  if (!container.classList.contains("landing-layout--freeform")) return;
+  const positions = await getLandingLayoutPositions();
+  if (!Object.keys(positions).length) return;
+  const containerRect = container.getBoundingClientRect();
+  if (!containerRect.height) return;
+  const nextPositions = { ...positions };
+  container.querySelectorAll("[data-layout-item]").forEach(item => {
+    const id = item.dataset.layoutItem;
+    const pos = id ? positions[id] : null;
+    if (!pos || item.getBoundingClientRect().top < anchorRect.bottom - 1) return;
+    const currentYpx = (pos.y / 100) * containerRect.height;
+    const nextYpx = currentYpx + deltaHeight;
+    nextPositions[id] = {
+      x: pos.x,
+      y: clampNumber((nextYpx / containerRect.height) * 100, 0, 100)
+    };
+  });
+  await setLandingLayoutPositions(nextPositions);
+  applyLandingLayoutPositions(container, nextPositions);
+}
+
 function applyElementVisibility(element, visible) {
   if (!element) return;
   element.style.display = visible ? "" : "none";
@@ -6453,8 +6476,22 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     if (!btn) return;
     const key = btn.dataset.collapsible;
     if (!key) return;
+    const landingLayout = document.getElementById("landingLayout");
+    const section = btn.closest(".landing-section");
+    const canAdjustLayout = landingLayout &&
+      section &&
+      landingLayout.contains(section) &&
+      landingLayout.classList.contains("landing-layout--freeform");
+    const anchorRect = canAdjustLayout ? section.getBoundingClientRect() : null;
     const isExpanded = btn.getAttribute("aria-expanded") === "true";
     setCollapsibleState(key, !isExpanded);
+    if (canAdjustLayout && anchorRect) {
+      requestAnimationFrame(() => {
+        const nextRect = section.getBoundingClientRect();
+        const deltaHeight = nextRect.height - anchorRect.height;
+        void nudgeLandingLayoutForCollapsible(landingLayout, anchorRect, deltaHeight);
+      });
+    }
   });
 
   const landingView = document.getElementById("landingView");
