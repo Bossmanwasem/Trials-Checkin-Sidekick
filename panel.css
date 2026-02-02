@@ -1373,35 +1373,6 @@ input[type="file"] {
   gap: 10px;
 }
 
-.theme-builder-layout__list {
-  display: grid;
-  gap: 8px;
-}
-
-.theme-builder-layout__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--input-border);
-  background: rgba(0, 0, 0, 0.15);
-  cursor: grab;
-  font-size: 13px;
-  color: var(--text-color);
-}
-
-.theme-builder-layout__item.is-dragging {
-  opacity: 0.6;
-  cursor: grabbing;
-}
-
-.theme-builder-layout__handle {
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: var(--muted-text);
-}
-
 .theme-builder-control {
   display: grid;
   gap: 6px;
@@ -1444,11 +1415,12 @@ input[type="file"] {
 }
 
 .theme-builder-preview {
-  border-radius: 16px;
-  padding: 12px;
-  background-color: var(--bg-color);
-  border: 2px solid var(--container-border);
-  box-shadow: var(--container-shadow);
+  display: flex;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
   color: var(--text-color);
 }
 
@@ -1501,12 +1473,6 @@ input[type="file"] {
 .theme-builder-delete {
   border-color: var(--error-color);
   color: var(--text-color);
-}
-
-@media (min-width: 880px) {
-  .theme-builder-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
 }
 
 .theme-option {

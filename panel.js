@@ -2278,74 +2278,6 @@ function applyThemeBuilderPreview() {
   );
 }
 
-function getThemeBuilderDragAfterElement(container, y) {
-  const draggableItems = [
-    ...container.querySelectorAll(".theme-builder-layout__item:not(.is-dragging)")
-  ];
-  return draggableItems.reduce(
-    (closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) {
-        return { offset, element: child };
-      }
-      return closest;
-    },
-    { offset: Number.NEGATIVE_INFINITY, element: null }
-  ).element;
-}
-
-function buildThemeBuilderLayoutList({ container, order, onOrderChange }) {
-  if (!container) return;
-  container.innerHTML = "";
-  order.forEach(id => {
-    const itemConfig = LANDING_LAYOUT_ITEMS.find(item => item.id === id);
-    if (!itemConfig) return;
-    const row = document.createElement("div");
-    row.className = "theme-builder-layout__item";
-    row.draggable = true;
-    row.dataset.layoutId = itemConfig.id;
-    const handle = document.createElement("span");
-    handle.className = "theme-builder-layout__handle";
-    handle.setAttribute("aria-hidden", "true");
-    handle.textContent = "⋮⋮";
-    const label = document.createElement("span");
-    label.textContent = itemConfig.label;
-    row.appendChild(handle);
-    row.appendChild(label);
-    row.addEventListener("dragstart", event => {
-      row.classList.add("is-dragging");
-      event.dataTransfer?.setData("text/plain", itemConfig.id);
-      if (event.dataTransfer) {
-        event.dataTransfer.effectAllowed = "move";
-      }
-    });
-    row.addEventListener("dragend", () => {
-      row.classList.remove("is-dragging");
-      const nextOrder = Array.from(container.querySelectorAll("[data-layout-id]")).map(
-        item => item.dataset.layoutId
-      );
-      onOrderChange?.(nextOrder);
-    });
-    container.appendChild(row);
-  });
-
-  if (!container.dataset.dragReady) {
-    container.dataset.dragReady = "true";
-    container.addEventListener("dragover", event => {
-      event.preventDefault();
-      const afterElement = getThemeBuilderDragAfterElement(container, event.clientY);
-      const dragging = container.querySelector(".is-dragging");
-      if (!dragging) return;
-      if (!afterElement) {
-        container.appendChild(dragging);
-      } else if (afterElement !== dragging) {
-        container.insertBefore(dragging, afterElement);
-      }
-    });
-  }
-}
-
 function initThemeBuilderPreviewDrag({ container, onPositionsChange }) {
   if (!container || container.dataset.previewDragReady) return;
   container.dataset.previewDragReady = "true";
@@ -2565,7 +2497,6 @@ async function initThemeBuilder() {
   const keyInput = document.getElementById("themeBuilderKeyInput");
   const keyApplyBtn = document.getElementById("themeBuilderKeyApplyBtn");
   const deleteBtn = document.getElementById("themeBuilderDeleteBtn");
-  const layoutList = document.getElementById("themeBuilderLayoutList");
   const mascotToggle = document.getElementById("themeBuilderMascotToggle");
   const symojiToggle = document.getElementById("themeBuilderSymojiToggle");
   const previewLayout = document.getElementById("themeBuilderLayout");
@@ -2588,20 +2519,8 @@ async function initThemeBuilder() {
 
   refreshThemeBuilderFromActiveTheme();
 
-  const syncLandingLayout = async nextOrder => {
-    const normalized = normalizeLandingLayoutOrder(nextOrder);
-    await setLandingLayoutOrder(normalized);
-    applyLandingLayoutOrder(normalized);
-    applyThemeBuilderLayoutOrder(normalized);
-  };
-
   const initialLayoutOrder = await getLandingLayoutOrder();
   applyThemeBuilderLayoutOrder(initialLayoutOrder);
-  buildThemeBuilderLayoutList({
-    container: layoutList,
-    order: initialLayoutOrder,
-    onOrderChange: syncLandingLayout
-  });
   const initialLayoutPositions = await getLandingLayoutPositions();
   applyLandingLayoutPositions(previewLayout, initialLayoutPositions);
   initThemeBuilderPreviewDrag({
