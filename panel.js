@@ -1824,6 +1824,45 @@ function deriveContainerShadow(hexColor) {
   return `0 0 20px rgba(${r}, ${g}, ${b}, 0.25)`;
 }
 
+function encodeBase64(value) {
+  return btoa(encodeURIComponent(value).replace(/%([0-9A-F]{2})/g, (_, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  }));
+}
+
+function decodeBase64(value) {
+  const decoded = atob(value);
+  const percentEncoded = Array.from(decoded).map(char => {
+    return `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`;
+  }).join("");
+  return decodeURIComponent(percentEncoded);
+}
+
+function buildThemeKey(config) {
+  const payload = {
+    v: 1,
+    name: config?.name || DEFAULT_CUSTOM_THEME_NAME,
+    vars: config?.vars || {},
+    containerImage: config?.containerImage || ""
+  };
+  return encodeBase64(JSON.stringify(payload));
+}
+
+function parseThemeKey(key) {
+  if (!key) return null;
+  try {
+    const decoded = decodeBase64(key.trim());
+    const payload = JSON.parse(decoded);
+    if (!payload || payload.v !== 1) return null;
+    const name = typeof payload.name === "string" ? payload.name : DEFAULT_CUSTOM_THEME_NAME;
+    const vars = payload.vars && typeof payload.vars === "object" ? payload.vars : {};
+    const containerImage = typeof payload.containerImage === "string" ? payload.containerImage : "";
+    return { name, vars, containerImage };
+  } catch {
+    return null;
+  }
+}
+
 function setCustomContainerImage(image) {
   const value = image ? `url("${image}")` : "none";
   document.documentElement.style.setProperty("--custom-container-bg-image", value);
@@ -2227,6 +2266,13 @@ async function initThemeBuilder() {
   const saveStatus = document.getElementById("themeBuilderSaveStatus");
   const imageStatus = document.getElementById("themeBuilderImageStatus");
   const returnBtn = document.getElementById("themeBuilderReturnBtn");
+  const keyOutput = document.getElementById("themeBuilderKeyOutput");
+  const keyCopyBtn = document.getElementById("themeBuilderKeyCopyBtn");
+  const keyInput = document.getElementById("themeBuilderKeyInput");
+  const keyApplyBtn = document.getElementById("themeBuilderKeyApplyBtn");
+  const keyStatus = document.getElementById("themeBuilderKeyStatus");
+  const deleteBtn = document.getElementById("themeBuilderDeleteBtn");
+  const deleteStatus = document.getElementById("themeBuilderDeleteStatus");
 
   customThemeDraft = {
     name: customThemeConfig.name,
@@ -2245,7 +2291,34 @@ async function initThemeBuilder() {
     if (!imageStatus) return;
     imageStatus.textContent = customThemeDraft.containerImage ? "Custom image selected." : "No image uploaded.";
   };
+  const updateKeyOutput = () => {
+    if (!keyOutput) return;
+    keyOutput.value = buildThemeKey(customThemeConfig);
+  };
+  const updateDeleteStatus = message => {
+    if (!deleteStatus) return;
+    deleteStatus.textContent = message;
+  };
+  const updateKeyStatus = message => {
+    if (!keyStatus) return;
+    keyStatus.textContent = message;
+  };
+  const syncThemeBuilderDraft = config => {
+    customThemeDraft = {
+      name: config.name,
+      vars: { ...config.vars },
+      containerImage: config.containerImage
+    };
+    if (nameInput) {
+      nameInput.value = customThemeDraft.name;
+    }
+    buildThemeBuilderControls();
+    applyThemeBuilderPreview();
+    updateImageStatus();
+    updateKeyOutput();
+  };
   updateImageStatus();
+  updateKeyOutput();
 
   imageInput?.addEventListener("change", async () => {
     const file = imageInput.files?.[0];
@@ -2289,6 +2362,62 @@ async function initThemeBuilder() {
     if (saveStatus) {
       saveStatus.textContent = `Saved "${name}" and applied it as your active theme.`;
     }
+    updateKeyOutput();
+  });
+
+  keyCopyBtn?.addEventListener("click", async () => {
+    if (!keyOutput?.value) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(keyOutput.value);
+      } else {
+        keyOutput.select();
+        document.execCommand("copy");
+      }
+      updateKeyStatus("Theme key copied to clipboard.");
+    } catch {
+      updateKeyStatus("Unable to copy the theme key.");
+    }
+  });
+
+  keyApplyBtn?.addEventListener("click", async () => {
+    const candidate = (keyInput?.value || "").trim();
+    if (!candidate) {
+      updateKeyStatus("Paste a theme key to import.");
+      return;
+    }
+    const parsed = parseThemeKey(candidate);
+    if (!parsed) {
+      updateKeyStatus("That key doesn't look valid.");
+      return;
+    }
+    updateCustomThemeConfig(parsed);
+    await setStoredValue(CUSTOM_THEME_STORAGE_KEY, customThemeConfig);
+    setCustomContainerImage(customThemeConfig.containerImage);
+    renderThemeOptions();
+    refreshThemeSelects();
+    applyTheme(CUSTOM_THEME_ID);
+    syncThemeBuilderDraft(customThemeConfig);
+    updateKeyStatus(`Loaded "${customThemeConfig.name}".`);
+  });
+
+  deleteBtn?.addEventListener("click", async () => {
+    const confirmed = confirm("Delete your custom theme and reset it to the default?");
+    if (!confirmed) return;
+    await removeStoredValue(CUSTOM_THEME_STORAGE_KEY);
+    updateCustomThemeConfig({
+      name: DEFAULT_CUSTOM_THEME_NAME,
+      vars: { ...CUSTOM_THEME_DEFAULT_VARS },
+      containerImage: ""
+    });
+    setCustomContainerImage("");
+    renderThemeOptions();
+    refreshThemeSelects();
+    if (activeThemeId === CUSTOM_THEME_ID) {
+      applyTheme("ocean");
+    }
+    syncThemeBuilderDraft(customThemeConfig);
+    updateDeleteStatus("Custom theme deleted and reset.");
   });
 
   returnBtn?.addEventListener("click", () => {
@@ -3122,6 +3251,17 @@ function setStoredValue(key, value) {
       return;
     }
     localStorage.setItem(key, JSON.stringify(value));
+    resolve();
+  });
+}
+
+function removeStoredValue(key) {
+  return new Promise(resolve => {
+    if (chrome?.storage?.local) {
+      chrome.storage.local.remove(key, () => resolve());
+      return;
+    }
+    localStorage.removeItem(key);
     resolve();
   });
 }

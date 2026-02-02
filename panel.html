@@ -421,6 +421,31 @@
       </button>
       <div class="status-line" id="themeBuilderSaveStatus"></div>
     </div>
+    <div class="theme-builder-share">
+      <div class="theme-builder-share__title">Share your theme</div>
+      <p class="hint-text">Generate a theme key to share or load a key from someone else.</p>
+      <label for="themeBuilderKeyOutput">Theme key</label>
+      <div class="theme-builder-share__row">
+        <input type="text" id="themeBuilderKeyOutput" readonly />
+        <button id="themeBuilderKeyCopyBtn" class="toggle-btn" type="button">
+          Copy key
+        </button>
+      </div>
+      <label for="themeBuilderKeyInput">Import a theme key</label>
+      <div class="theme-builder-share__row">
+        <input type="text" id="themeBuilderKeyInput" placeholder="Paste a theme key" />
+        <button id="themeBuilderKeyApplyBtn" class="toggle-btn" type="button">
+          Load key
+        </button>
+      </div>
+      <div class="status-line" id="themeBuilderKeyStatus"></div>
+    </div>
+    <div class="theme-builder-actions">
+      <button id="themeBuilderDeleteBtn" class="toggle-btn theme-builder-delete" type="button">
+        Delete custom theme
+      </button>
+      <div class="status-line" id="themeBuilderDeleteStatus"></div>
+    </div>
     <div class="crm-nav-footer">
       <button id="themeBuilderReturnBtn" class="toggle-btn" type="button">
         Back to user settings
