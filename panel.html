@@ -52,6 +52,12 @@
         <input type="checkbox" id="onboardingDailyCounterToggle" />
         Show daily task counter on the landing page
       </label>
+      <label class="checkbox-row" for="onboardingCustomDailyCounterToggle">
+        <input type="checkbox" id="onboardingCustomDailyCounterToggle" />
+        Enable custom daily counter
+      </label>
+      <label for="onboardingCustomDailyCounterName">Custom daily counter name</label>
+      <input type="text" id="onboardingCustomDailyCounterName" placeholder="e.g. Calls" />
       <label class="checkbox-row" for="onboardingWeeklyCounterToggle">
         <input type="checkbox" id="onboardingWeeklyCounterToggle" />
         Show weekly task counter on the landing page
@@ -191,6 +197,14 @@
               <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="-1" aria-label="Decrease prep count">-</button>
               <span class="daily-counter__value" id="dailyPrepsCount">0</span>
               <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="1" aria-label="Increase prep count">+</button>
+            </div>
+          </div>
+          <div class="daily-counter__item" id="dailyCustomCounterItem">
+            <span class="daily-counter__label" id="dailyCustomLabel">Custom</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="custom" data-delta="-1" aria-label="Decrease custom count">-</button>
+              <span class="daily-counter__value" id="dailyCustomCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="custom" data-delta="1" aria-label="Increase custom count">+</button>
             </div>
           </div>
           </div>
