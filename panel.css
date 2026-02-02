@@ -135,6 +135,22 @@ body[data-theme^="customTheme-"] .container > * {
   width: 100%;
 }
 
+.landing-layout-edit-bar {
+  display: none;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.landing-layout-save-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.landing-view--layout-edit .landing-layout-edit-bar {
+  display: flex;
+}
+
 .landing-layout--freeform {
   display: block;
   position: relative;
@@ -149,12 +165,12 @@ body[data-theme^="customTheme-"] .container > * {
   width: clamp(220px, 70%, 360px);
 }
 
-.theme-builder-preview .landing-layout [data-layout-item] {
+.landing-layout--editing [data-layout-item] {
   cursor: grab;
   touch-action: none;
 }
 
-.theme-builder-preview .landing-layout [data-layout-item].is-preview-dragging {
+.landing-layout--editing [data-layout-item].is-layout-dragging {
   cursor: grabbing;
   z-index: 2;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
@@ -164,6 +180,10 @@ body[data-theme^="customTheme-"] .container > * {
 .landing-layout > .daily-counter,
 .landing-layout > .landing-btn {
   width: 100%;
+}
+
+.theme-builder-layout-btn {
+  margin-bottom: 8px;
 }
 
 .landing-header {
