@@ -1381,6 +1381,37 @@ input[type="file"] {
   gap: 10px;
 }
 
+.theme-builder-share,
+.theme-builder-actions {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--input-border);
+  background: rgba(15, 20, 32, 0.4);
+}
+
+.theme-builder-share__title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.theme-builder-share__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.theme-builder-share__row input {
+  width: 100%;
+}
+
+.theme-builder-delete {
+  border-color: var(--error-color);
+  color: var(--text-color);
+}
+
 @media (min-width: 880px) {
   .theme-builder-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
