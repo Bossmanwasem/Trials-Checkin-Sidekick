@@ -980,13 +980,30 @@ input[type="file"] {
 }
 
 .onboarding-mascot-preview {
-  width: 120px;
-  height: 120px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
   border-radius: 16px;
   border: 1px solid var(--note-border);
   background: var(--note-bg);
   padding: 6px;
+}
+
+.onboarding-mascot-size-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-mascot-size-row input[type="range"] {
+  flex: 1;
+}
+
+.onboarding-mascot-size-value {
+  min-width: 44px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--title-color);
 }
 
 .outlook-setup-steps {

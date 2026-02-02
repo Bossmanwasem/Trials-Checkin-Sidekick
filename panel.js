@@ -194,7 +194,11 @@ let outlookSetupTabId = null;
 let hasFinalizedCheckin = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
+const USER_MASCOT_SIZE_STORAGE_KEY = "ttmtSidekickUserMascotSize";
 const DEFAULT_MASCOT_SRC = "assets/sparknsymoji.png";
+const DEFAULT_MASCOT_SIZE = 96;
+const MIN_MASCOT_SIZE = 64;
+const MAX_MASCOT_SIZE = 160;
 const DEFAULT_CORNER_SYMOJI_SRC = "assets/symoji.png";
 const SYMOJI_ASSET_ROOT = "assets/Symojis";
 const SYMOJI_FILES = [
@@ -2072,6 +2076,7 @@ async function initOnboardingForm() {
   const firstNameInput = document.getElementById("userFirstName");
   const mascotInput = document.getElementById("userMascotInput");
   const symojiPickerBtn = document.getElementById("symojiPickerMascotBtn");
+  const mascotSizeInput = document.getElementById("onboardingMascotSize");
   const themeSelect = document.getElementById("onboardingThemeSelect");
   const dailyCounterToggle = document.getElementById("onboardingDailyCounterToggle");
   const customDailyCounterToggle = document.getElementById("onboardingCustomDailyCounterToggle");
@@ -2112,6 +2117,13 @@ async function initOnboardingForm() {
       } catch {
         alert("Unable to read that image file.");
       }
+    });
+  }
+  if (mascotSizeInput) {
+    const storedMascotSize = await getUserMascotSize();
+    applyMascotPreviewSize(storedMascotSize ?? DEFAULT_MASCOT_SIZE);
+    mascotSizeInput.addEventListener("input", () => {
+      applyMascotPreviewSize(mascotSizeInput.value);
     });
   }
   if (symojiPickerBtn) {
@@ -2161,6 +2173,7 @@ async function initOnboardingForm() {
     const customDailyCounterLabel = customDailyCounterNameInput?.value || "";
     const weeklyCounterEnabled = weeklyCounterToggle?.checked ?? true;
     const tooltipsEnabled = tooltipToggle?.checked ?? true;
+    const mascotSize = mascotSizeInput?.value ?? DEFAULT_MASCOT_SIZE;
 
     if (!firstName) {
       alert("Please enter your username.");
@@ -2172,6 +2185,8 @@ async function initOnboardingForm() {
       await saveUserMascot(pendingMascot);
       updateLandingMascot(pendingMascot);
     }
+    await saveUserMascotSize(mascotSize);
+    applyLandingMascotSize(mascotSize);
     await setDailyCounterEnabled(dailyCounterEnabled);
     await setDailyCustomCounterEnabled(customDailyCounterEnabled);
     await setDailyCustomCounterLabel(customDailyCounterLabel);
@@ -2823,6 +2838,20 @@ async function saveUserMascot(mascotSrc) {
   await setStoredValue(USER_MASCOT_STORAGE_KEY, mascotSrc);
 }
 
+function normalizeMascotSize(size, fallback = DEFAULT_MASCOT_SIZE) {
+  const value = Number(size);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(MAX_MASCOT_SIZE, Math.max(MIN_MASCOT_SIZE, Math.round(value)));
+}
+
+async function getUserMascotSize() {
+  return await getStoredValue(USER_MASCOT_SIZE_STORAGE_KEY);
+}
+
+async function saveUserMascotSize(size) {
+  await setStoredValue(USER_MASCOT_SIZE_STORAGE_KEY, normalizeMascotSize(size));
+}
+
 async function getCornerSymoji() {
   return await getStoredValue(CORNER_SYMOJI_STORAGE_KEY);
 }
@@ -2844,10 +2873,40 @@ function updateLandingMascot(mascotSrc) {
   }
 }
 
+function applyLandingMascotSize(size) {
+  const image = document.getElementById("landingMascot");
+  if (!image) return;
+  if (size === null || size === undefined) {
+    image.style.width = "";
+    return;
+  }
+  const normalized = normalizeMascotSize(size);
+  image.style.width = `${normalized}px`;
+}
+
 function updateMascotPreview(mascotSrc) {
   const image = document.getElementById("userMascotPreview");
   if (image) {
     image.src = mascotSrc || DEFAULT_MASCOT_SRC;
+  }
+}
+
+function applyMascotPreviewSize(size) {
+  const image = document.getElementById("userMascotPreview");
+  if (image) {
+    const normalized = normalizeMascotSize(size);
+    image.style.width = `${normalized}px`;
+    image.style.height = `${normalized}px`;
+  }
+  const output = document.getElementById("onboardingMascotSizeValue");
+  if (output) {
+    const normalized = normalizeMascotSize(size);
+    output.textContent = `${normalized}px`;
+  }
+  const slider = document.getElementById("onboardingMascotSize");
+  if (slider) {
+    const normalized = normalizeMascotSize(size);
+    slider.value = String(normalized);
   }
 }
 
@@ -3144,6 +3203,8 @@ async function refreshLandingView() {
   updateLandingGreeting(profile);
   const mascot = await getUserMascot();
   updateLandingMascot(mascot);
+  const mascotSize = await getUserMascotSize();
+  applyLandingMascotSize(mascotSize);
   const cornerSymoji = await getCornerSymoji();
   updateCornerSymoji(cornerSymoji);
   updateLandingVersion();
