@@ -15,6 +15,7 @@
   --note-bg: #0f1b2b;
   --note-border: #2f4b6f;
   --error-color: #ff7b7b;
+  --custom-container-bg-image: none;
   --title-color: var(--text-color);
   --header-color: var(--muted-text);
 }
@@ -64,6 +65,19 @@ body[data-theme^="nfl"] {
 
 body[data-theme^="nfl"] h3 {
   color: var(--container-border);
+}
+
+body[data-theme="customTheme"] .container {
+  position: relative;
+  background-image: var(--custom-container-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body[data-theme="customTheme"] .container > * {
+  position: relative;
+  z-index: 1;
 }
 
 .container {
@@ -1274,6 +1288,103 @@ input[type="file"] {
 .theme-options__grid {
   display: grid;
   gap: 10px;
+}
+
+.theme-builder-view {
+  display: grid;
+  gap: 16px;
+}
+
+.theme-builder-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.theme-builder-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.theme-builder-controls__title {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.theme-builder-controls__list {
+  display: grid;
+  gap: 10px;
+}
+
+.theme-builder-control {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: rgba(15, 20, 32, 0.4);
+}
+
+.theme-builder-control label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+
+.theme-builder-control__inputs {
+  display: grid;
+  grid-template-columns: minmax(90px, 120px) 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.theme-builder-control__rgb {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(60px, 1fr));
+  gap: 8px;
+}
+
+.theme-builder-control__rgb input {
+  width: 100%;
+}
+
+.theme-builder-upload {
+  display: grid;
+  gap: 8px;
+}
+
+.theme-builder-upload__btn {
+  width: fit-content;
+}
+
+.theme-builder-preview {
+  border-radius: 16px;
+  padding: 12px;
+  background-color: var(--bg-color);
+  border: 2px solid var(--container-border);
+  box-shadow: var(--container-shadow);
+  color: var(--text-color);
+}
+
+.theme-builder-preview .container {
+  background-image: var(--custom-container-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.theme-builder-preview .landing-content {
+  padding-bottom: 24px;
+}
+
+.theme-builder-save {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 880px) {
+  .theme-builder-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 }
 
 .theme-option {
