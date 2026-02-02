@@ -174,7 +174,9 @@
       </div>
       <img class="landing-symojo" id="landingMascot" src="assets/sparknsymoji.png" alt="Spark mascot" />
       <p class="landing-greeting" id="landingGreeting"></p>
-      <div class="daily-counter" id="dailyCounterSection" aria-label="Daily task counter">
+      <p class="landing-subtitle">Pick a workflow to get started.</p>
+      <div class="landing-layout" id="landingLayout">
+      <div class="daily-counter" id="dailyCounterSection" data-layout-item="dailyCounter" aria-label="Daily task counter">
         <div class="daily-counter__header">
           <span>Daily task counter</span>
           <div class="daily-counter__actions">
@@ -216,7 +218,7 @@
           </div>
         </div>
       </div>
-      <div class="daily-counter" id="weeklyCounterSection" aria-label="Weekly task counter">
+      <div class="daily-counter" id="weeklyCounterSection" data-layout-item="weeklyCounter" aria-label="Weekly task counter">
         <div class="daily-counter__header">
           <span>Weekly task counter</span>
           <div class="daily-counter__actions">
@@ -238,8 +240,7 @@
           </div>
         </div>
       </div>
-      <p class="landing-subtitle">Pick a workflow to get started.</p>
-      <div class="landing-section">
+      <div class="landing-section" data-layout-item="checkinTools">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false" data-tooltip="Folder housing check-in tools. Click to reveal the Device Lookup tool and the Check-in form.">
           Check-in Tools
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
@@ -253,7 +254,7 @@
           </button>
         </div>
       </div>
-      <div class="landing-section">
+      <div class="landing-section" data-layout-item="prepTools">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="prep-tools" aria-expanded="false" data-tooltip="Folder housing prep tools. Click to reveal Grid Sidekick and TalkPad Prep Sidekick.">
           Prep Tools
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
@@ -267,10 +268,10 @@
           </button>
         </div>
       </div>
-      <button id="qaFormBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens the QA form.">
+      <button id="qaFormBtn" class="toggle-btn landing-btn" data-layout-item="qaForm" type="button" data-tooltip="Opens the QA form.">
         QA Form
       </button>
-      <div class="landing-section">
+      <div class="landing-section" data-layout-item="trialsLinks">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false" data-tooltip="Folder of useful links like CRM Navigator, APP override codes, and KG request form.">
           Trials Links
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
@@ -287,11 +288,12 @@
           </button>
         </div>
       </div>
+      <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" data-layout-item="userSettings" type="button">
+        <span class="landing-settings-icon" aria-hidden="true">⚙</span>
+        <span>User settings</span>
+      </button>
+      </div>
     </div>
-    <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" type="button">
-      <span class="landing-settings-icon" aria-hidden="true">⚙</span>
-      <span>User settings</span>
-    </button>
     <div class="landing-version" id="landingVersion"></div>
     <button class="landing-corner-symojo-btn" id="landingCornerSymojiBtn" type="button" aria-label="Change corner Symoji">
       <img class="landing-corner-symojo" id="landingCornerSymoji" src="assets/symoji.png" alt="Symoji mascot" />
@@ -377,6 +379,19 @@
       <div class="theme-builder-controls">
         <div class="theme-builder-controls__title">Theme colors</div>
         <div id="themeBuilderControls" class="theme-builder-controls__list"></div>
+        <div class="theme-builder-controls__title">Landing layout</div>
+        <p class="hint-text">Drag items to rearrange the landing page.</p>
+        <div class="theme-builder-layout">
+          <label class="checkbox-row" for="themeBuilderMascotToggle">
+            <input type="checkbox" id="themeBuilderMascotToggle" />
+            Show profile mascot
+          </label>
+          <label class="checkbox-row" for="themeBuilderSymojiToggle">
+            <input type="checkbox" id="themeBuilderSymojiToggle" />
+            Show corner Symoji
+          </label>
+          <div id="themeBuilderLayoutList" class="theme-builder-layout__list" aria-label="Landing layout order"></div>
+        </div>
         <div class="theme-builder-upload">
           <label for="themeBuilderImageInput">Container background image (optional)</label>
           <input type="file" id="themeBuilderImageInput" accept="image/*" />
@@ -392,8 +407,41 @@
             <div class="landing-header">
               <h1 class="landing-title">CRM Sidekick</h1>
             </div>
+            <img class="landing-symojo theme-preview-mascot" data-preview-element="mascot" src="assets/sparknsymoji.png" alt="Profile mascot preview" />
+            <p class="landing-greeting">Welcome back, Jordan!</p>
             <p class="landing-subtitle">Theme preview layout</p>
-            <div class="landing-section">
+            <div class="landing-layout" id="themeBuilderLayout">
+            <div class="daily-counter" data-layout-item="dailyCounter" aria-label="Daily task counter">
+              <div class="daily-counter__header">
+                <span>Daily task counter</span>
+              </div>
+              <div class="daily-counter__content">
+                <div class="daily-counter__grid">
+                  <div class="daily-counter__item">
+                    <span class="daily-counter__label">Checkins</span>
+                    <span class="daily-counter__value">2</span>
+                  </div>
+                  <div class="daily-counter__item">
+                    <span class="daily-counter__label">QA's</span>
+                    <span class="daily-counter__value">1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="daily-counter" data-layout-item="weeklyCounter" aria-label="Weekly task counter">
+              <div class="daily-counter__header">
+                <span>Weekly task counter</span>
+              </div>
+              <div class="daily-counter__content">
+                <div class="daily-counter__grid weekly-counter__grid">
+                  <div class="daily-counter__item">
+                    <span class="daily-counter__label">Total</span>
+                    <span class="daily-counter__value">12</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="landing-section" data-layout-item="checkinTools">
               <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="theme-preview-actions" aria-expanded="true">
                 Check-in Tools
                 <span class="landing-section__chevron" aria-hidden="true">▾</span>
@@ -407,7 +455,22 @@
                 </button>
               </div>
             </div>
-            <div class="landing-section">
+            <div class="landing-section" data-layout-item="prepTools">
+              <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="theme-preview-prep" aria-expanded="true">
+                Prep Tools
+                <span class="landing-section__chevron" aria-hidden="true">▾</span>
+              </button>
+              <div class="landing-section__content" data-collapsible-content="theme-preview-prep">
+                <button class="toggle-btn landing-btn" type="button">
+                  Grid Sidekick
+                </button>
+                <button class="toggle-btn landing-btn" type="button">
+                  TalkPad Prep Sidekick
+                </button>
+              </div>
+            </div>
+            <button class="toggle-btn landing-btn" data-layout-item="qaForm" type="button">QA Form</button>
+            <div class="landing-section" data-layout-item="trialsLinks">
               <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="theme-preview-links" aria-expanded="true">
                 Trials Links
                 <span class="landing-section__chevron" aria-hidden="true">▾</span>
@@ -417,8 +480,15 @@
                 <button class="toggle-btn landing-btn" type="button">APP Overrides</button>
               </div>
             </div>
-            <button class="toggle-btn landing-btn" type="button">QA Form</button>
+            <button class="toggle-btn landing-settings-btn" data-layout-item="userSettings" type="button">
+              <span class="landing-settings-icon" aria-hidden="true">⚙</span>
+              <span>User settings</span>
+            </button>
+            </div>
           </div>
+          <button class="landing-corner-symojo-btn theme-preview-symojo" data-preview-element="symoji" type="button" aria-label="Corner Symoji preview">
+            <img class="landing-corner-symojo" src="assets/symoji.png" alt="Corner Symoji preview" />
+          </button>
         </div>
       </div>
     </div>

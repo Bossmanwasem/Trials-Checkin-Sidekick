@@ -45,6 +45,9 @@ const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
+const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
+const LANDING_MASCOT_VISIBLE_STORAGE_KEY = "ttmtLandingMascotVisible";
+const LANDING_SYMOJI_VISIBLE_STORAGE_KEY = "ttmtLandingSymojiVisible";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const CUSTOM_THEME_ID_PREFIX = "customTheme-";
 const DEFAULT_CUSTOM_THEME_NAME = "Custom Theme";
@@ -156,6 +159,15 @@ const CUSTOM_THEME_FIELDS = [
   { key: "note-bg", label: "Note background" },
   { key: "note-border", label: "Note border" },
   { key: "error-color", label: "Error color" }
+];
+const LANDING_LAYOUT_ITEMS = [
+  { id: "dailyCounter", label: "Daily task counter" },
+  { id: "weeklyCounter", label: "Weekly task counter" },
+  { id: "checkinTools", label: "Check-in tools button" },
+  { id: "prepTools", label: "Prep tools button" },
+  { id: "qaForm", label: "QA form button" },
+  { id: "trialsLinks", label: "Trials links button" },
+  { id: "userSettings", label: "User settings button" }
 ];
 
 function showView(targetId) {
@@ -2261,6 +2273,74 @@ function applyThemeBuilderPreview() {
   );
 }
 
+function getThemeBuilderDragAfterElement(container, y) {
+  const draggableItems = [
+    ...container.querySelectorAll(".theme-builder-layout__item:not(.is-dragging)")
+  ];
+  return draggableItems.reduce(
+    (closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset, element: child };
+      }
+      return closest;
+    },
+    { offset: Number.NEGATIVE_INFINITY, element: null }
+  ).element;
+}
+
+function buildThemeBuilderLayoutList({ container, order, onOrderChange }) {
+  if (!container) return;
+  container.innerHTML = "";
+  order.forEach(id => {
+    const itemConfig = LANDING_LAYOUT_ITEMS.find(item => item.id === id);
+    if (!itemConfig) return;
+    const row = document.createElement("div");
+    row.className = "theme-builder-layout__item";
+    row.draggable = true;
+    row.dataset.layoutId = itemConfig.id;
+    const handle = document.createElement("span");
+    handle.className = "theme-builder-layout__handle";
+    handle.setAttribute("aria-hidden", "true");
+    handle.textContent = "⋮⋮";
+    const label = document.createElement("span");
+    label.textContent = itemConfig.label;
+    row.appendChild(handle);
+    row.appendChild(label);
+    row.addEventListener("dragstart", event => {
+      row.classList.add("is-dragging");
+      event.dataTransfer?.setData("text/plain", itemConfig.id);
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+      }
+    });
+    row.addEventListener("dragend", () => {
+      row.classList.remove("is-dragging");
+      const nextOrder = Array.from(container.querySelectorAll("[data-layout-id]")).map(
+        item => item.dataset.layoutId
+      );
+      onOrderChange?.(nextOrder);
+    });
+    container.appendChild(row);
+  });
+
+  if (!container.dataset.dragReady) {
+    container.dataset.dragReady = "true";
+    container.addEventListener("dragover", event => {
+      event.preventDefault();
+      const afterElement = getThemeBuilderDragAfterElement(container, event.clientY);
+      const dragging = container.querySelector(".is-dragging");
+      if (!dragging) return;
+      if (!afterElement) {
+        container.appendChild(dragging);
+      } else if (afterElement !== dragging) {
+        container.insertBefore(dragging, afterElement);
+      }
+    });
+  }
+}
+
 function buildThemeBuilderControls() {
   const controls = document.getElementById("themeBuilderControls");
   if (!controls || !customThemeDraft) return;
@@ -2408,6 +2488,9 @@ async function initThemeBuilder() {
   const keyInput = document.getElementById("themeBuilderKeyInput");
   const keyApplyBtn = document.getElementById("themeBuilderKeyApplyBtn");
   const deleteBtn = document.getElementById("themeBuilderDeleteBtn");
+  const layoutList = document.getElementById("themeBuilderLayoutList");
+  const mascotToggle = document.getElementById("themeBuilderMascotToggle");
+  const symojiToggle = document.getElementById("themeBuilderSymojiToggle");
 
   const syncThemeBuilderDraft = config => {
     customThemeConfig = { ...config };
@@ -2426,6 +2509,43 @@ async function initThemeBuilder() {
   };
 
   refreshThemeBuilderFromActiveTheme();
+
+  const syncLandingLayout = async nextOrder => {
+    const normalized = normalizeLandingLayoutOrder(nextOrder);
+    await setLandingLayoutOrder(normalized);
+    applyLandingLayoutOrder(normalized);
+    applyThemeBuilderLayoutOrder(normalized);
+  };
+
+  const initialLayoutOrder = await getLandingLayoutOrder();
+  applyThemeBuilderLayoutOrder(initialLayoutOrder);
+  buildThemeBuilderLayoutList({
+    container: layoutList,
+    order: initialLayoutOrder,
+    onOrderChange: syncLandingLayout
+  });
+
+  if (mascotToggle) {
+    mascotToggle.checked = await getLandingMascotVisible();
+    applyThemeBuilderMascotVisibility(mascotToggle.checked);
+    mascotToggle.addEventListener("change", async () => {
+      const visible = Boolean(mascotToggle.checked);
+      await setLandingMascotVisible(visible);
+      applyLandingMascotVisibility(visible);
+      applyThemeBuilderMascotVisibility(visible);
+    });
+  }
+
+  if (symojiToggle) {
+    symojiToggle.checked = await getLandingSymojiVisible();
+    applyThemeBuilderSymojiVisibility(symojiToggle.checked);
+    symojiToggle.addEventListener("change", async () => {
+      const visible = Boolean(symojiToggle.checked);
+      await setLandingSymojiVisible(visible);
+      applyLandingSymojiVisibility(visible);
+      applyThemeBuilderSymojiVisibility(visible);
+    });
+  }
 
   imageInput?.addEventListener("change", async () => {
     const file = imageInput.files?.[0];
@@ -3458,6 +3578,99 @@ async function saveCornerSymoji(symojiSrc) {
   await setStoredValue(CORNER_SYMOJI_STORAGE_KEY, symojiSrc);
 }
 
+function normalizeLandingLayoutOrder(order) {
+  const validIds = new Set(LANDING_LAYOUT_ITEMS.map(item => item.id));
+  const normalized = [];
+  if (Array.isArray(order)) {
+    order.forEach(id => {
+      if (!validIds.has(id) || normalized.includes(id)) return;
+      normalized.push(id);
+    });
+  }
+  LANDING_LAYOUT_ITEMS.forEach(item => {
+    if (!normalized.includes(item.id)) {
+      normalized.push(item.id);
+    }
+  });
+  return normalized;
+}
+
+async function getLandingLayoutOrder() {
+  const stored = await getStoredValue(LANDING_LAYOUT_STORAGE_KEY);
+  return normalizeLandingLayoutOrder(stored);
+}
+
+async function setLandingLayoutOrder(order) {
+  await setStoredValue(LANDING_LAYOUT_STORAGE_KEY, normalizeLandingLayoutOrder(order));
+}
+
+async function getLandingMascotVisible() {
+  const stored = await getStoredValue(LANDING_MASCOT_VISIBLE_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return true;
+  return Boolean(stored);
+}
+
+async function setLandingMascotVisible(visible) {
+  await setStoredValue(LANDING_MASCOT_VISIBLE_STORAGE_KEY, Boolean(visible));
+}
+
+async function getLandingSymojiVisible() {
+  const stored = await getStoredValue(LANDING_SYMOJI_VISIBLE_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return true;
+  return Boolean(stored);
+}
+
+async function setLandingSymojiVisible(visible) {
+  await setStoredValue(LANDING_SYMOJI_VISIBLE_STORAGE_KEY, Boolean(visible));
+}
+
+function applyLandingLayoutToContainer(container, order) {
+  if (!container) return;
+  const items = new Map();
+  container.querySelectorAll("[data-layout-item]").forEach(item => {
+    if (item.dataset.layoutItem) {
+      items.set(item.dataset.layoutItem, item);
+    }
+  });
+  order.forEach(id => {
+    const element = items.get(id);
+    if (element) {
+      container.appendChild(element);
+    }
+  });
+}
+
+function applyLandingLayoutOrder(order) {
+  applyLandingLayoutToContainer(document.getElementById("landingLayout"), order);
+}
+
+function applyThemeBuilderLayoutOrder(order) {
+  applyLandingLayoutToContainer(document.getElementById("themeBuilderLayout"), order);
+}
+
+function applyElementVisibility(element, visible) {
+  if (!element) return;
+  element.style.display = visible ? "" : "none";
+}
+
+function applyLandingMascotVisibility(visible) {
+  applyElementVisibility(document.getElementById("landingMascot"), visible);
+}
+
+function applyLandingSymojiVisibility(visible) {
+  applyElementVisibility(document.getElementById("landingCornerSymojiBtn"), visible);
+}
+
+function applyThemeBuilderMascotVisibility(visible) {
+  const preview = document.getElementById("themeBuilderPreview");
+  applyElementVisibility(preview?.querySelector('[data-preview-element="mascot"]'), visible);
+}
+
+function applyThemeBuilderSymojiVisibility(visible) {
+  const preview = document.getElementById("themeBuilderPreview");
+  applyElementVisibility(preview?.querySelector('[data-preview-element="symoji"]'), visible);
+}
+
 function updateLandingGreeting(profile) {
   const firstName = (profile?.firstName || "").trim();
   const greeting = firstName ? `Welcome back, ${firstName}!` : "Welcome back!";
@@ -3805,6 +4018,14 @@ async function refreshLandingView() {
   applyLandingMascotSize(mascotSize);
   const cornerSymoji = await getCornerSymoji();
   updateCornerSymoji(cornerSymoji);
+  const [layoutOrder, mascotVisible, symojiVisible] = await Promise.all([
+    getLandingLayoutOrder(),
+    getLandingMascotVisible(),
+    getLandingSymojiVisible()
+  ]);
+  applyLandingLayoutOrder(layoutOrder);
+  applyLandingMascotVisibility(mascotVisible);
+  applyLandingSymojiVisibility(symojiVisible);
   updateLandingVersion();
   await updateDailyCounterVisibility();
   await updateDailyCustomCounterSettings();
