@@ -537,6 +537,8 @@ const ltlUpdateOtherField = document.getElementById("ltlUpdateOtherField");
 const ltlUpdateOtherText = document.getElementById("ltlUpdateOtherText");
 const ltlUpdateNewSerialField = document.getElementById("ltlUpdateNewSerialField");
 const ltlUpdateNewSerialNumber = document.getElementById("ltlUpdateNewSerialNumber");
+const ltlUpdateRowSection = document.getElementById("ltlUpdateRowSection");
+const ltlUpdateRowResult = document.getElementById("ltlUpdateRowResult");
 
 function isCheckinFlowActive() {
   return Boolean(activeCheckinFlow);
@@ -578,6 +580,19 @@ function updateLtlUpdateNewSerialFieldVisibility() {
   if (!show && ltlUpdateNewSerialNumber) ltlUpdateNewSerialNumber.value = "";
 }
 
+function updateLtlUpdateRowSection() {
+  if (!ltlUpdateRowSection || !ltlUpdateRowResult) return;
+  const rowText = deviceLookupLastLtlRow?.rowText || "";
+  const rowNumber = deviceLookupLastLtlRow?.rowNumber;
+  const show = isLtlUpdateFlow() && Boolean(rowText);
+  ltlUpdateRowSection.classList.toggle("hidden-section", !show);
+  if (show) {
+    ltlUpdateRowResult.textContent = rowNumber ? `Row ${rowNumber}\n${rowText}` : rowText;
+  } else {
+    ltlUpdateRowResult.textContent = "";
+  }
+}
+
 function applyCheckinModeUI() {
   const isLtlUpdate = isLtlUpdateFlow();
   if (checkinFormTitle) {
@@ -604,6 +619,7 @@ function applyCheckinModeUI() {
   }
   updateLtlUpdateOtherFieldVisibility();
   updateLtlUpdateNewSerialFieldVisibility();
+  updateLtlUpdateRowSection();
   if (finishCheckinBtn) {
     finishCheckinBtn.textContent = isLtlUpdate ? "Next Step" : "Final Step";
   }
@@ -4660,6 +4676,7 @@ let deviceLookupWorkbookMeta = {
 let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
+let deviceLookupLastLtlRow = null;
 let deviceLookupLastAutofill = {
   cameraSerials: [],
   luminSerials: [],
@@ -4974,9 +4991,30 @@ function buildHeaderMap(rows) {
   return map;
 }
 
+function formatWorksheetRow(rows, rowNumber) {
+  const headerRow = rows[0] || [];
+  const dataRow = rows[rowNumber - 1] || [];
+  const lines = [];
+  headerRow.forEach((header, idx) => {
+    const headerText = String(header || "").trim();
+    const valueText = String(dataRow[idx] ?? "").trim();
+    if (!headerText || !valueText) return;
+    lines.push(`${headerText}: ${valueText}`);
+  });
+  if (!lines.length) {
+    dataRow.forEach((value, idx) => {
+      const valueText = String(value ?? "").trim();
+      if (!valueText) return;
+      lines.push(`Column ${idx + 1}: ${valueText}`);
+    });
+  }
+  return lines.join("\n");
+}
+
 function searchSerialNumber(serialNumber, workbook) {
   const matches = [];
   const sheetsFound = new Set();
+  let ltlRowMatch = null;
   const serialNorm = normalizeLookupValue(serialNumber);
   ["LTL Update List", "Return Watchlist"].forEach(sheetName => {
     const rows = getSheetRows(workbook, sheetName);
@@ -4988,12 +5026,26 @@ function searchSerialNumber(serialNumber, workbook) {
           if (normalizeLookupValue(cellText) === serialNorm) {
             matches.push({ sheet: sheetName, row: rowIndex + 1 });
             sheetsFound.add(sheetName);
+            if (sheetName === "LTL Update List" && !ltlRowMatch) {
+              ltlRowMatch = {
+                sheet: sheetName,
+                rowNumber: rowIndex + 1,
+                rowText: formatWorksheetRow(rows, rowIndex + 1)
+              };
+            }
           }
         } else {
           const parts = cellText.split(/[,\n;/]+/).map(part => normalizeLookupValue(part));
           if (parts.includes(serialNorm)) {
             matches.push({ sheet: sheetName, row: rowIndex + 1 });
             sheetsFound.add(sheetName);
+            if (sheetName === "LTL Update List" && !ltlRowMatch) {
+              ltlRowMatch = {
+                sheet: sheetName,
+                rowNumber: rowIndex + 1,
+                rowText: formatWorksheetRow(rows, rowIndex + 1)
+              };
+            }
           }
         }
       });
@@ -5002,9 +5054,9 @@ function searchSerialNumber(serialNumber, workbook) {
 
   if (matches.length) {
     const msg = `✅ Found in:\n${matches.map(match => `- Sheet: ${match.sheet}, Row: ${match.row}`).join("\n")}`;
-    return { message: msg, status: "green", sheetsFound: Array.from(sheetsFound) };
+    return { message: msg, status: "green", sheetsFound: Array.from(sheetsFound), ltlRow: ltlRowMatch };
   }
-  return { message: "❌ Serial number not found in Workbook.", status: "red", sheetsFound: [] };
+  return { message: "❌ Serial number not found in Workbook.", status: "red", sheetsFound: [], ltlRow: null };
 }
 
 function findCrmIdFromSerial(serialNumber, workbook) {
@@ -5268,6 +5320,17 @@ function updateCopyButton(buttonId, value, label) {
   button.textContent = hasValue ? `${label}: ${value}` : label;
 }
 
+function updateLookupBeginLtlUpdateButton(show) {
+  const button = document.getElementById("lookupBeginLtlUpdateBtn");
+  if (!button) return;
+  button.classList.toggle("hidden-section", !show);
+}
+
+function clearLookupLtlRow() {
+  deviceLookupLastLtlRow = null;
+  updateLtlUpdateRowSection();
+}
+
 function resetLookupCopyButtons() {
   lookupCopyButtons.forEach(({ id, label }) => updateCopyButton(id, "", label));
 }
@@ -5311,6 +5374,7 @@ async function runDeviceLookupSearch(rawInput) {
   setText("deviceLookupExtracted", extracted ? `✅ ${extracted}` : "❌ Invalid serial scanned");
   deviceLookupLastSerial = extracted || "";
   deviceLookupLastCrmId = "";
+  deviceLookupLastLtlRow = null;
   deviceLookupLastAutofill = {
     cameraSerials: [],
     luminSerials: [],
@@ -5324,6 +5388,8 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Report the invalid scan to pre-prep.", "red");
     resetLookupCopyButtons();
+    updateLookupBeginLtlUpdateButton(false);
+    updateLtlUpdateRowSection();
     return;
   }
 
@@ -5342,11 +5408,15 @@ async function runDeviceLookupSearch(rawInput) {
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
     updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
     resetLookupCopyButtons();
+    updateLookupBeginLtlUpdateButton(false);
+    updateLtlUpdateRowSection();
     return;
   }
 
   const serialResult = searchSerialNumber(extracted, ltlWorkbook);
   updateLookupResultCard("lookupSerialCard", "lookupSerialResult", serialResult.message, serialResult.status);
+  deviceLookupLastLtlRow = serialResult.ltlRow;
+  updateLtlUpdateRowSection();
   deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
   if (serialResult.sheetsFound.includes("LTL Update List")) {
     deviceLookupLastSheetLink = DEVICE_LOOKUP_SHEET_LINKS["LTL Update List"] || DEVICE_LOOKUP_EXCEL_WEB_URL;
@@ -5373,6 +5443,8 @@ async function runDeviceLookupSearch(rawInput) {
   const foundInLtl = serialResult.sheetsFound.includes("LTL Update List");
   const foundInRwl = serialResult.sheetsFound.includes("Return Watchlist");
   const crmFullUrl = crmId ? `https://crm.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
+
+  updateLookupBeginLtlUpdateButton(foundInLtl);
 
   if (foundInRwl) {
     const rwlUrl = DEVICE_LOOKUP_SHEET_LINKS["Return Watchlist"] || DEVICE_LOOKUP_EXCEL_WEB_URL;
@@ -6819,6 +6891,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
+    clearLookupLtlRow();
     setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     updateDeviceRules();
     showFormView();
@@ -6828,6 +6901,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startLtlUpdateBtn")?.addEventListener("click", async () => {
+    clearLookupLtlRow();
     setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
     updateDeviceRules();
     showFormView();
@@ -7119,6 +7193,24 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     setValue("deviceNumberInput", deviceLookupLastSerial);
     updateDeviceRules();
     applyLookupAutofillToCheckin();
+  });
+
+  document.getElementById("lookupBeginLtlUpdateBtn")?.addEventListener("click", async () => {
+    if (!deviceLookupLastSerial) {
+      alert("Search for a device to continue.");
+      return;
+    }
+    setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
+    updateDeviceRules();
+    showFormView();
+    setValue("deviceNumberInput", deviceLookupLastSerial);
+    updateLtlUpdateRowSection();
+    await refreshTrialFilesFromFolder();
+    if (!deviceLookupLastCrmId) {
+      alert("No CRM ID found for this device.");
+      return;
+    }
+    await openCrmRecordTab(deviceLookupLastCrmId);
   });
 
   document.getElementById("lookupOpenWorkbookBtn")?.addEventListener("click", () => {

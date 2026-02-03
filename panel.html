@@ -670,6 +670,7 @@
     <div class="mini-row">
       <button id="lookupOpenCrmBtn" class="toggle-btn" type="button">Open CRM</button>
       <button id="lookupOpenWorkbookBtn" class="toggle-btn" type="button">Open LTL/RWL workbook</button>
+      <button id="lookupBeginLtlUpdateBtn" class="toggle-btn hidden-section" type="button">Begin LTL update</button>
     </div>
 
     <div class="crm-nav-footer">
@@ -825,6 +826,11 @@
       <!-- Device number -->
       <label id="deviceNumberLabel">Device Number (Put an X if only Checking in Mount) *</label>
       <input type="text" id="deviceNumberInput" required />
+
+      <div id="ltlUpdateRowSection" class="note-preview hidden-section">
+        <div class="note-preview__title">LTL Update Row</div>
+        <pre id="ltlUpdateRowResult" class="note-preview__body"></pre>
+      </div>
 
       <!-- Device condition -->
       <div id="conditionContainer">
