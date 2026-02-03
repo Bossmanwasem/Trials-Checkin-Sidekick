@@ -531,6 +531,10 @@ const deviceNumberLabel = document.getElementById("deviceNumberLabel");
 const cameraToggleBtn = document.getElementById("cameraToggle");
 const mountToggleBtn = document.getElementById("mountToggle");
 const finishCheckinBtn = document.getElementById("finishCheckinBtn");
+const ltlUpdatesSection = document.getElementById("ltlUpdatesSection");
+const ltlUpdateOtherToggle = document.getElementById("ltlUpdateOther");
+const ltlUpdateOtherField = document.getElementById("ltlUpdateOtherField");
+const ltlUpdateOtherText = document.getElementById("ltlUpdateOtherText");
 
 function isCheckinFlowActive() {
   return Boolean(activeCheckinFlow);
@@ -544,6 +548,21 @@ function clearCameraAndMountFields() {
   document.querySelectorAll(
     'input[name="cameraNumber"], input[name="luminNumber"], input[name="clampMount"], input[name="tableMount"], input[name="rollingMount"]'
   ).forEach(el => el.value = "");
+}
+
+function clearLtlUpdates() {
+  document.querySelectorAll('input[name="ltlUpdates"]').forEach(input => {
+    input.checked = false;
+  });
+  if (ltlUpdateOtherText) ltlUpdateOtherText.value = "";
+  if (ltlUpdateOtherField) ltlUpdateOtherField.style.display = "none";
+}
+
+function updateLtlUpdateOtherFieldVisibility() {
+  if (!ltlUpdateOtherToggle || !ltlUpdateOtherField) return;
+  const show = ltlUpdateOtherToggle.checked && isLtlUpdateFlow();
+  ltlUpdateOtherField.style.display = show ? "block" : "none";
+  if (!show && ltlUpdateOtherText) ltlUpdateOtherText.value = "";
 }
 
 function applyCheckinModeUI() {
@@ -564,6 +583,13 @@ function applyCheckinModeUI() {
     if (mountSection) mountSection.style.display = "none";
     clearCameraAndMountFields();
   }
+  if (ltlUpdatesSection) {
+    ltlUpdatesSection.style.display = isLtlUpdate ? "block" : "none";
+  }
+  if (!isLtlUpdate) {
+    clearLtlUpdates();
+  }
+  updateLtlUpdateOtherFieldVisibility();
   if (finishCheckinBtn) {
     finishCheckinBtn.textContent = isLtlUpdate ? "Finish LTL Update" : "Final Step";
   }
@@ -5534,6 +5560,30 @@ repairButtons.forEach(btn => {
 
 otherInput?.addEventListener("input", updateRepairsBox);
 
+/* ---------------- LTL updates ---------------- */
+
+function getSelectedLtlUpdates() {
+  return Array.from(document.querySelectorAll('input[name="ltlUpdates"]:checked'))
+    .map(input => input.value)
+    .filter(Boolean);
+}
+
+function buildLtlUpdatesLine() {
+  if (!isLtlUpdateFlow()) return "";
+  const updates = getSelectedLtlUpdates();
+  if (!updates.length) return "";
+
+  const formatted = updates.map(value => {
+    if (value !== "Other") return value;
+    const otherText = ltlUpdateOtherText?.value?.trim();
+    return otherText ? `Other: ${otherText}` : "Other";
+  });
+
+  return `Updates made: ${formatted.join(", ")}.`;
+}
+
+ltlUpdateOtherToggle?.addEventListener("change", updateLtlUpdateOtherFieldVisibility);
+
 /* ---------------- Device Condition + X rules ---------------- */
 
 const deviceInput = document.getElementById("deviceNumberInput");
@@ -5729,18 +5779,20 @@ function buildCannedNote() {
 
   const vocabLine = buildVocabLine();
   const accessoriesLine = buildAccessoriesLineIfAny();
+  const updatesLine = buildLtlUpdatesLine();
+  const updatesSuffix = updatesLine ? ` ${updatesLine}` : "";
   const mountsBlock = buildMountsBlockIfAny();
   const deviceId = buildDeviceIdentifier(deviceNum);
 
   if (condition === "Needs Repair") {
-    return `${fullName}'s ${modelName} ${deviceId} was returned and needs repair (${repairs || "repairs needed not specified"}). ${vocabLine}${accessoriesLine}${mountsBlock}`;
+    return `${fullName}'s ${modelName} ${deviceId} was returned and needs repair (${repairs || "repairs needed not specified"}). ${vocabLine}${accessoriesLine}${updatesSuffix}${mountsBlock}`;
   }
 
   const conditionPhrase =
     condition === "Working" ? "working condition" :
       condition || "an unspecified condition";
 
-  return `${fullName}'s ${modelName} ${deviceId} was returned in ${conditionPhrase}. ${vocabLine}${accessoriesLine}${mountsBlock}`;
+  return `${fullName}'s ${modelName} ${deviceId} was returned in ${conditionPhrase}. ${vocabLine}${accessoriesLine}${updatesSuffix}${mountsBlock}`;
 }
 
 /* ---------------- CRM messaging helpers ---------------- */
@@ -6288,6 +6340,7 @@ function resetAllFieldsAndUI() {
   });
 
   clearRepairsUI();
+  clearLtlUpdates();
 
   const cameraLuminSection = document.getElementById("cameraLuminSection");
   const accessorySection = document.getElementById("accessorySection");

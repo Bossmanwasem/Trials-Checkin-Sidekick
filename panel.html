@@ -852,6 +852,45 @@
         <textarea id="otherRepairInput" placeholder="Describe other repair..." style="display:none;"></textarea>
       </div>
 
+      <!-- LTL Updates -->
+      <div id="ltlUpdatesSection" class="hidden-section">
+        <label>Updates Made (Select all that apply):</label>
+        <div class="checkbox-group">
+          <label class="checkbox-row" for="ltlUpdateFixedHandle">
+            <input type="checkbox" id="ltlUpdateFixedHandle" name="ltlUpdates" value="Fixed Handle" />
+            Fixed Handle
+          </label>
+          <label class="checkbox-row" for="ltlUpdateFixedStand">
+            <input type="checkbox" id="ltlUpdateFixedStand" name="ltlUpdates" value="Fixed Stand" />
+            Fixed Stand
+          </label>
+          <label class="checkbox-row" for="ltlUpdateReplacedScreenProtector">
+            <input type="checkbox" id="ltlUpdateReplacedScreenProtector" name="ltlUpdates" value="Replaced Screen Protector" />
+            Replaced Screen Protector
+          </label>
+          <label class="checkbox-row" for="ltlUpdateReplacedDevice">
+            <input type="checkbox" id="ltlUpdateReplacedDevice" name="ltlUpdates" value="Replaced Device" />
+            Replaced Device
+          </label>
+          <label class="checkbox-row" for="ltlUpdateReplacedCase">
+            <input type="checkbox" id="ltlUpdateReplacedCase" name="ltlUpdates" value="Replaced Case" />
+            Replaced Case
+          </label>
+          <label class="checkbox-row" for="ltlUpdateNa">
+            <input type="checkbox" id="ltlUpdateNa" name="ltlUpdates" value="N/A" />
+            N/A
+          </label>
+          <label class="checkbox-row" for="ltlUpdateOther">
+            <input type="checkbox" id="ltlUpdateOther" name="ltlUpdates" value="Other" />
+            Other
+          </label>
+        </div>
+        <div id="ltlUpdateOtherField" class="hidden-section">
+          <label for="ltlUpdateOtherText">Other updates</label>
+          <input type="text" id="ltlUpdateOtherText" placeholder="Describe other updates..." />
+        </div>
+      </div>
+
       <!-- Client info -->
       <label>Client First Name</label>
       <input type="text" id="firstName" />
