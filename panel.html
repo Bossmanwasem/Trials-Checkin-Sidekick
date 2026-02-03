@@ -240,6 +240,14 @@
           </div>
         </div>
       </div>
+      <div class="landing-crm-nav" data-layout-item="crmNavigator">
+        <div class="landing-crm-nav__title">CRM Navigator</div>
+        <form id="landingCrmNavigatorForm" class="landing-crm-nav__form">
+          <label class="landing-crm-nav__label" for="landingCrmNavigatorInput">CRM ID</label>
+          <input type="text" id="landingCrmNavigatorInput" class="landing-crm-nav__input" placeholder="Enter CRM ID" required />
+          <button type="submit" class="toggle-btn landing-crm-nav__btn">Go</button>
+        </form>
+      </div>
       <div class="landing-section" data-layout-item="checkinTools">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false" data-tooltip="Folder housing check-in tools. Click to reveal the Device Lookup tool and the Check-in form.">
           Check-in Tools
@@ -277,9 +285,6 @@
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
         </button>
         <div class="landing-section__content" data-collapsible-content="trials-links" hidden>
-          <button id="crmNavigatorBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Enter a CRM number to open that client record in a new tab.">
-            CRM Navigator
-          </button>
           <button id="appOverridesBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens a window with our app override codes.">
             APP Overrides
           </button>
@@ -595,22 +600,6 @@
     <button id="qaFinishedBtn" class="toggle-btn" type="button" style="margin-top:16px;">
       Finished QA
     </button>
-  </div>
-
-  <!-- CRM NAVIGATOR VIEW -->
-  <div class="container crm-navigator-view" id="crmNavigatorView" style="display:none;">
-    <h1>CRM Navigator</h1>
-    <p class="complete-intro">Enter a CRM ID to jump straight to the client record.</p>
-    <form id="crmNavigatorForm">
-      <label for="crmNavigatorInput">CRM ID</label>
-      <input type="text" id="crmNavigatorInput" placeholder="Enter CRM ID" required />
-      <button type="submit" id="crmNavigatorGoBtn">Go!</button>
-    </form>
-    <div class="crm-nav-footer">
-      <button id="crmNavigatorReturnBtn" class="toggle-btn" type="button">
-        Return to CRM Sidekick
-      </button>
-    </div>
   </div>
 
   <div class="symoji-modal" id="symojiPicker" aria-hidden="true">
