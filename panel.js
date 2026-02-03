@@ -5,7 +5,6 @@
 // Notes (still used)
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
-const DEVICE_UPDATED_NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]/option[18]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
 const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
@@ -6531,10 +6530,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
   // 4) Select category
   const isDeviceUpdated = isLtlUpdateFlow();
-  const noteCategory = isDeviceUpdated ? "Device updated" : "Device Returned";
-  const setCatRes = isDeviceUpdated
-    ? await sendToCrm("CLICK_BY_XPATH", { xpath: DEVICE_UPDATED_NOTE_CATEGORY_XPATH })
-    : await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
+  const noteCategory = isDeviceUpdated ? "Device Updated" : "Device Returned";
+  const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
   if (!setCatRes.ok) {
     const message = `Failed to select note category "${noteCategory}".`;
     alert(message);
