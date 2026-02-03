@@ -558,18 +558,18 @@ body[data-theme^="customTheme-"] .container > * {
 }
 
 .landing-crm-nav {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 8px;
+  padding: 8px 10px;
   border-radius: 12px;
   border: 1px solid var(--input-border);
   background: rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .landing-crm-nav__title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--accent);
 }
@@ -577,13 +577,13 @@ body[data-theme^="customTheme-"] .container > * {
 .landing-crm-nav__form {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
 .landing-crm-nav__label {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted-text);
 }
@@ -593,7 +593,7 @@ body[data-theme^="customTheme-"] .container > * {
 }
 
 .landing-crm-nav__btn {
-  padding: 6px 12px;
+  padding: 4px 10px;
 }
 
 .qa-complete-view .qa-crm-nav {

@@ -166,6 +166,7 @@ const CUSTOM_THEME_FIELDS = [
 const LANDING_LAYOUT_ITEMS = [
   { id: "dailyCounter", label: "Daily task counter" },
   { id: "weeklyCounter", label: "Weekly task counter" },
+  { id: "crmNavigator", label: "CRM navigator" },
   { id: "checkinTools", label: "Check-in tools button" },
   { id: "prepTools", label: "Prep tools button" },
   { id: "qaForm", label: "QA form button" },
