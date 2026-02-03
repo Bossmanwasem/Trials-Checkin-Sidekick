@@ -181,7 +181,7 @@ const PREP_CHECKLIST_CATEGORIES = [
       { id: "prepStrapClips", label: "Shoulder strap has Correct clips" },
       {
         id: "prepFolderMaterials",
-        label: "Added Shipping reminder"
+        label: "Folder is prepared with all necessary materials (Include Spanish AND English materials if device has any Spanish requested vocab or Spanish Interpreter Needed  Shipping reminder is present for all non-LTL devices)"
       }
     ]
   },
@@ -250,9 +250,11 @@ const PREP_CHECKLIST_CATEGORIES = [
 
 const PREP_CHECKLIST_SL_CATEGORY_OVERRIDES = {
   binPreparation: {
-    title: "Added Shipping Reminder",
+    title: "Bin Preparation",
     items: [
-      { id: "prepShippingReminder", label: "Added shipping reminder for the Service Loan" }
+      { id: "prepChargers", label: "Gather Correct Chargers" },
+      { id: "prepStrapClips", label: "Shoulder strap has Correct clips" },
+      { id: "prepShippingReminder", label: "Added Shipping reminder" }
     ]
   }
 };
