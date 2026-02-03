@@ -757,6 +757,31 @@
   </div>
 
   <!-- TALKPAD PREP SIDEKICK VIEW -->
+  <div class="container" id="prepTypeView" style="display:none;">
+    <h1>TalkPad Prep Sidekick</h1>
+    <p class="complete-intro">Is this a Service Loan (SL) or a CL/LTL (Regular Prep)?</p>
+    <div class="mini-row">
+      <button id="prepTypeSlBtn" class="toggle-btn" type="button">Service Loan (SL)</button>
+      <button id="prepTypeClBtn" class="toggle-btn" type="button">CL/LTL (Regular Prep)</button>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="prepTypeReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+  </div>
+
+  <div class="container" id="prepSlCrmView" style="display:none;">
+    <h1>Service Loan CRM Navigator</h1>
+    <p class="complete-intro">Please input the user's original loan CRM ID and hit go.</p>
+    <form id="prepSlCrmForm">
+      <label for="prepSlCrmInput">Original loan CRM ID</label>
+      <input type="text" id="prepSlCrmInput" placeholder="Enter CRM ID" required />
+      <button type="submit" id="prepSlCrmGoBtn">Go!</button>
+    </form>
+    <div class="crm-nav-footer">
+      <button id="prepSlCrmReturnBtn" class="toggle-btn" type="button">Back</button>
+    </div>
+  </div>
+
   <div class="container prep-view" id="prepView" style="display:none;">
     <h1>TalkPad Prep Sidekick</h1>
     <p class="complete-intro">Work through the prep checklist and mark items off as you go.</p>
