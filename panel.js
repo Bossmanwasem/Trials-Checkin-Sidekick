@@ -290,6 +290,9 @@ function clearPrepChecklist() {
   prepView.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.checked = false;
   });
+  prepView.querySelectorAll(".prep-checklist__category").forEach(wrapper => {
+    updatePrepChecklistCategoryState(wrapper);
+  });
 }
 
 let prepChecklistOrderDraft = [];
@@ -334,6 +337,30 @@ function buildPrepChecklistItem(item) {
   return label;
 }
 
+function setPrepChecklistCategoryCollapsed(wrapper, collapsed) {
+  wrapper.classList.toggle("is-collapsed", collapsed);
+  const header = wrapper.querySelector(".prep-checklist__category-header");
+  if (header) {
+    header.setAttribute("aria-expanded", String(!collapsed));
+  }
+}
+
+function updatePrepChecklistCategoryState(wrapper) {
+  const checkboxes = Array.from(wrapper.querySelectorAll('input[type="checkbox"]'));
+  const allChecked = checkboxes.length > 0 && checkboxes.every(input => input.checked);
+  wrapper.classList.toggle("is-complete", allChecked);
+
+  if (allChecked) {
+    if (wrapper.dataset.autoCollapsed !== "true") {
+      wrapper.dataset.autoCollapsed = "true";
+      setPrepChecklistCategoryCollapsed(wrapper, true);
+    }
+  } else if (wrapper.dataset.autoCollapsed === "true") {
+    delete wrapper.dataset.autoCollapsed;
+    setPrepChecklistCategoryCollapsed(wrapper, false);
+  }
+}
+
 function renderPrepChecklist(container, categories) {
   container.innerHTML = "";
   categories.forEach(category => {
@@ -341,18 +368,51 @@ function renderPrepChecklist(container, categories) {
     wrapper.className = "prep-checklist__category";
     wrapper.dataset.categoryId = category.id;
 
-    const title = document.createElement("div");
+    const header = document.createElement("button");
+    header.type = "button";
+    header.className = "prep-checklist__category-header";
+    header.setAttribute("aria-expanded", "true");
+
+    const title = document.createElement("span");
     title.className = "prep-checklist__category-title";
     title.textContent = category.title;
-    wrapper.appendChild(title);
+    header.appendChild(title);
+
+    const status = document.createElement("span");
+    status.className = "prep-checklist__category-status";
+    status.setAttribute("aria-hidden", "true");
+    status.textContent = "✓";
+    header.appendChild(status);
+
+    const toggle = document.createElement("span");
+    toggle.className = "prep-checklist__category-toggle";
+    toggle.setAttribute("aria-hidden", "true");
+    toggle.textContent = "▾";
+    header.appendChild(toggle);
+
+    header.addEventListener("click", () => {
+      const isCollapsed = wrapper.classList.contains("is-collapsed");
+      delete wrapper.dataset.autoCollapsed;
+      setPrepChecklistCategoryCollapsed(wrapper, !isCollapsed);
+    });
+
+    wrapper.appendChild(header);
 
     const items = document.createElement("div");
     items.className = "prep-checklist__category-items";
+    items.id = `prepChecklistItems-${category.id}`;
+    header.setAttribute("aria-controls", items.id);
+    items.addEventListener("change", event => {
+      if (event.target instanceof HTMLInputElement && event.target.type === "checkbox") {
+        updatePrepChecklistCategoryState(wrapper);
+      }
+    });
     category.items.forEach(item => {
       items.appendChild(buildPrepChecklistItem(item));
     });
     wrapper.appendChild(items);
     container.appendChild(wrapper);
+    updatePrepChecklistCategoryState(wrapper);
   });
 }
 
