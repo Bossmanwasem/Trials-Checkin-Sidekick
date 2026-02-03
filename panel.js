@@ -73,7 +73,7 @@ let qaFormTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "prepChecklistOrderView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -248,6 +248,15 @@ const PREP_CHECKLIST_CATEGORIES = [
   }
 ];
 
+const PREP_CHECKLIST_SL_CATEGORY_OVERRIDES = {
+  binPreparation: {
+    title: "Added Shipping Reminder",
+    items: [
+      { id: "prepShippingReminder", label: "Added shipping reminder for the Service Loan" }
+    ]
+  }
+};
+
 function clampNumber(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -279,7 +288,11 @@ function showGridView() {
   showView("gridView");
   void refreshGridClientData();
 }
-function showPrepView() {
+function showPrepTypeView() { showView("prepTypeView"); }
+function showPrepSlCrmView() { showView("prepSlCrmView"); }
+function showPrepView(options = {}) {
+  const { variant = "standard" } = options;
+  prepChecklistVariant = variant;
   showView("prepView");
   void refreshPrepChecklist();
 }
@@ -296,13 +309,34 @@ function clearPrepChecklist() {
 }
 
 let prepChecklistOrderDraft = [];
+let prepChecklistVariant = "standard";
+
+function getPrepChecklistCategoriesForVariant(variant) {
+  const categories = PREP_CHECKLIST_CATEGORIES.map(category => ({
+    ...category,
+    items: category.items.map(item => ({ ...item }))
+  }));
+  if (variant !== "serviceLoan") return categories;
+
+  Object.entries(PREP_CHECKLIST_SL_CATEGORY_OVERRIDES).forEach(([categoryId, override]) => {
+    const index = categories.findIndex(category => category.id === categoryId);
+    if (index === -1) return;
+    categories[index] = {
+      ...categories[index],
+      ...override,
+      items: (override.items || []).map(item => ({ ...item }))
+    };
+  });
+
+  return categories;
+}
 
 function getPrepChecklistCategoryIds() {
   return PREP_CHECKLIST_CATEGORIES.map(category => category.id);
 }
 
 function getPrepChecklistCategoriesByOrder(order) {
-  const categoryMap = new Map(PREP_CHECKLIST_CATEGORIES.map(category => [category.id, category]));
+  const categoryMap = new Map(getPrepChecklistCategoriesForVariant(prepChecklistVariant).map(category => [category.id, category]));
   const orderedCategories = [];
   order.forEach(id => {
     const category = categoryMap.get(id);
@@ -6651,7 +6685,36 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("talkPadPrepBtn")?.addEventListener("click", () => {
-    showPrepView();
+    showPrepTypeView();
+  });
+
+  document.getElementById("prepTypeSlBtn")?.addEventListener("click", () => {
+    showPrepSlCrmView();
+  });
+
+  document.getElementById("prepTypeClBtn")?.addEventListener("click", () => {
+    showPrepView({ variant: "standard" });
+  });
+
+  document.getElementById("prepTypeReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("prepSlCrmReturnBtn")?.addEventListener("click", () => {
+    showPrepTypeView();
+  });
+
+  document.getElementById("prepSlCrmForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const crmInput = document.getElementById("prepSlCrmInput");
+    const crmId = (crmInput?.value || "").trim();
+    if (!crmId) {
+      alert("Enter a CRM ID to continue.");
+      return;
+    }
+    openCrmRecordTab(crmId);
+    if (crmInput) crmInput.value = "";
+    showPrepView({ variant: "serviceLoan" });
   });
 
   document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
@@ -6770,7 +6833,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("prepOrderReturnBtn")?.addEventListener("click", () => {
-    showPrepView();
+    showPrepView({ variant: prepChecklistVariant });
   });
 
   document.getElementById("prepOrderSaveBtn")?.addEventListener("click", async () => {
@@ -6778,7 +6841,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       prepChecklistOrderDraft = getPrepChecklistCategoryIds();
     }
     await setStoredValue(PREP_CHECKLIST_ORDER_STORAGE_KEY, prepChecklistOrderDraft);
-    showPrepView();
+    showPrepView({ variant: prepChecklistVariant });
   });
 
   document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
