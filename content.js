@@ -824,8 +824,12 @@ async function fillDafFormFromStorage() {
   await Promise.all(fields.map(f => fillDafFieldWithFallback(f)));
   await selectDafConsultantByAac(data.aac);
 
+  const dafCheckboxXPath = data.isLtlUpdate
+    ? '//*[@id="field-element-9"]/div/span/div/div/div/div[3]/div/label'
+    : '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label';
+
   await ensureDafCheckboxChecked(
-    '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label',
+    dafCheckboxXPath,
     ["device returned", "daf", "device received back", "ttmt device confirmation"]
   );
 
