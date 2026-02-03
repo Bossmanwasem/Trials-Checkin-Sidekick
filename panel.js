@@ -593,6 +593,19 @@ function updateLtlUpdateRowSection() {
   }
 }
 
+async function openLtlWorkbookForCompletion(rowValues = []) {
+  const tab = await chrome.tabs.create({ url: DEVICE_LOOKUP_EXCEL_WEB_URL });
+  if (!tab?.id || !rowValues?.length) return;
+  const ready = await waitForTabComplete(tab.id, 20000);
+  if (!ready) return;
+  await chrome.tabs.sendMessage(tab.id, {
+    type: "PASTE_LTL_COMPLETED_ROW",
+    rowValues
+  }).catch(error => {
+    console.warn("Unable to send LTL completion row.", error);
+  });
+}
+
 function applyCheckinModeUI() {
   const isLtlUpdate = isLtlUpdateFlow();
   if (checkinFormTitle) {
@@ -4991,6 +5004,19 @@ function buildHeaderMap(rows) {
   return map;
 }
 
+function trimTrailingEmptyCells(row) {
+  const trimmed = [...row];
+  while (trimmed.length) {
+    const value = trimmed[trimmed.length - 1];
+    if (value === null || value === undefined || String(value).trim() === "") {
+      trimmed.pop();
+      continue;
+    }
+    break;
+  }
+  return trimmed;
+}
+
 function formatWorksheetRow(rows, rowNumber) {
   const headerRow = rows[0] || [];
   const dataRow = rows[rowNumber - 1] || [];
@@ -5027,10 +5053,13 @@ function searchSerialNumber(serialNumber, workbook) {
             matches.push({ sheet: sheetName, row: rowIndex + 1 });
             sheetsFound.add(sheetName);
             if (sheetName === "LTL Update List" && !ltlRowMatch) {
+              const headerRow = rows[0] || [];
+              const rowValues = rows[rowIndex] ? rows[rowIndex].slice(0, headerRow.length) : [];
               ltlRowMatch = {
                 sheet: sheetName,
                 rowNumber: rowIndex + 1,
-                rowText: formatWorksheetRow(rows, rowIndex + 1)
+                rowText: formatWorksheetRow(rows, rowIndex + 1),
+                rowValues: trimTrailingEmptyCells(rowValues)
               };
             }
           }
@@ -5040,10 +5069,13 @@ function searchSerialNumber(serialNumber, workbook) {
             matches.push({ sheet: sheetName, row: rowIndex + 1 });
             sheetsFound.add(sheetName);
             if (sheetName === "LTL Update List" && !ltlRowMatch) {
+              const headerRow = rows[0] || [];
+              const rowValues = rows[rowIndex] ? rows[rowIndex].slice(0, headerRow.length) : [];
               ltlRowMatch = {
                 sheet: sheetName,
                 rowNumber: rowIndex + 1,
-                rowText: formatWorksheetRow(rows, rowIndex + 1)
+                rowText: formatWorksheetRow(rows, rowIndex + 1),
+                rowValues: trimTrailingEmptyCells(rowValues)
               };
             }
           }
@@ -6722,7 +6754,7 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
     if (dafTabId) {
       await chrome.tabs.remove(dafTabId);
     }
-    chrome.tabs.create({ url: DEVICE_LOOKUP_EXCEL_WEB_URL });
+    await openLtlWorkbookForCompletion(deviceLookupLastLtlRow?.rowValues || []);
     await finishCheckinAndReset({ returnToLanding: true });
     return;
   }

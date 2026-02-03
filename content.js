@@ -543,6 +543,16 @@ if (runtime?.onMessage?.addListener) {
       return true;
     }
 
+    if (msg.type === "PASTE_LTL_COMPLETED_ROW") {
+      pasteLtlCompletedRow(msg.rowValues || [])
+        .then(ok => sendResponse({ ok }))
+        .catch(err => {
+          console.error(err);
+          sendResponse({ ok: false, message: err?.message || "Failed to paste LTL update row." });
+        });
+      return true;
+    }
+
     if (msg.type === "RUN_DAF_AUTOFILL") {
       fillDafFormFromStorage()
         .then(didRun => {
@@ -561,6 +571,67 @@ if (runtime?.onMessage?.addListener) {
   });
 } else {
   console.warn("Chrome runtime not available; skipping message listener setup.");
+}
+
+/* ---------------- Excel workbook helpers ---------------- */
+
+const LTL_COMPLETED_SHEET_NAME = "Completed LTL Update List";
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function findSheetTabByName(sheetName) {
+  const normalizedTarget = normalizeText(sheetName);
+  const candidates = Array.from(document.querySelectorAll('[role="tab"], button, li, span'));
+  return candidates.find(el => normalizeText(el.textContent).includes(normalizedTarget)) || null;
+}
+
+function findExcelGrid() {
+  return document.querySelector('[role="grid"]')
+    || document.querySelector('div[aria-label*="Sheet"]')
+    || document.querySelector('div[aria-label*="Worksheet"]');
+}
+
+function sendKey(target, key, options = {}) {
+  const event = new KeyboardEvent("keydown", {
+    key,
+    bubbles: true,
+    cancelable: true,
+    ...options
+  });
+  target.dispatchEvent(event);
+}
+
+async function pasteLtlCompletedRow(rowValues) {
+  if (!Array.isArray(rowValues) || rowValues.length === 0) return false;
+  const rowText = rowValues.map(value => String(value ?? "")).join("\t");
+  await navigator.clipboard.writeText(rowText);
+
+  const sheetTab = findSheetTabByName(LTL_COMPLETED_SHEET_NAME);
+  if (sheetTab) {
+    sheetTab.click();
+    await delay(600);
+  }
+
+  const grid = findExcelGrid();
+  if (!grid) {
+    alert("LTL row copied to clipboard. Paste into the Completed LTL Update List.");
+    return false;
+  }
+
+  grid.focus();
+  grid.click();
+  sendKey(grid, "End", { ctrlKey: true });
+  await delay(100);
+  sendKey(grid, "ArrowDown");
+  await delay(100);
+
+  const pasted = typeof document.execCommand === "function" && document.execCommand("paste");
+  if (!pasted) {
+    alert("LTL row copied to clipboard. Paste into the Completed LTL Update List.");
+  }
+  return pasted;
 }
 
 /* ---------------- DAF form autofill ---------------- */
