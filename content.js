@@ -825,7 +825,7 @@ async function fillDafFormFromStorage() {
   await selectDafConsultantByAac(data.aac);
 
   const dafCheckboxXPath = data.isLtlUpdate
-    ? '//*[@id="field-element-9"]/div/span/div/div/div/div[3]/div/label'
+    ? '//*[@id="ChoiceGroupLabel51-LTL Update"]'
     : '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label';
 
   await ensureDafCheckboxChecked(
