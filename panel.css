@@ -547,14 +547,6 @@ body[data-theme^="customTheme-"] .container > * {
   margin-top: 0;
 }
 
-.crm-navigator-view {
-  position: relative;
-}
-
-.crm-navigator-view button[type="submit"] {
-  margin-top: 16px;
-}
-
 .crm-nav-footer {
   margin-top: 18px;
   display: flex;
@@ -563,6 +555,45 @@ body[data-theme^="customTheme-"] .container > * {
 
 .qa-complete-view {
   position: relative;
+}
+
+.landing-crm-nav {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--input-border);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-crm-nav__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.landing-crm-nav__form {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.landing-crm-nav__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+
+.landing-crm-nav__input {
+  margin: 0;
+}
+
+.landing-crm-nav__btn {
+  padding: 6px 12px;
 }
 
 .qa-complete-view .qa-crm-nav {

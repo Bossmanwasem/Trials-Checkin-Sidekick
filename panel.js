@@ -73,7 +73,7 @@ let qaFormTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -284,7 +284,6 @@ function showThemeBuilderView() {
   refreshThemeBuilderFromActiveTheme();
 }
 function showUpdateNotesView() { showView("updateNotesView"); }
-function showCrmNavigatorView() { showView("crmNavigatorView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
@@ -6719,10 +6718,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showPrepView({ variant: "serviceLoan" });
   });
 
-  document.getElementById("crmNavigatorBtn")?.addEventListener("click", () => {
-    showCrmNavigatorView();
-  });
-
   document.getElementById("settingsReturnBtn")?.addEventListener("click", () => {
     showLandingView();
   });
@@ -6788,9 +6783,9 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
 
-  document.getElementById("crmNavigatorForm")?.addEventListener("submit", (event) => {
+  document.getElementById("landingCrmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const crmInput = document.getElementById("crmNavigatorInput");
+    const crmInput = document.getElementById("landingCrmNavigatorInput");
     const crmId = (crmInput?.value || "").trim();
     if (!crmId) {
       alert("Enter a CRM ID to continue.");
@@ -6812,10 +6807,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     const tab = await openCrmRecordTab(crmId);
     void loadQaClientNameFromTab(tab?.id ?? null);
     if (crmInput) crmInput.value = "";
-  });
-
-  document.getElementById("crmNavigatorReturnBtn")?.addEventListener("click", () => {
-    showLandingView();
   });
 
   document.getElementById("deviceLookupReturnBtn")?.addEventListener("click", () => {
