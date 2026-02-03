@@ -6,7 +6,7 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
-const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]';
+const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]/span';
 const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
 const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
 const DOCUMENT_UPLOAD_SUCCESS_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_lblFileUploadSuccess"]';
@@ -6561,6 +6561,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
   let uploadMessage = "CRM note submitted. Review the details below.";
   if (zipUploads.length || zipName || gridZipName) {
+    await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
     uploadMessage = "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
     showUploadPrompt(zipName, gridZipName);
   }
