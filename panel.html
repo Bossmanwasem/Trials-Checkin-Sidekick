@@ -260,6 +260,9 @@
           <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Check-in form that auto-fills name and AAC from the current CRM.">
             Check-in Sidekick
           </button>
+          <button id="startLtlUpdateBtn" class="toggle-btn landing-btn" type="button" data-tooltip="LTL Update check-in form without camera and mount sections.">
+            LTL Update Sidekick
+          </button>
         </div>
       </div>
       <div class="landing-section" data-layout-item="prepTools">
@@ -810,7 +813,7 @@
 
   <!-- FORM VIEW -->
   <div class="container" id="formView" style="display:none;">
-    <h1>Trials Automated Check-in SideKick</h1>
+    <h1 id="checkinFormTitle">Trials Automated Check-in SideKick</h1>
 
     <div class="mini-row">
       <button id="refreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
@@ -820,7 +823,7 @@
     <form id="checkinForm">
 
       <!-- Device number -->
-      <label>Device Number (Put an X if only Checking in Mount) *</label>
+      <label id="deviceNumberLabel">Device Number (Put an X if only Checking in Mount) *</label>
       <input type="text" id="deviceNumberInput" required />
 
       <!-- Device condition -->

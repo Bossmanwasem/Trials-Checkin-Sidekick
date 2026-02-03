@@ -526,6 +526,59 @@ function showEmailView() { showView("emailView"); }
 function showAppOverridesView() { showView("appOverridesView"); }
 function showQaCompleteView() { showView("qaCompleteView"); }
 
+const checkinFormTitle = document.getElementById("checkinFormTitle");
+const deviceNumberLabel = document.getElementById("deviceNumberLabel");
+const cameraToggleBtn = document.getElementById("cameraToggle");
+const mountToggleBtn = document.getElementById("mountToggle");
+const finishCheckinBtn = document.getElementById("finishCheckinBtn");
+
+function isCheckinFlowActive() {
+  return Boolean(activeCheckinFlow);
+}
+
+function isLtlUpdateFlow() {
+  return activeCheckinFlow === CHECKIN_FLOW.LTL_UPDATE;
+}
+
+function clearCameraAndMountFields() {
+  document.querySelectorAll(
+    'input[name="cameraNumber"], input[name="luminNumber"], input[name="clampMount"], input[name="tableMount"], input[name="rollingMount"]'
+  ).forEach(el => el.value = "");
+}
+
+function applyCheckinModeUI() {
+  const isLtlUpdate = isLtlUpdateFlow();
+  if (checkinFormTitle) {
+    checkinFormTitle.textContent = isLtlUpdate ? "LTL Update Sidekick" : "Trials Automated Check-in SideKick";
+  }
+  if (deviceNumberLabel) {
+    deviceNumberLabel.textContent = isLtlUpdate
+      ? "Device Number *"
+      : "Device Number (Put an X if only Checking in Mount) *";
+  }
+  const showMountAndCamera = !isLtlUpdate;
+  if (cameraToggleBtn) cameraToggleBtn.style.display = showMountAndCamera ? "" : "none";
+  if (mountToggleBtn) mountToggleBtn.style.display = showMountAndCamera ? "" : "none";
+  if (!showMountAndCamera) {
+    if (cameraLuminSection) cameraLuminSection.style.display = "none";
+    if (mountSection) mountSection.style.display = "none";
+    clearCameraAndMountFields();
+  }
+  if (finishCheckinBtn) {
+    finishCheckinBtn.textContent = isLtlUpdate ? "Finish LTL Update" : "Final Step";
+  }
+}
+
+function setActiveCheckinFlow(flow) {
+  activeCheckinFlow = flow;
+  applyCheckinModeUI();
+}
+
+function clearActiveCheckinFlow() {
+  activeCheckinFlow = null;
+  applyCheckinModeUI();
+}
+
 function setCollapsibleState(key, expanded) {
   const toggle = document.querySelector(`[data-collapsible="${key}"]`);
   const content = document.querySelector(`[data-collapsible-content="${key}"]`);
@@ -534,7 +587,11 @@ function setCollapsibleState(key, expanded) {
   content.hidden = !expanded;
 }
 
-let hasStartedCheckin = false;
+const CHECKIN_FLOW = {
+  CHECKIN: "checkin",
+  LTL_UPDATE: "ltlUpdate"
+};
+let activeCheckinFlow = null;
 let smartboxRepairRequired = false;
 let hasStartedGrid = false;
 let outlookEmailTabId = null;
@@ -5480,6 +5537,7 @@ otherInput?.addEventListener("input", updateRepairsBox);
 /* ---------------- Device Condition + X rules ---------------- */
 
 const deviceInput = document.getElementById("deviceNumberInput");
+const cameraLuminSection = document.getElementById("cameraLuminSection");
 const mountSection = document.getElementById("mountSection");
 const conditionSelect = document.getElementById("conditionSelect");
 const conditionContainer = document.getElementById("conditionContainer");
@@ -5498,7 +5556,7 @@ function clearRepairsUI() {
 function updateDeviceRules() {
   const isMountOnly = (deviceInput?.value || "").trim().toLowerCase() === "x";
 
-  if (isMountOnly) {
+  if (isMountOnly && !isLtlUpdateFlow()) {
     if (mountSection) mountSection.style.display = "block";
     if (conditionSelect) {
       conditionSelect.required = false;
@@ -5507,6 +5565,7 @@ function updateDeviceRules() {
     if (conditionContainer) conditionContainer.style.display = "none";
     clearRepairsUI();
   } else {
+    if (isLtlUpdateFlow() && mountSection) mountSection.style.display = "none";
     if (conditionContainer) conditionContainer.style.display = "block";
     if (conditionSelect) conditionSelect.required = true;
   }
@@ -5651,7 +5710,7 @@ function buildCannedNote() {
   const isMountOnly = deviceNum.toLowerCase() === "x";
   const modelName = detectDeviceModel(deviceNum);
 
-  if (isMountOnly) {
+  if (isMountOnly && !isLtlUpdateFlow()) {
     const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
     const cameraNumber = getFormValue('input[name="cameraNumber"]');
     const luminNumber = getFormValue('input[name="luminNumber"]');
@@ -5899,7 +5958,7 @@ async function finalizeCheckinCleanupAndCounters() {
 }
 
 async function handleOutlookEmailTabClosed() {
-  if (!hasStartedCheckin) return;
+  if (activeCheckinFlow !== CHECKIN_FLOW.CHECKIN) return;
   await finalizeCheckinCleanupAndCounters();
   await finishCheckinAndReset({ returnToLanding: true });
 }
@@ -6038,10 +6097,10 @@ async function closeManageInventoryTabs(excludeTabId = null) {
 async function syncViewForTab(tab) {
   if (!tab) return;
   const gridVisible = document.getElementById("gridView")?.style.display === "block";
-  if (!hasStartedCheckin && !gridVisible) return;
+  if (!isCheckinFlowActive() && !gridVisible) return;
 
   if (isDafFormUrl(tab.url)) {
-    if (!hasStartedCheckin) return;
+    if (!isCheckinFlowActive()) return;
     await renderDafRecap();
     await closeManageInventoryTabs(tab.id);
     showDafView();
@@ -6051,7 +6110,7 @@ async function syncViewForTab(tab) {
   if (!isCrmUrl(tab.url)) return;
 
   if (isManageInventoryUrl(tab.url)) {
-    if (!hasStartedCheckin) return;
+    if (!isCheckinFlowActive() || isLtlUpdateFlow()) return;
     showInventoryView();
     await updateInventorySearchDisplay();
     return;
@@ -6064,7 +6123,7 @@ async function syncViewForTab(tab) {
 
   const res = await fetchClientData(tab.id);
   if (res?.data) {
-    if (hasStartedCheckin) {
+    if (isCheckinFlowActive()) {
       applyClientData(res.data);
     }
     if (gridVisible) {
@@ -6264,6 +6323,9 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   await updateInventorySearchDisplay();
   await renderDafRecap();
   if (returnToLanding) {
+    clearActiveCheckinFlow();
+  }
+  if (returnToLanding) {
     showLandingView();
   } else {
     showFormView();
@@ -6380,7 +6442,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   await logTaskOutcome("Checkin", "Completed successfully");
   resetAllFieldsAndUI();
   setText("notePreviewText", note);
-  if (isMountOnly) {
+  if (isMountOnly && !isLtlUpdateFlow()) {
     await renderDafRecap();
     showDafView();
     chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
@@ -6400,6 +6462,12 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 
 document.getElementById("startAnotherBtn")?.addEventListener("click", async () => {
   await closeCheckinTabs();
+  if (isLtlUpdateFlow()) {
+    await renderDafRecap();
+    showDafView();
+    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
+    return;
+  }
   if (smartboxRepairRequired) {
     showSmartboxRepairView();
     chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
@@ -6464,6 +6532,11 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
+  if (isLtlUpdateFlow()) {
+    await finalizeCheckinCleanupAndCounters();
+    await finishCheckinAndReset({ returnToLanding: true });
+    return;
+  }
   showEmailView();
   await finalizeCheckinCleanupAndCounters();
   const dafTabId = await getActiveDafTabId();
@@ -6629,7 +6702,17 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
-    hasStartedCheckin = true;
+    setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
+    updateDeviceRules();
+    showFormView();
+    await refreshTrialFilesFromFolder();
+    const activeTab = await getActiveCrmTab();
+    await syncViewForTab(activeTab);
+  });
+
+  document.getElementById("startLtlUpdateBtn")?.addEventListener("click", async () => {
+    setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
+    updateDeviceRules();
     showFormView();
     await refreshTrialFilesFromFolder();
     const activeTab = await getActiveCrmTab();
@@ -6914,7 +6997,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     chrome.tabs.create({
       url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
     });
-    hasStartedCheckin = true;
+    setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     showFormView();
     setValue("deviceNumberInput", deviceLookupLastSerial);
     updateDeviceRules();
@@ -6940,6 +7023,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("returnToLandingBtn")?.addEventListener("click", () => {
+    clearActiveCheckinFlow();
     showLandingView();
   });
 
