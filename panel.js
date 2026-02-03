@@ -605,7 +605,7 @@ function applyCheckinModeUI() {
   updateLtlUpdateOtherFieldVisibility();
   updateLtlUpdateNewSerialFieldVisibility();
   if (finishCheckinBtn) {
-    finishCheckinBtn.textContent = isLtlUpdate ? "Finish LTL Update" : "Final Step";
+    finishCheckinBtn.textContent = isLtlUpdate ? "Next Step" : "Final Step";
   }
 }
 
@@ -6646,6 +6646,11 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
   if (isLtlUpdateFlow()) {
     await finalizeCheckinCleanupAndCounters();
+    const dafTabId = await getActiveDafTabId();
+    if (dafTabId) {
+      await chrome.tabs.remove(dafTabId);
+    }
+    chrome.tabs.create({ url: DEVICE_LOOKUP_EXCEL_WEB_URL });
     await finishCheckinAndReset({ returnToLanding: true });
     return;
   }
