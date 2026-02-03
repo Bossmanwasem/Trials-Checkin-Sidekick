@@ -1030,6 +1030,21 @@
     </button>
   </div>
 
+  <!-- LTL COMPLETION VIEW -->
+  <div class="container" id="ltlCompletionView" style="display:none;">
+    <h1>LTL Update</h1>
+    <p class="complete-intro">Review the row below, then press the button to open Excel and paste it into the Completed LTL Update List.</p>
+    <div class="note-preview">
+      <div class="note-preview__title">Row to paste</div>
+      <div class="note-preview__body" id="ltlCompletionRowDetails">No LTL row captured yet.</div>
+    </div>
+    <div class="mini-row">
+      <button class="toggle-btn" id="ltlCompletionRunBtn" type="button">Open workbook &amp; paste row</button>
+      <button class="toggle-btn" id="ltlCompletionReturnBtn" type="button">Return to landing</button>
+    </div>
+    <div class="status-line" id="ltlCompletionStatus"></div>
+  </div>
+
   <!-- SMARTBOX REPAIR VIEW -->
   <div class="container" id="smartboxRepairView" style="display:none;">
     <h1>Smartbox Repair Tracker</h1>

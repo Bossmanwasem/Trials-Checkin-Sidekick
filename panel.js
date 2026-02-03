@@ -73,7 +73,7 @@ let qaFormTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -518,6 +518,7 @@ function showPrepChecklistOrderView() {
   void refreshPrepChecklistOrderList();
 }
 function showCompleteView() { showView("completeView"); }
+function showLtlCompletionView() { showView("ltlCompletionView"); }
 function showFormView() { showView("formView"); }
 function showSmartboxRepairView() { showView("smartboxRepairView"); }
 function showInventoryView() { showView("inventoryView"); }
@@ -539,6 +540,12 @@ const ltlUpdateNewSerialField = document.getElementById("ltlUpdateNewSerialField
 const ltlUpdateNewSerialNumber = document.getElementById("ltlUpdateNewSerialNumber");
 const ltlUpdateRowSection = document.getElementById("ltlUpdateRowSection");
 const ltlUpdateRowResult = document.getElementById("ltlUpdateRowResult");
+const ltlCompletionRowDetails = document.getElementById("ltlCompletionRowDetails");
+const ltlCompletionRunBtn = document.getElementById("ltlCompletionRunBtn");
+const ltlCompletionReturnBtn = document.getElementById("ltlCompletionReturnBtn");
+const ltlCompletionStatus = document.getElementById("ltlCompletionStatus");
+
+let ltlCompletionRowPayload = null;
 
 function isCheckinFlowActive() {
   return Boolean(activeCheckinFlow);
@@ -590,6 +597,21 @@ function updateLtlUpdateRowSection() {
     ltlUpdateRowResult.textContent = rowNumber ? `Row ${rowNumber}\n${rowText}` : rowText;
   } else {
     ltlUpdateRowResult.textContent = "";
+  }
+}
+
+function updateLtlCompletionDetails() {
+  if (!ltlCompletionRowDetails) return;
+  const rowText = ltlCompletionRowPayload?.rowText || "";
+  const rowNumber = ltlCompletionRowPayload?.rowNumber;
+  if (rowText) {
+    ltlCompletionRowDetails.textContent = rowNumber ? `Row ${rowNumber}\n${rowText}` : rowText;
+  } else {
+    ltlCompletionRowDetails.textContent = "No LTL row captured yet.";
+  }
+  if (ltlCompletionStatus) ltlCompletionStatus.textContent = "";
+  if (ltlCompletionRunBtn) {
+    ltlCompletionRunBtn.disabled = !ltlCompletionRowPayload?.rowValues?.length;
   }
 }
 
@@ -6754,8 +6776,17 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
     if (dafTabId) {
       await chrome.tabs.remove(dafTabId);
     }
-    await openLtlWorkbookForCompletion(deviceLookupLastLtlRow?.rowValues || []);
-    await finishCheckinAndReset({ returnToLanding: true });
+    if (deviceLookupLastLtlRow) {
+      ltlCompletionRowPayload = {
+        rowNumber: deviceLookupLastLtlRow.rowNumber,
+        rowText: deviceLookupLastLtlRow.rowText,
+        rowValues: deviceLookupLastLtlRow.rowValues
+      };
+    } else {
+      ltlCompletionRowPayload = null;
+    }
+    updateLtlCompletionDetails();
+    showLtlCompletionView();
     return;
   }
   showEmailView();
@@ -6765,6 +6796,24 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
     await chrome.tabs.remove(dafTabId);
   }
   await openOutlookComposeEmail();
+});
+
+ltlCompletionRunBtn?.addEventListener("click", async () => {
+  if (!ltlCompletionRowPayload?.rowValues?.length) {
+    alert("No LTL row captured yet. Run a device lookup to capture the row before continuing.");
+    return;
+  }
+  if (ltlCompletionStatus) ltlCompletionStatus.textContent = "Opening workbook and preparing the paste...";
+  await openLtlWorkbookForCompletion(ltlCompletionRowPayload.rowValues);
+  if (ltlCompletionStatus) {
+    ltlCompletionStatus.textContent = "Workbook opened. The row is copied to your clipboard.";
+  }
+});
+
+ltlCompletionReturnBtn?.addEventListener("click", async () => {
+  ltlCompletionRowPayload = null;
+  updateLtlCompletionDetails();
+  await finishCheckinAndReset({ returnToLanding: true });
 });
 
 ["gridFirstName", "gridLastName", "gridCrmId"].forEach(id => {
