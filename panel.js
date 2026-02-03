@@ -47,6 +47,7 @@ const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
 const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
+const PREP_CHECKLIST_ORDER_STORAGE_KEY = "ttmtPrepChecklistCategoryOrder";
 const LANDING_MASCOT_VISIBLE_STORAGE_KEY = "ttmtLandingMascotVisible";
 const LANDING_SYMOJI_VISIBLE_STORAGE_KEY = "ttmtLandingSymojiVisible";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
@@ -72,7 +73,7 @@ let qaFormTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "crmNavigatorView", "deviceLookupView", "gridView", "prepView", "prepChecklistOrderView", "formView", "completeView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -171,6 +172,81 @@ const LANDING_LAYOUT_ITEMS = [
   { id: "trialsLinks", label: "Trials links button" },
   { id: "userSettings", label: "User settings button" }
 ];
+const PREP_CHECKLIST_CATEGORIES = [
+  {
+    id: "binPreparation",
+    title: "Bin Preparation",
+    items: [
+      { id: "prepChargers", label: "Gather Correct Chargers" },
+      { id: "prepStrapClips", label: "Shoulder strap has Correct clips" },
+      {
+        id: "prepFolderMaterials",
+        label: "Folder is prepared with Needed materials (Include Spanish AND English materials if device has any Spanish requested vocab or Spanish Interpreter Needed. Shipping reminder is present for all non-LTL devices)"
+      }
+    ]
+  },
+  {
+    id: "deviceCondition",
+    title: "Device and Case Condition",
+    items: [
+      { id: "prepDeviceCondition", label: "Ensure Device is in good condition" },
+      { id: "prepScreenProtector", label: "Check Screen protector for scratches/Bubbles" },
+      { id: "prepScreenScratches", label: "Check screen for any scratches" },
+      { id: "prepDevicePerformance", label: "Device is performing well" },
+      { id: "prepCaseCondition", label: "Case is in Good Condition" }
+    ]
+  },
+  {
+    id: "requestedAccessories",
+    title: "Requested Accessories",
+    items: [
+      { id: "prepAccessories", label: "Accessories listed on the Device Tab are with the Device" },
+      {
+        id: "prepKeyguards",
+        label: "Make sure requested keyguard(s) and keyguard frame are present, fit properly, and do not have sharp edges"
+      }
+    ]
+  },
+  {
+    id: "iosSettings",
+    title: "iOS Settings",
+    items: [
+      { id: "prepBackboxBluetooth", label: "Backbox connected via Bluetooth" },
+      {
+        id: "prepCameraAccess",
+        label: "Camera and Photo Access Allowed (Only needed for requested Main 4 apps)"
+      }
+    ]
+  },
+  {
+    id: "iosSettings1",
+    title: "iOS Settings 1",
+    items: [
+      { id: "prepAutoLock", label: "Display and Brightness - Auto-Lock set to 10 minutes" },
+      { id: "prepDockSliders", label: "Home Screen & App Library - Dock sliders are turned off" },
+      { id: "prepGestures", label: "Multitasking & Gestures - All sliders turned off" }
+    ]
+  },
+  {
+    id: "iosSettings2",
+    title: "iOS Settings 2",
+    items: [
+      { id: "prepSiriSuggestions", label: "Notifications - Siri Suggestions - All Off" },
+      { id: "prepNotificationStyle", label: "Notifications - Notification Style - All Off" },
+      { id: "prepItunesPurchases", label: "Screen Time - iTunes & App Store purchases turned off" },
+      { id: "prepSiriDictation", label: "Screen Time - Siri & Dictation - Off" },
+      { id: "prepScreenTimePasscode", label: "Screen Time passcode set to 9357" }
+    ]
+  },
+  {
+    id: "crm",
+    title: "CRM",
+    items: [
+      { id: "prepVocabSet", label: "Vocab Set filled out as necessary" },
+      { id: "prepGridAccounts", label: "Grid accounts are added to device tab" }
+    ]
+  }
+];
 
 function clampNumber(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -203,7 +279,10 @@ function showGridView() {
   showView("gridView");
   void refreshGridClientData();
 }
-function showPrepView() { showView("prepView"); }
+function showPrepView() {
+  showView("prepView");
+  void refreshPrepChecklist();
+}
 
 function clearPrepChecklist() {
   const prepView = document.getElementById("prepView");
@@ -211,6 +290,136 @@ function clearPrepChecklist() {
   prepView.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.checked = false;
   });
+}
+
+let prepChecklistOrderDraft = [];
+
+function getPrepChecklistCategoryIds() {
+  return PREP_CHECKLIST_CATEGORIES.map(category => category.id);
+}
+
+function getPrepChecklistCategoriesByOrder(order) {
+  const categoryMap = new Map(PREP_CHECKLIST_CATEGORIES.map(category => [category.id, category]));
+  const orderedCategories = [];
+  order.forEach(id => {
+    const category = categoryMap.get(id);
+    if (category) {
+      orderedCategories.push(category);
+      categoryMap.delete(id);
+    }
+  });
+  categoryMap.forEach(category => orderedCategories.push(category));
+  return orderedCategories;
+}
+
+async function getPrepChecklistCategoryOrder() {
+  const stored = await getStoredValue(PREP_CHECKLIST_ORDER_STORAGE_KEY);
+  const defaultOrder = getPrepChecklistCategoryIds();
+  if (!Array.isArray(stored)) return defaultOrder;
+  const validIds = new Set(defaultOrder);
+  const filtered = stored.filter(id => validIds.has(id));
+  const missing = defaultOrder.filter(id => !filtered.includes(id));
+  const combined = [...filtered, ...missing];
+  return combined.length ? combined : defaultOrder;
+}
+
+function buildPrepChecklistItem(item) {
+  const label = document.createElement("label");
+  label.className = "prep-checklist__item";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.id = item.id;
+  label.appendChild(input);
+  label.appendChild(document.createTextNode(` ${item.label}`));
+  return label;
+}
+
+function renderPrepChecklist(container, categories) {
+  container.innerHTML = "";
+  categories.forEach(category => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "prep-checklist__category";
+    wrapper.dataset.categoryId = category.id;
+
+    const title = document.createElement("div");
+    title.className = "prep-checklist__category-title";
+    title.textContent = category.title;
+    wrapper.appendChild(title);
+
+    const items = document.createElement("div");
+    items.className = "prep-checklist__category-items";
+    category.items.forEach(item => {
+      items.appendChild(buildPrepChecklistItem(item));
+    });
+    wrapper.appendChild(items);
+    container.appendChild(wrapper);
+  });
+}
+
+async function refreshPrepChecklist() {
+  const container = document.getElementById("prepChecklistContainer");
+  if (!container) return;
+  const order = await getPrepChecklistCategoryOrder();
+  renderPrepChecklist(container, getPrepChecklistCategoriesByOrder(order));
+}
+
+function renderPrepChecklistOrderList() {
+  const container = document.getElementById("prepChecklistOrderList");
+  if (!container) return;
+  container.innerHTML = "";
+  const orderedCategories = getPrepChecklistCategoriesByOrder(prepChecklistOrderDraft);
+  orderedCategories.forEach((category, index) => {
+    const row = document.createElement("div");
+    row.className = "prep-checklist__order-item";
+
+    const title = document.createElement("div");
+    title.textContent = category.title;
+    row.appendChild(title);
+
+    const actions = document.createElement("div");
+    actions.className = "prep-checklist__order-actions";
+
+    const upButton = document.createElement("button");
+    upButton.type = "button";
+    upButton.className = "toggle-btn";
+    upButton.textContent = "Up";
+    upButton.disabled = index === 0;
+    upButton.addEventListener("click", () => {
+      movePrepChecklistCategory(index, -1);
+    });
+
+    const downButton = document.createElement("button");
+    downButton.type = "button";
+    downButton.className = "toggle-btn";
+    downButton.textContent = "Down";
+    downButton.disabled = index === orderedCategories.length - 1;
+    downButton.addEventListener("click", () => {
+      movePrepChecklistCategory(index, 1);
+    });
+
+    actions.appendChild(upButton);
+    actions.appendChild(downButton);
+    row.appendChild(actions);
+    container.appendChild(row);
+  });
+}
+
+function movePrepChecklistCategory(index, delta) {
+  const nextIndex = index + delta;
+  if (nextIndex < 0 || nextIndex >= prepChecklistOrderDraft.length) return;
+  const updated = [...prepChecklistOrderDraft];
+  [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+  prepChecklistOrderDraft = updated;
+  renderPrepChecklistOrderList();
+}
+
+async function refreshPrepChecklistOrderList() {
+  prepChecklistOrderDraft = await getPrepChecklistCategoryOrder();
+  renderPrepChecklistOrderList();
+}
+function showPrepChecklistOrderView() {
+  showView("prepChecklistOrderView");
+  void refreshPrepChecklistOrderList();
 }
 function showCompleteView() { showView("completeView"); }
 function showFormView() { showView("formView"); }
@@ -6494,6 +6703,22 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
 
   document.getElementById("prepReturnBtn")?.addEventListener("click", () => {
     showLandingView();
+  });
+
+  document.getElementById("prepReorderBtn")?.addEventListener("click", () => {
+    showPrepChecklistOrderView();
+  });
+
+  document.getElementById("prepOrderReturnBtn")?.addEventListener("click", () => {
+    showPrepView();
+  });
+
+  document.getElementById("prepOrderSaveBtn")?.addEventListener("click", async () => {
+    if (!prepChecklistOrderDraft.length) {
+      prepChecklistOrderDraft = getPrepChecklistCategoryIds();
+    }
+    await setStoredValue(PREP_CHECKLIST_ORDER_STORAGE_KEY, prepChecklistOrderDraft);
+    showPrepView();
   });
 
   document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
