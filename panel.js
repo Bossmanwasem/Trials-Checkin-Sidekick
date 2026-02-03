@@ -535,6 +535,8 @@ const ltlUpdatesSection = document.getElementById("ltlUpdatesSection");
 const ltlUpdateOtherToggle = document.getElementById("ltlUpdateOther");
 const ltlUpdateOtherField = document.getElementById("ltlUpdateOtherField");
 const ltlUpdateOtherText = document.getElementById("ltlUpdateOtherText");
+const ltlUpdateNewSerialField = document.getElementById("ltlUpdateNewSerialField");
+const ltlUpdateNewSerialNumber = document.getElementById("ltlUpdateNewSerialNumber");
 
 function isCheckinFlowActive() {
   return Boolean(activeCheckinFlow);
@@ -556,6 +558,8 @@ function clearLtlUpdates() {
   });
   if (ltlUpdateOtherText) ltlUpdateOtherText.value = "";
   if (ltlUpdateOtherField) ltlUpdateOtherField.style.display = "none";
+  if (ltlUpdateNewSerialNumber) ltlUpdateNewSerialNumber.value = "";
+  if (ltlUpdateNewSerialField) ltlUpdateNewSerialField.style.display = "none";
 }
 
 function updateLtlUpdateOtherFieldVisibility() {
@@ -563,6 +567,15 @@ function updateLtlUpdateOtherFieldVisibility() {
   const show = ltlUpdateOtherToggle.checked && isLtlUpdateFlow();
   ltlUpdateOtherField.style.display = show ? "block" : "none";
   if (!show && ltlUpdateOtherText) ltlUpdateOtherText.value = "";
+}
+
+function updateLtlUpdateNewSerialFieldVisibility() {
+  if (!ltlUpdateNewSerialField) return;
+  const requiresNewSerial = Array.from(document.querySelectorAll('input[name="ltlUpdates"]:checked'))
+    .some(input => ["Replaced Device", "Replaced Case"].includes(input.value));
+  const show = requiresNewSerial && isLtlUpdateFlow();
+  ltlUpdateNewSerialField.style.display = show ? "block" : "none";
+  if (!show && ltlUpdateNewSerialNumber) ltlUpdateNewSerialNumber.value = "";
 }
 
 function applyCheckinModeUI() {
@@ -590,6 +603,7 @@ function applyCheckinModeUI() {
     clearLtlUpdates();
   }
   updateLtlUpdateOtherFieldVisibility();
+  updateLtlUpdateNewSerialFieldVisibility();
   if (finishCheckinBtn) {
     finishCheckinBtn.textContent = isLtlUpdate ? "Finish LTL Update" : "Final Step";
   }
@@ -5583,6 +5597,10 @@ function buildLtlUpdatesLine() {
 }
 
 ltlUpdateOtherToggle?.addEventListener("change", updateLtlUpdateOtherFieldVisibility);
+document.querySelectorAll('input[name="ltlUpdates"]').forEach(input => {
+  input.addEventListener("change", updateLtlUpdateNewSerialFieldVisibility);
+});
+updateLtlUpdateNewSerialFieldVisibility();
 
 /* ---------------- Device Condition + X rules ---------------- */
 
@@ -5746,6 +5764,39 @@ function buildMountsReturnedOnlyNote() {
   return lines.join("\n");
 }
 
+function getFormattedLtlUpdates() {
+  const updates = getSelectedLtlUpdates();
+  if (!updates.length) return "No updates selected";
+
+  const formatted = updates.map(value => {
+    if (value !== "Other") return value;
+    const otherText = ltlUpdateOtherText?.value?.trim();
+    return otherText ? `Other: ${otherText}` : "Other";
+  });
+
+  return formatted.join(", ");
+}
+
+function buildLtlUpdateNote({ fullName, modelName, deviceNum }) {
+  const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
+  const selectedVocabs = getSelectedVocabTypes();
+  const vocabLabel = vocabNotReturned
+    ? "no"
+    : (selectedVocabs.length ? selectedVocabs.join(", ") : "selected");
+  const updatesText = getFormattedLtlUpdates();
+
+  let note = `${fullName} ${modelName} (${deviceNum}) was returned for a yearly update. I was able to save/transfer ${vocabLabel} Vocab(s) to the CRM. Device was wiped and unsupported apps were removed. I also performed the following updates: ${updatesText}. Returning updated device to clinic.`;
+
+  const needsNewSerial = Array.from(document.querySelectorAll('input[name="ltlUpdates"]:checked'))
+    .some(input => ["Replaced Device", "Replaced Case"].includes(input.value));
+  if (needsNewSerial) {
+    const newSerial = ltlUpdateNewSerialNumber?.value?.trim() || "Serial number not provided";
+    note += `\n\nNew Device: ${newSerial}`;
+  }
+
+  return note;
+}
+
 /* ---------------- NOTE GENERATION ---------------- */
 
 function buildCannedNote() {
@@ -5759,6 +5810,10 @@ function buildCannedNote() {
   const fullName = [first, last].filter(Boolean).join(" ") || "Client";
   const isMountOnly = deviceNum.toLowerCase() === "x";
   const modelName = detectDeviceModel(deviceNum);
+
+  if (isLtlUpdateFlow()) {
+    return buildLtlUpdateNote({ fullName, modelName, deviceNum });
+  }
 
   if (isMountOnly && !isLtlUpdateFlow()) {
     const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
@@ -6474,9 +6529,10 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   // 4) Select category
-  const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: "Device Returned" });
+  const noteCategory = isLtlUpdateFlow() ? "Device updated" : "Device Returned";
+  const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
   if (!setCatRes.ok) {
-    const message = 'Failed to select note category "Device Returned".';
+    const message = `Failed to select note category "${noteCategory}".`;
     alert(message);
     await logTaskOutcome("Checkin", message);
     return;
