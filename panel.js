@@ -5913,7 +5913,8 @@ function collectCheckinFormDataForDaf() {
     aac: getFormValue("#aac"),
     clampMount: getFormValue('input[name="clampMount"]'),
     tableMount: getFormValue('input[name="tableMount"]'),
-    rollingMount: getFormValue('input[name="rollingMount"]')
+    rollingMount: getFormValue('input[name="rollingMount"]'),
+    isLtlUpdate: isLtlUpdateFlow()
   };
 }
 
