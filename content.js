@@ -435,7 +435,14 @@ function pickInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminN
   return camera || lumin || device || "";
 }
 
-function clickEditForDevice(searchValue) {
+function splitInventoryIdentifiers(value = "") {
+  return value
+    .split(/[,;\n]+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function clickEditForDevice(searchValue, { suppressNotFoundAlert = false } = {}) {
   const target = safeTrimLower(searchValue);
   const rows = document.querySelectorAll("table tr");
   let foundRow = null;
@@ -469,7 +476,9 @@ function clickEditForDevice(searchValue) {
     return true;
   }
 
-  alert("No matching row found for: " + searchValue);
+  if (!suppressNotFoundAlert) {
+    alert("No matching row found for: " + searchValue);
+  }
   return false;
 }
 
@@ -527,13 +536,51 @@ if (runtime?.onMessage?.addListener) {
   }
 
     if (msg.type === "RUN_INVENTORY_SCRIPT") {
-      const searchValue = pickInventorySearchValue(msg.identifiers);
-      if (!searchValue) {
+      const identifiers = msg.identifiers || {};
+      const cameraNumbers = splitInventoryIdentifiers(identifiers.cameraNumber || "");
+      const fallbackSearchValue = pickInventorySearchValue({
+        deviceNumber: identifiers.deviceNumber,
+        cameraNumber: cameraNumbers.length > 1 ? "" : identifiers.cameraNumber || "",
+        luminNumber: identifiers.luminNumber
+      });
+
+      if (!cameraNumbers.length && !fallbackSearchValue) {
         sendResponse({ ok: false, message: "No device, camera, or Lumin-I number provided." });
         return true;
       }
 
       try {
+        if (cameraNumbers.length > 1) {
+          for (let index = 0; index < cameraNumbers.length; index += 1) {
+            const cameraValue = cameraNumbers[index];
+            const ok = clickEditForDevice(cameraValue, { suppressNotFoundAlert: true });
+            if (ok) {
+              sendResponse({ ok: true });
+              return true;
+            }
+            const nextCamera = cameraNumbers[index + 1];
+            if (nextCamera) {
+              alert(`No listing found for camera ${cameraValue}. Switching search to ${nextCamera}...`);
+            }
+          }
+
+          if (fallbackSearchValue) {
+            const ok = clickEditForDevice(fallbackSearchValue);
+            sendResponse({ ok });
+            return true;
+          }
+
+          alert(`No matching row found for cameras: ${cameraNumbers.join(", ")}`);
+          sendResponse({ ok: false, message: "No matching row found for the provided cameras." });
+          return true;
+        }
+
+        const searchValue = fallbackSearchValue;
+        if (!searchValue) {
+          sendResponse({ ok: false, message: "No device, camera, or Lumin-I number provided." });
+          return true;
+        }
+
         const ok = clickEditForDevice(searchValue);
         sendResponse({ ok });
       } catch (err) {
