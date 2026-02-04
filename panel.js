@@ -4714,6 +4714,7 @@ let deviceLookupLastCrmId = "";
 let deviceLookupLastLtlRow = null;
 let deviceLookupLastAutofill = {
   cameraSerials: [],
+  evoSerials: [],
   luminSerials: [],
   clampMounts: [],
   tableMounts: [],
@@ -5396,7 +5397,7 @@ function applyLookupAutofillToCheckin() {
   const tableInput = document.querySelector('input[name="tableMount"]');
   const rollingInput = document.querySelector('input[name="rollingMount"]');
 
-  const cameraValue = deviceLookupLastAutofill.cameraSerials.join(", ");
+  const cameraValue = [...deviceLookupLastAutofill.cameraSerials, ...deviceLookupLastAutofill.evoSerials].join(", ");
   const luminValue = deviceLookupLastAutofill.luminSerials.join(", ");
   const clampValue = deviceLookupLastAutofill.clampMounts.join(", ");
   const tableValue = deviceLookupLastAutofill.tableMounts.join(", ");
@@ -5431,6 +5432,7 @@ async function runDeviceLookupSearch(rawInput) {
   deviceLookupLastLtlRow = null;
   deviceLookupLastAutofill = {
     cameraSerials: [],
+    evoSerials: [],
     luminSerials: [],
     clampMounts: [],
     tableMounts: [],
@@ -5576,6 +5578,7 @@ async function runDeviceLookupSearch(rawInput) {
   updateCopyButton("copyRollingBtn", mountResult.rolling.map(item => item.serial).join(", "), "Copy rolling mount");
   deviceLookupLastAutofill = {
     cameraSerials,
+    evoSerials,
     luminSerials,
     clampMounts: mountResult.clamp.map(item => item.serial),
     tableMounts: mountResult.table.map(item => item.serial),
