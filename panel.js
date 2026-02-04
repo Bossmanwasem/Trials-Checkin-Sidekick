@@ -617,15 +617,26 @@ function updateLtlCompletionDetails() {
 
 async function openLtlWorkbookForCompletion(rowValues = []) {
   const tab = await chrome.tabs.create({ url: DEVICE_LOOKUP_EXCEL_WEB_URL });
-  if (!tab?.id || !rowValues?.length) return;
+  if (!tab?.id) {
+    return { ok: false, message: "Unable to open the LTL update workbook." };
+  }
+  if (!rowValues?.length) {
+    return { ok: false, message: "No LTL update row values available to paste." };
+  }
   const ready = await waitForTabComplete(tab.id, 20000);
-  if (!ready) return;
-  await chrome.tabs.sendMessage(tab.id, {
-    type: "PASTE_LTL_COMPLETED_ROW",
-    rowValues
-  }).catch(error => {
+  if (!ready) {
+    return { ok: false, message: "LTL update workbook did not finish loading." };
+  }
+  try {
+    await chrome.tabs.sendMessage(tab.id, {
+      type: "PASTE_LTL_COMPLETED_ROW",
+      rowValues
+    });
+  } catch (error) {
     console.warn("Unable to send LTL completion row.", error);
-  });
+    return { ok: false, message: "Unable to paste the LTL update row." };
+  }
+  return { ok: true };
 }
 
 function applyCheckinModeUI() {
@@ -3875,6 +3886,33 @@ async function logTaskOutcome(action, outcome) {
   }
 }
 
+async function writeLtlUpdateLogEntry(outcome) {
+  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  if (!baseHandle) return false;
+  const profile = await getUserProfile();
+  const username = buildLogUserName(profile);
+  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
+  const filename = "LTL Update Logs.txt";
+  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+  const outcomeText = outcome && outcome.trim() ? outcome : "LTL Update Completed successfully";
+  const now = new Date();
+  const line = `${username}--${formatLogDate(now)}--${outcomeText}`;
+  const existingFile = await fileHandle.getFile();
+  const writable = await fileHandle.createWritable({ keepExistingData: true });
+  await writable.seek(existingFile.size);
+  await writable.write(`${line}\n`);
+  await writable.close();
+  return true;
+}
+
+async function logLtlUpdateOutcome(outcome) {
+  try {
+    await writeLtlUpdateLogEntry(outcome);
+  } catch {
+    // Logging should never block the user flow.
+  }
+}
+
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
@@ -6803,14 +6841,24 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
 
 ltlCompletionRunBtn?.addEventListener("click", async () => {
   if (!ltlCompletionRowPayload?.rowValues?.length) {
-    alert("No LTL row captured yet. Run a device lookup to capture the row before continuing.");
+    const message = "No LTL row captured yet. Run a device lookup to capture the row before continuing.";
+    alert(message);
+    await logLtlUpdateOutcome(message);
     return;
   }
   if (ltlCompletionStatus) ltlCompletionStatus.textContent = "Opening workbook and preparing the paste...";
-  await openLtlWorkbookForCompletion(ltlCompletionRowPayload.rowValues);
+  const result = await openLtlWorkbookForCompletion(ltlCompletionRowPayload.rowValues);
+  if (!result.ok) {
+    const message = result.message || "Unable to complete the LTL update.";
+    alert(message);
+    if (ltlCompletionStatus) ltlCompletionStatus.textContent = message;
+    await logLtlUpdateOutcome(message);
+    return;
+  }
   if (ltlCompletionStatus) {
     ltlCompletionStatus.textContent = "Workbook opened. The row is copied to your clipboard.";
   }
+  await logLtlUpdateOutcome("LTL Update Completed successfully");
 });
 
 ltlCompletionReturnBtn?.addEventListener("click", async () => {
