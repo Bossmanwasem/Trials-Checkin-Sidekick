@@ -267,7 +267,7 @@
         </div>
       </div>
       <div class="landing-section" data-layout-item="prepTools">
-        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="prep-tools" aria-expanded="false" data-tooltip="Folder housing prep tools. Click to reveal Grid Sidekick and TalkPad Prep Sidekick.">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="prep-tools" aria-expanded="false" data-tooltip="Folder housing prep tools. Click to reveal Grid Sidekick, TalkPad Prep Sidekick, and GridPad Prep Sidekick.">
           Prep Tools
           <span class="landing-section__chevron" aria-hidden="true">▾</span>
         </button>
@@ -277,6 +277,9 @@
           </button>
           <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Basic TalkPad prep checklist (more features coming soon).">
             TalkPad Prep Sidekick
+          </button>
+          <button id="gridPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Categorized GridPad prep checklist with reorderable categories.">
+            GridPad Prep Sidekick
           </button>
         </div>
       </div>
@@ -473,6 +476,9 @@
                 </button>
                 <button class="toggle-btn landing-btn" type="button">
                   TalkPad Prep Sidekick
+                </button>
+                <button class="toggle-btn landing-btn" type="button">
+                  GridPad Prep Sidekick
                 </button>
               </div>
             </div>
@@ -842,6 +848,45 @@
 
     <div class="crm-nav-footer">
       <button id="prepOrderSaveBtn" class="toggle-btn" type="button">Save order</button>
+    </div>
+  </div>
+
+
+
+  <div class="container prep-view" id="gridPadPrepView" style="display:none;">
+    <h1>GridPad Prep Sidekick</h1>
+    <p class="complete-intro">Work through the GridPad prep checklist and mark items off as you go.</p>
+
+    <div class="mini-row">
+      <button id="gridPadPrepReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+      <button id="gridPadPrepReorderBtn" class="toggle-btn" type="button">Reorder categories</button>
+    </div>
+
+    <div class="note-preview prep-checklist">
+      <div class="note-preview__title">GridPad prep checklist</div>
+      <div class="prep-checklist__list" id="gridPadChecklistContainer"></div>
+    </div>
+
+    <div class="crm-nav-footer">
+      <button id="gridPadPrepFinishBtn" class="toggle-btn" type="button">Finish prep</button>
+    </div>
+  </div>
+
+  <div class="container prep-order-view" id="gridPadChecklistOrderView" style="display:none;">
+    <h1>GridPad Prep Checklist Order</h1>
+    <p class="complete-intro">Reorder the checklist categories to match your workflow.</p>
+
+    <div class="mini-row">
+      <button id="gridPadOrderReturnBtn" class="toggle-btn" type="button">Back to checklist</button>
+    </div>
+
+    <div class="note-preview prep-checklist">
+      <div class="note-preview__title">Checklist categories</div>
+      <div class="prep-checklist__order-list" id="gridPadChecklistOrderList"></div>
+    </div>
+
+    <div class="crm-nav-footer">
+      <button id="gridPadOrderSaveBtn" class="toggle-btn" type="button">Save order</button>
     </div>
   </div>
 
