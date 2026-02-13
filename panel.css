@@ -802,6 +802,24 @@ button[type="submit"]:hover {
   flex: 1;
 }
 
+.grid-actions-row {
+  flex-wrap: wrap;
+}
+
+.grid-actions-row .toggle-btn {
+  margin-top: 0;
+  flex: 1 1 170px;
+  min-width: 0;
+}
+
+@media (max-width: 420px) {
+  .grid-actions-row .toggle-btn {
+    flex-basis: 100%;
+    font-size: 13px;
+    padding: 9px 8px;
+  }
+}
+
 .complete-intro {
   margin-top: 10px;
   opacity: 0.9;
