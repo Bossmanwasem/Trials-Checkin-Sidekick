@@ -5634,11 +5634,12 @@ const GRID_QR_API_BASE_URL = "https://api.qrserver.com/v1/create-qr-code/";
 let isGridChangesLocked = false;
 
 function buildGridQrPayload(email) {
-  return JSON.stringify({
-    type: "grid-login",
-    email,
-    password: GRID_PASSWORD
-  });
+  // Keep this as plain text so scanners don't treat it as an email/mailto payload.
+  return [
+    "GRID LOGIN",
+    `email=${email}`,
+    `password=${GRID_PASSWORD}`
+  ].join("\n");
 }
 
 function hideGridQrBlock() {
