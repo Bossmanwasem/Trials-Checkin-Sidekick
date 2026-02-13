@@ -249,7 +249,7 @@ body[data-theme^="customTheme-"] .container > * {
 
 .daily-counter {
   margin: 8px auto 16px;
-  padding: 10px 12px;
+  padding: clamp(6px, 2.4vw, 10px) clamp(8px, 3vw, 12px);
   border-radius: 12px;
   border: 1px solid var(--input-border);
   background: rgba(0, 0, 0, 0.18);
@@ -317,7 +317,7 @@ body[data-theme^="customTheme-"] .container > * {
 .daily-counter__grid {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr));
   gap: 8px;
 }
 
@@ -326,7 +326,7 @@ body[data-theme^="customTheme-"] .container > * {
 }
 
 .daily-counter__item {
-  padding: 8px;
+  padding: clamp(5px, 2vw, 8px);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.2);
   text-align: center;
@@ -350,17 +350,17 @@ body[data-theme^="customTheme-"] .container > * {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: clamp(3px, 1.5vw, 6px);
 }
 
 .daily-counter__btn {
-  width: 24px;
-  height: 24px;
+  width: clamp(18px, 6vw, 24px);
+  height: clamp(18px, 6vw, 24px);
   border-radius: 999px;
   border: 1px solid var(--button-border);
   background: rgba(0, 0, 0, 0.35);
   color: var(--text-color);
-  font-size: 16px;
+  font-size: clamp(12px, 3.5vw, 16px);
   line-height: 1;
   cursor: pointer;
 }
