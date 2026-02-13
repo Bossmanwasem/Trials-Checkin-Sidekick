@@ -1758,16 +1758,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#241311",
-      "container-border": "#002244",
+      "container-border": "#c33c0f",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#fb4f14",
       "accent-strong": "#a4320c",
       "accent-strong-hover": "#c33c0f",
       "input-bg": "#1f140f",
-      "input-border": "#002244",
+      "input-border": "#c33c0f",
       "note-bg": "#120b08",
-      "note-border": "#002244",
-      "error-color": "#002244"
+      "note-border": "#c33c0f",
+      "error-color": "#c33c0f"
     }
   },
   nflLions: {
@@ -2043,16 +2043,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#14201c",
-      "container-border": "#000000",
+      "container-border": "#0f4331",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#125740",
       "accent-strong": "#0a3225",
       "accent-strong-hover": "#0f4331",
       "input-bg": "#1a2622",
-      "input-border": "#000000",
+      "input-border": "#0f4331",
       "note-bg": "#0d1714",
-      "note-border": "#000000",
-      "error-color": "#000000"
+      "note-border": "#0f4331",
+      "error-color": "#0f4331"
     }
   },
   nflEagles: {
@@ -2081,16 +2081,16 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#1f1a10",
-      "container-border": "#101820",
+      "container-border": "#c28a00",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#ffb612",
       "accent-strong": "#9a6d00",
       "accent-strong-hover": "#c28a00",
       "input-bg": "#1b1710",
-      "input-border": "#101820",
+      "input-border": "#c28a00",
       "note-bg": "#120f0a",
-      "note-border": "#101820",
-      "error-color": "#101820"
+      "note-border": "#c28a00",
+      "error-color": "#c28a00"
     }
   },
   nfl49ers: {
