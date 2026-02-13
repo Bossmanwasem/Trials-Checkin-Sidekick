@@ -70,6 +70,7 @@ const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 let qaFormTabId = null;
+let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
@@ -6749,18 +6750,28 @@ document.getElementById("startAnotherBtn")?.addEventListener("click", async () =
   }
   if (smartboxRepairRequired) {
     showSmartboxRepairView();
-    chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
+    const tab = await chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
+    smartboxRepairTabId = tab?.id ?? null;
     return;
   }
   chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
 });
 
-document.getElementById("openSmartboxRepairBtn")?.addEventListener("click", () => {
-  chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
+document.getElementById("openSmartboxRepairBtn")?.addEventListener("click", async () => {
+  const tab = await chrome.tabs.create({ url: SMARTBOX_REPAIR_TRACKER_URL });
+  smartboxRepairTabId = tab?.id ?? null;
 });
 
-document.getElementById("smartboxContinueBtn")?.addEventListener("click", () => {
+document.getElementById("smartboxContinueBtn")?.addEventListener("click", async () => {
   smartboxRepairRequired = false;
+  if (smartboxRepairTabId) {
+    try {
+      await chrome.tabs.remove(smartboxRepairTabId);
+    } catch (_) {
+      // Tab may already be closed.
+    }
+    smartboxRepairTabId = null;
+  }
   chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
 });
 
@@ -7384,6 +7395,9 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   chrome.tabs.onRemoved.addListener(async (tabId) => {
+    if (tabId === smartboxRepairTabId) {
+      smartboxRepairTabId = null;
+    }
     if (tabId !== outlookEmailTabId) return;
     outlookEmailTabId = null;
     await handleOutlookEmailTabClosed();
