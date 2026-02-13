@@ -2043,7 +2043,7 @@ const THEMES = {
       "text-color": "#ffffff",
       "muted-text": "#ffffff",
       "container-bg": "#14201c",
-      "container-border": "#0f4331",
+      "container-border": "#ffffff",
       "container-shadow": "0 0 20px rgba(0, 0, 0, 0.25)",
       "accent": "#125740",
       "accent-strong": "#0a3225",
