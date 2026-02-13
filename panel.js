@@ -69,6 +69,7 @@ const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
+const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
@@ -4619,8 +4620,8 @@ function applyClientData(data) {
 
 function applyGridClientData(data) {
   if (!data) return;
-  setValue("gridFirstName", data.firstName);
-  setValue("gridLastName", data.lastName);
+  setValue("gridFirstName", sanitizeName(data.firstName));
+  setValue("gridLastName", sanitizeName(data.lastName));
   setValue("gridCrmId", data.crmId);
 }
 
@@ -5629,6 +5630,19 @@ async function runDeviceLookupSearch(rawInput) {
 
 const GRID_EMAIL_DOMAIN = "wegotalk.com";
 const GRID_PASSWORD = "Xqxq77##";
+let isGridChangesLocked = false;
+
+function getGridSanitizedNames() {
+  return {
+    firstName: sanitizeName(getFormValue("#gridFirstName")),
+    lastName: sanitizeName(getFormValue("#gridLastName"))
+  };
+}
+
+function getGridFullName() {
+  const { firstName, lastName } = getGridSanitizedNames();
+  return [firstName, lastName].filter(Boolean).join(" ");
+}
 
 function splitNameParts(name) {
   return sanitizeName(name)
@@ -5638,8 +5652,7 @@ function splitNameParts(name) {
 }
 
 function buildGridEmail() {
-  const firstName = getFormValue("#gridFirstName");
-  const lastName = getFormValue("#gridLastName");
+  const { firstName, lastName } = getGridSanitizedNames();
   const crmId = getFormValue("#gridCrmId");
   const type = document.querySelector("input[name='gridType']:checked")?.value || "CL";
 
@@ -5662,12 +5675,30 @@ function buildGridEmail() {
   return `${initials}${crmId}@${GRID_EMAIL_DOMAIN}`.toLowerCase();
 }
 
-function updateGridOutput() {
-  const email = buildGridEmail();
+function updateGridLockButtonLabel() {
+  const lockBtn = document.getElementById("gridLockChangesBtn");
+  if (lockBtn) {
+    lockBtn.textContent = `Lock Changes: ${isGridChangesLocked ? "On" : "Off"}`;
+  }
+}
+
+function updateGridOutput({ preserveTypedEmail = false } = {}) {
+  const fullName = getGridFullName();
+  const generatedEmail = buildGridEmail();
+  const typedEmail = getFormValue("#gridEmailField").trim();
+  const email = preserveTypedEmail ? (typedEmail || generatedEmail) : generatedEmail;
   const crmInfo = email ? `Grid: ${email} | ${GRID_PASSWORD}` : "";
+
+  setValue("gridFullNameField", fullName);
   setValue("gridEmailField", email);
   setValue("gridPasswordField", GRID_PASSWORD);
   setValue("gridCrmInfoField", crmInfo);
+
+  const fullNameCopyBtn = document.getElementById("gridFullNameCopyBtn");
+  if (fullNameCopyBtn) {
+    fullNameCopyBtn.disabled = !fullName;
+    fullNameCopyBtn.textContent = fullName ? "Copy" : "No value";
+  }
 
   const emailCopyBtn = document.getElementById("gridEmailCopyBtn");
   if (emailCopyBtn) {
@@ -5689,13 +5720,21 @@ function updateGridOutput() {
   const status = document.getElementById("gridStatus");
   if (status) {
     status.textContent = email
-      ? "Grid credentials ready."
+      ? isGridChangesLocked
+        ? "Grid credentials ready. Changes are locked."
+        : "Grid credentials ready."
       : "Enter client details and CRM ID to generate the Grid email.";
   }
 }
 
 async function refreshGridClientData(tabIdOverride = null) {
   const status = document.getElementById("gridStatus");
+  if (isGridChangesLocked) {
+    if (status) status.textContent = "Changes are locked. Unlock changes to refresh from CRM.";
+    updateGridOutput({ preserveTypedEmail: true });
+    return;
+  }
+
   const res = await fetchClientData(tabIdOverride);
   if (!res?.data) {
     if (status) status.textContent = "Open a CRM client record to auto-fill these fields.";
@@ -6403,8 +6442,12 @@ async function syncViewForTab(tab) {
       applyClientData(res.data);
     }
     if (gridVisible) {
-      applyGridClientData(res.data);
-      updateGridOutput();
+      if (!isGridChangesLocked) {
+        applyGridClientData(res.data);
+        updateGridOutput();
+      } else {
+        updateGridOutput({ preserveTypedEmail: true });
+      }
     }
   }
 }
@@ -6883,7 +6926,26 @@ ltlCompletionReturnBtn?.addEventListener("click", async () => {
 });
 
 document.querySelectorAll("input[name='gridType']").forEach(el => {
-  el.addEventListener("change", updateGridOutput);
+  el.addEventListener("change", () => updateGridOutput());
+});
+
+document.getElementById("gridEmailField")?.addEventListener("input", () => {
+  updateGridOutput({ preserveTypedEmail: true });
+});
+
+document.getElementById("gridFullNameCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#gridFullNameField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("gridFullNameCopyBtn");
+  const status = document.getElementById("gridStatus");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy";
+    }, 1200);
+  }
+  if (status) status.textContent = "Client full name copied to clipboard.";
 });
 
 document.getElementById("gridEmailCopyBtn")?.addEventListener("click", async () => {
@@ -6996,6 +7058,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   watchIdentifierInputs();
   initSymojiPicker();
   await loadDeviceLookupWorkbooksFromStorage();
+  isGridChangesLocked = Boolean(await getStoredValue(GRID_LOCK_CHANGES_STORAGE_KEY));
+  updateGridLockButtonLabel();
   const profile = await getUserProfile();
   if (profile) {
     showLandingView();
@@ -7368,6 +7432,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   document.getElementById("gridRefreshBtn")?.addEventListener("click", async () => {
     const activeTab = await getActiveCrmTab();
     await refreshGridClientData(activeTab?.id || null);
+  });
+
+  document.getElementById("gridLockChangesBtn")?.addEventListener("click", async () => {
+    isGridChangesLocked = !isGridChangesLocked;
+    await setStoredValue(GRID_LOCK_CHANGES_STORAGE_KEY, isGridChangesLocked);
+    updateGridLockButtonLabel();
+    updateGridOutput({ preserveTypedEmail: true });
   });
 
   document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () => {
