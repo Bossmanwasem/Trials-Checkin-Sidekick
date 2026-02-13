@@ -711,6 +711,7 @@
     <div class="mini-row">
       <button id="gridRefreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
       <button id="gridRegisterLicenseBtn" class="toggle-btn" type="button">Register Grid License</button>
+      <button id="gridLockChangesBtn" class="toggle-btn" type="button">Lock Changes: Off</button>
       <button id="gridReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
     </div>
 
@@ -738,9 +739,14 @@
 
     <div class="note-preview">
       <div class="note-preview__title">Grid credentials</div>
+      <label class="copy-label" for="gridFullNameField">Client full name</label>
+      <div class="copy-row">
+        <input type="text" id="gridFullNameField" class="copy-field" readonly placeholder="Generated client full name" />
+        <button id="gridFullNameCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
+      </div>
       <label class="copy-label" for="gridEmailField">Grid email</label>
       <div class="copy-row">
-        <input type="text" id="gridEmailField" class="copy-field" readonly placeholder="Generated Grid email" />
+        <input type="text" id="gridEmailField" class="copy-field" placeholder="Generated Grid email" />
         <button id="gridEmailCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
       </div>
       <label class="copy-label" for="gridPasswordField">Grid password</label>
