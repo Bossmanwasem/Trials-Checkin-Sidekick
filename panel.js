@@ -5630,7 +5630,66 @@ async function runDeviceLookupSearch(rawInput) {
 
 const GRID_EMAIL_DOMAIN = "wegotalk.com";
 const GRID_PASSWORD = "Xqxq77##";
+const GRID_QR_API_BASE_URL = "https://api.qrserver.com/v1/create-qr-code/";
 let isGridChangesLocked = false;
+
+function buildGridQrPayload(email) {
+  return JSON.stringify({
+    type: "grid-login",
+    email,
+    password: GRID_PASSWORD
+  });
+}
+
+function hideGridQrBlock() {
+  const qrBlock = document.getElementById("gridQrBlock");
+  const qrImage = document.getElementById("gridQrImage");
+  if (qrBlock) qrBlock.style.display = "none";
+  if (qrImage) qrImage.removeAttribute("src");
+  setValue("gridQrEmailField", "");
+  setValue("gridQrPasswordField", "");
+  const emailCopyBtn = document.getElementById("gridQrEmailCopyBtn");
+  const passwordCopyBtn = document.getElementById("gridQrPasswordCopyBtn");
+  if (emailCopyBtn) {
+    emailCopyBtn.disabled = true;
+    emailCopyBtn.textContent = "Copy";
+  }
+  if (passwordCopyBtn) {
+    passwordCopyBtn.disabled = true;
+    passwordCopyBtn.textContent = "Copy";
+  }
+}
+
+function renderGridQr(email) {
+  const qrBlock = document.getElementById("gridQrBlock");
+  const qrImage = document.getElementById("gridQrImage");
+  const status = document.getElementById("gridStatus");
+  if (!email || !qrBlock || !qrImage) {
+    if (status) status.textContent = "Generate a Grid email first, then create the setup QR.";
+    return;
+  }
+
+  const payload = buildGridQrPayload(email);
+  const qrUrl = `${GRID_QR_API_BASE_URL}?size=260x260&margin=10&data=${encodeURIComponent(payload)}`;
+
+  qrImage.src = qrUrl;
+  qrBlock.style.display = "block";
+  setValue("gridQrEmailField", email);
+  setValue("gridQrPasswordField", GRID_PASSWORD);
+
+  const emailCopyBtn = document.getElementById("gridQrEmailCopyBtn");
+  const passwordCopyBtn = document.getElementById("gridQrPasswordCopyBtn");
+  if (emailCopyBtn) {
+    emailCopyBtn.disabled = false;
+    emailCopyBtn.textContent = "Copy";
+  }
+  if (passwordCopyBtn) {
+    passwordCopyBtn.disabled = false;
+    passwordCopyBtn.textContent = "Copy";
+  }
+
+  if (status) status.textContent = "Setup QR ready. Scan it on the prep device or copy the login fields below.";
+}
 
 function getGridSanitizedNames() {
   return {
@@ -5725,6 +5784,8 @@ function updateGridOutput({ preserveTypedEmail = false } = {}) {
         : "Grid credentials ready."
       : "Enter client details and CRM ID to generate the Grid email.";
   }
+
+  hideGridQrBlock();
 }
 
 async function refreshGridClientData(tabIdOverride = null) {
@@ -7441,7 +7502,42 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     updateGridOutput({ preserveTypedEmail: true });
   });
 
-  document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () => {
+  document.getElementById("gridGenerateQrBtn")?.addEventListener("click", () => {
+    const email = getFormValue("#gridEmailField").trim();
+    renderGridQr(email);
+  });
+
+  document.getElementById("gridQrEmailCopyBtn")?.addEventListener("click", async () => {
+    const value = getFormValue("#gridQrEmailField");
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    const btn = document.getElementById("gridQrEmailCopyBtn");
+    const status = document.getElementById("gridStatus");
+    if (btn) {
+      btn.textContent = "Copied!";
+      setTimeout(() => {
+        btn.textContent = "Copy";
+      }, 1200);
+    }
+    if (status) status.textContent = "QR email copied to clipboard.";
+  });
+
+  document.getElementById("gridQrPasswordCopyBtn")?.addEventListener("click", async () => {
+    const value = getFormValue("#gridQrPasswordField");
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    const btn = document.getElementById("gridQrPasswordCopyBtn");
+    const status = document.getElementById("gridStatus");
+    if (btn) {
+      btn.textContent = "Copied!";
+      setTimeout(() => {
+        btn.textContent = "Copy";
+      }, 1200);
+    }
+    if (status) status.textContent = "QR password copied to clipboard.";
+  });
+
+document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: GRID_LICENSE_REGISTRATION_URL });
   });
 

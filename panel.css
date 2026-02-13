@@ -1792,3 +1792,18 @@ body[data-theme="rainbowParty"] .landing-corner-symojo-btn::before,
 body[data-theme="rainbowParty"] .landing-corner-symojo-btn::after {
   content: none;
 }
+
+.grid-qr-block {
+  margin-top: 12px;
+}
+
+.grid-qr-image {
+  display: block;
+  width: min(260px, 100%);
+  height: auto;
+  margin: 10px auto 14px;
+  border-radius: 8px;
+  border: 1px solid var(--note-border);
+  background: #fff;
+  padding: 8px;
+}
