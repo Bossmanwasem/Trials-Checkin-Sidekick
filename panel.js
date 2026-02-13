@@ -254,99 +254,157 @@ const PREP_CHECKLIST_CATEGORIES = [
 
 const GRIDPAD_CHECKLIST_CATEGORIES = [
   {
-    id: "accessories",
-    title: "Check for Accessories",
+    id: "dashboardAccessories",
+    title: "Dashboard and Accessories",
     items: [
-      { id: "gridPadAccessories", label: "Check Dashboard, Device Tab, and PG for any accessories (switches, mounts, KGs, etc.)." }
+      { id: "gridPadDashboardInitial", label: "Initial in Trials Dashboard (Column I next to X in Column H)." },
+      { id: "gridPadOpenCrm", label: "Open CRM and check Device Tab and PG." },
+      { id: "gridPadConfirmAccessories", label: "Confirm required accessories (switches, mounts, KGs, etc.)." },
+      { id: "gridPadAccessoryInventory", label: "Verify accessories are in-house before prepping." }
     ]
   },
   {
-    id: "windowsUpdate",
-    title: "Windows Update",
+    id: "deviceInspection",
+    title: "Device Inspection",
     items: [
-      { id: "gridPadWindowsUpdate", label: "Navigate to Settings > Windows Update." },
-      { id: "gridPadPauseUpdates", label: "Do not run updates, but ensure updates are paused for 5 weeks." }
-    ]
-  },
-  {
-    id: "microsoftSettings",
-    title: "Microsoft Settings",
-    items: [
-      { id: "gridPadHomeIcons", label: "Home screen icons setup in appropriate order." },
-      { id: "gridPadPrivacyAccountInfo", label: "Privacy & security: Turn off Account info." },
-      { id: "gridPadPrivacyOtherDevices", label: "Privacy & security: Turn off Other devices." },
-      { id: "gridPadPrivacyDiagnostics", label: "Privacy & security: Turn off App diagnostics." }
-    ]
-  },
-  {
-    id: "edgeLtlStl",
-    title: "Edge Settings (LTLs and STLs only)",
-    items: [
-      { id: "gridPadEdgeOpenSettings", label: "Open Edge and go to Settings." },
-      { id: "gridPadEdgeStartHome", label: "Navigate to Start, home, and new tab page." },
-      { id: "gridPadEdgeOpenPages", label: "Open these pages: add https://www.talktometechnologies.com." },
-      { id: "gridPadEdgeHomeButton", label: "Turn Home button on and set it to https://www.talktometechnologies.com." }
-    ]
-  },
-  {
-    id: "edgeAllLoanTypes",
-    title: "Edge Settings (all loan types)",
-    items: [
-      { id: "gridPadEdgeNewTab", label: "Open Edge and open a new tab." },
-      { id: "gridPadPageSettings", label: "Select Page settings." },
-      { id: "gridPadShowContent", label: "Turn off the Show content toggle." }
-    ]
-  },
-  {
-    id: "gridAccount",
-    title: "Grid Account",
-    items: [
-      { id: "gridPadCreateAccounts", label: "Create Grid and Dropbox accounts and document in Device Tab of Client CRM page." },
-      { id: "gridPadCopyProprietary", label: "Copy proprietary sets, Grid Symbols and Text, and Look Suite (eyegaze only) from Trials Zuvo Grid User." },
-      { id: "gridPadRequestOnlySets", label: "All other Grid sets are by request only." }
-    ]
-  },
-  {
-    id: "gridSettings",
-    title: "Grid Settings",
-    items: [
-      { id: "gridPadAccessMatchesPg", label: "Make sure access settings (Calibration and Activation) match PG." },
-      { id: "gridPadVoiceMatchesPg", label: "Make sure voice(s) are set to match PG." },
-      { id: "gridPadAudioFeedback", label: "Set Audio Feedback to Senary Audio." },
-      { id: "gridPadCameraConfig", label: "Devices > Cameras: Front Camera = 5M Camera, Rear Camera = Back Camera." },
-      { id: "gridPadUnlockLookLab", label: "Unlock Look Lab." }
-    ]
-  },
-  {
-    id: "folder",
-    title: "Folder",
-    items: [
-      { id: "gridPadLeftSchoolBoard", label: "Left side (bottom to top): School Board (Pediatric & LTL/STL)." },
-      { id: "gridPadLeftStickers", label: "Left side: Stickers." },
-      { id: "gridPadLeftAacScript", label: "Left side: AAC Script (Adult & LTL/STL)." },
-      { id: "gridPadLeftFaq", label: "Left side: FAQ." },
-      { id: "gridPadLeftNextSteps", label: "Left side: Next Steps." },
-      { id: "gridPadRightExamples", label: "Right side (bottom to top): Examples of Use." },
-      { id: "gridPadRightDisinfection", label: "Right side: Disinfection Sheet." },
-      { id: "gridPadRightQuickReference", label: "Right side: Zuvo & Grid Pad Quick Reference Sheet." },
-      { id: "gridPadRightUserGuide", label: "Right side: User Guide based on whether the device has eyegaze systems." },
-      { id: "gridPadRightWelcome", label: "Right side: Welcome Card." },
-      { id: "gridPadRightMagnet", label: "Right side: Magnet Warning." },
-      { id: "gridPadRightChoking", label: "Right side: Choking Hazard." }
+      { id: "gridPadMatchDashboard", label: "Match device to dashboard entry." },
+      { id: "gridPadInspectCase", label: "Inspect case and backbox for cracks or damage." },
+      { id: "gridPadButtons", label: "Check power and volume buttons." },
+      { id: "gridPadStickers", label: "Verify TTMT sticker and QR/serial code." },
+      { id: "gridPadUsbPorts", label: "Check USB ports (2 right, 1 left, 1 top)." },
+      { id: "gridPadFlipStand", label: "Flip stand stops." }
     ]
   },
   {
     id: "remote",
     title: "Remote (LTL or request only)",
     items: [
-      { id: "gridPadRemotePair", label: "Connect remote by pressing the two furthest smart buttons until flashing blue, then press the down button inside remote until green light stops flashing." }
+      { id: "gridPadRemoteBlue", label: "Press two outside smart buttons for 7 seconds until flashing blue." },
+      { id: "gridPadRemoteGreen", label: "Press pairing button inside remote until green confirmation." },
+      { id: "gridPadRemotePower", label: "In Grid: Settings → Devices → Remote Power Button → Set all to ON (5 second default)." }
+    ]
+  },
+  {
+    id: "windowsSetup",
+    title: "Windows Setup",
+    items: [
+      { id: "gridPadWindowsPauseUpdates", label: "Pause Windows Updates for 5 weeks (do NOT run updates)." },
+      { id: "gridPadDesktopGrid3", label: "Desktop layout left side top to bottom: Grid 3." },
+      { id: "gridPadDesktopLookLab", label: "Desktop layout: Look Lab." },
+      { id: "gridPadDesktopLookToRead", label: "Desktop layout: Look to Read." },
+      { id: "gridPadDesktopLookToLearn", label: "Desktop layout: Look to Learn." },
+      { id: "gridPadDesktopSmartboxHub", label: "Desktop layout: Smartbox Hub." },
+      { id: "gridPadDesktopIntelliGaze", label: "Desktop layout: IntelliGaze." },
+      { id: "gridPadRecycleBin", label: "Move Recycle Bin to top right." },
+      { id: "gridPadTaskbarUnpin", label: "Unpin Edge, Microsoft Store, and File Explorer from taskbar." },
+      { id: "gridPadPrivacyAccount", label: "Privacy and Security: Turn OFF Account Info." },
+      { id: "gridPadPrivacyDevices", label: "Privacy and Security: Turn OFF Other Devices." },
+      { id: "gridPadPrivacyDiagnostics", label: "Privacy and Security: Turn OFF App Diagnostics." }
+    ]
+  },
+  {
+    id: "edgeSetup",
+    title: "Microsoft Edge Setup",
+    items: [
+      { id: "gridPadEdgeShowContent", label: "All loan types: Open new tab → Page Settings → Turn OFF Show Content." },
+      { id: "gridPadEdgeLtlPages", label: "LTL only: Settings → Start, Home, New Tabs → Open these pages → Add www.talktometechnologies.com." },
+      { id: "gridPadEdgeHomeButton", label: "LTL only: Turn ON Home Button → same URL." },
+      { id: "gridPadEdgeConfirm", label: "Close and reopen Edge to confirm." }
+    ]
+  },
+  {
+    id: "backboxSetup",
+    title: "Backbox Setup (Grid Pad Go only)",
+    items: [
+      { id: "gridPadBackboxPair", label: "Pair Bluetooth Backbox." },
+      { id: "gridPadBackboxConnect", label: "Open Smartbox Link → Connect Backbox." },
+      { id: "gridPadBackboxSkipUpdates", label: "Skip updates." },
+      { id: "gridPadBackboxPowerCycle", label: "Power cycle Backbox." },
+      { id: "gridPadBackboxSwitchPorts", label: "In Grid → Settings → Access → Switches → Connection → Select Switch Ports." }
+    ]
+  },
+  {
+    id: "cameraSetup",
+    title: "Camera Setup",
+    items: [
+      { id: "gridPadVidaUpdate", label: "VIDA (if applicable): Update camera." },
+      { id: "gridPadVidaAutoUpdate", label: "VIDA (if applicable): Turn off automatic updates." },
+      { id: "gridPadVidaCalibrate", label: "VIDA (if applicable): Calibrate." },
+      { id: "gridPadLuminiPlug", label: "Lumin-i (if applicable): Plug in (auto-detected in Grid)." }
+    ]
+  },
+  {
+    id: "gridAccountSetup",
+    title: "Grid Account Setup",
+    items: [
+      { id: "gridPadGetStarted", label: "Open Grid → New → Get Started." },
+      { id: "gridPadNameFormat", label: "Enter First Name + Last Initial (Clinic name for LTL)." },
+      { id: "gridPadLogoWallpaper", label: "Set TTMT Logo wallpaper." },
+      { id: "gridPadCreateAccounts", label: "Create Grid and Dropbox account." },
+      { id: "gridPadEmailFormat", label: "Email format: firstname + lastinitial + CRM# @wegotalk.com." },
+      { id: "gridPadPasswordFormat", label: "Password: Xqxq77##." },
+      { id: "gridPadDocumentCredentials", label: "Document email and password in CRM Device Tab." }
+    ]
+  },
+  {
+    id: "addVocabulary",
+    title: "Add Vocabulary",
+    items: [
+      { id: "gridPadExistingUser", label: "Sign into existing user if applicable." },
+      { id: "gridPadImportProfile", label: "OR import GridPad Resources Profile." },
+      { id: "gridPadCopyVocab", label: "Copy vocab (less than 4 folders at a time)." },
+      { id: "gridPadPodd", label: "Add PODD sets." },
+      { id: "gridPadLookSuite", label: "Add Look Suite (eyegaze only)." }
+    ]
+  },
+  {
+    id: "customizeSettings",
+    title: "Customize Grid Settings",
+    items: [
+      { id: "gridPadAccessMethod", label: "Access method matches PG (Eyegaze or Switch)." },
+      { id: "gridPadCalibration", label: "Calibration complete." },
+      { id: "gridPadVoice", label: "Voice matches PG." }
+    ]
+  },
+  {
+    id: "camerasAudio",
+    title: "Cameras and Audio (Grid Pad Go)",
+    items: [
+      { id: "gridPadCameraFront", label: "Cameras: Front = Surface Camera Front." },
+      { id: "gridPadCameraRear", label: "Cameras: Rear = Surface Camera Back." },
+      { id: "gridPadCameraTest", label: "Test cameras in Fast Talker." },
+      { id: "gridPadAudioSpeech", label: "Audio: F10 → Speech → Speaking → Smartbox AAC (Backbox SN)." },
+      { id: "gridPadAudioFeedback", label: "Audio: F10 → Speech → Audio Feedback → Smartbox AAC (Backbox SN)." },
+      { id: "gridPadAudioTest", label: "Test left and right speakers." },
+      { id: "gridPadUnlockLookLab", label: "Unlock Look Lab." }
+    ]
+  },
+  {
+    id: "folderContents",
+    title: "Folder Contents",
+    items: [
+      { id: "gridPadFolderSchoolBoard", label: "Left side (bottom to top): School Board (if pediatric/LTL/STL)." },
+      { id: "gridPadFolderStickers", label: "Left side: Stickers." },
+      { id: "gridPadFolderAacScript", label: "Left side: AAC Script." },
+      { id: "gridPadFolderFaq", label: "Left side: FAQ." },
+      { id: "gridPadFolderNextSteps", label: "Left side: Next Steps." },
+      { id: "gridPadFolderExamples", label: "Right side (bottom to top): Examples of Use." },
+      { id: "gridPadFolderDisinfection", label: "Right side: Disinfection Sheet." },
+      { id: "gridPadFolderQuickReference", label: "Right side: Zuvo and Grid Pad Quick Reference Sheet." },
+      { id: "gridPadFolderGuide", label: "Right side: User Guide (based on eyegaze)." },
+      { id: "gridPadFolderWelcome", label: "Right side: Welcome Card." },
+      { id: "gridPadFolderMagnet", label: "Right side: Magnet Warning." },
+      { id: "gridPadFolderChoking", label: "Right side: Choking Hazard." }
     ]
   },
   {
     id: "bagBin",
-    title: "Bag/Bin",
+    title: "Bag and Bin",
     items: [
-      { id: "gridPadBagBin", label: "Place folder and bag in bin with charger and remote in bag if necessary." }
+      { id: "gridPadBagCharger", label: "Include charger." },
+      { id: "gridPadBagRemote", label: "Include remote if applicable." },
+      { id: "gridPadBagFolder", label: "Include folder." },
+      { id: "gridPadBagAllItems", label: "Place all items in bin." }
     ]
   }
 ];
