@@ -48,6 +48,7 @@ const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
 const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
 const PREP_CHECKLIST_ORDER_STORAGE_KEY = "ttmtPrepChecklistCategoryOrder";
+const GRIDPAD_CHECKLIST_ORDER_STORAGE_KEY = "ttmtGridPadChecklistCategoryOrder";
 const LANDING_MASCOT_VISIBLE_STORAGE_KEY = "ttmtLandingMascotVisible";
 const LANDING_SYMOJI_VISIBLE_STORAGE_KEY = "ttmtLandingSymojiVisible";
 const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
@@ -75,7 +76,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -251,6 +252,105 @@ const PREP_CHECKLIST_CATEGORIES = [
   }
 ];
 
+const GRIDPAD_CHECKLIST_CATEGORIES = [
+  {
+    id: "accessories",
+    title: "Check for Accessories",
+    items: [
+      { id: "gridPadAccessories", label: "Check Dashboard, Device Tab, and PG for any accessories (switches, mounts, KGs, etc.)." }
+    ]
+  },
+  {
+    id: "windowsUpdate",
+    title: "Windows Update",
+    items: [
+      { id: "gridPadWindowsUpdate", label: "Navigate to Settings > Windows Update." },
+      { id: "gridPadPauseUpdates", label: "Do not run updates, but ensure updates are paused for 5 weeks." }
+    ]
+  },
+  {
+    id: "microsoftSettings",
+    title: "Microsoft Settings",
+    items: [
+      { id: "gridPadHomeIcons", label: "Home screen icons setup in appropriate order." },
+      { id: "gridPadPrivacyAccountInfo", label: "Privacy & security: Turn off Account info." },
+      { id: "gridPadPrivacyOtherDevices", label: "Privacy & security: Turn off Other devices." },
+      { id: "gridPadPrivacyDiagnostics", label: "Privacy & security: Turn off App diagnostics." }
+    ]
+  },
+  {
+    id: "edgeLtlStl",
+    title: "Edge Settings (LTLs and STLs only)",
+    items: [
+      { id: "gridPadEdgeOpenSettings", label: "Open Edge and go to Settings." },
+      { id: "gridPadEdgeStartHome", label: "Navigate to Start, home, and new tab page." },
+      { id: "gridPadEdgeOpenPages", label: "Open these pages: add https://www.talktometechnologies.com." },
+      { id: "gridPadEdgeHomeButton", label: "Turn Home button on and set it to https://www.talktometechnologies.com." }
+    ]
+  },
+  {
+    id: "edgeAllLoanTypes",
+    title: "Edge Settings (all loan types)",
+    items: [
+      { id: "gridPadEdgeNewTab", label: "Open Edge and open a new tab." },
+      { id: "gridPadPageSettings", label: "Select Page settings." },
+      { id: "gridPadShowContent", label: "Turn off the Show content toggle." }
+    ]
+  },
+  {
+    id: "gridAccount",
+    title: "Grid Account",
+    items: [
+      { id: "gridPadCreateAccounts", label: "Create Grid and Dropbox accounts and document in Device Tab of Client CRM page." },
+      { id: "gridPadCopyProprietary", label: "Copy proprietary sets, Grid Symbols and Text, and Look Suite (eyegaze only) from Trials Zuvo Grid User." },
+      { id: "gridPadRequestOnlySets", label: "All other Grid sets are by request only." }
+    ]
+  },
+  {
+    id: "gridSettings",
+    title: "Grid Settings",
+    items: [
+      { id: "gridPadAccessMatchesPg", label: "Make sure access settings (Calibration and Activation) match PG." },
+      { id: "gridPadVoiceMatchesPg", label: "Make sure voice(s) are set to match PG." },
+      { id: "gridPadAudioFeedback", label: "Set Audio Feedback to Senary Audio." },
+      { id: "gridPadCameraConfig", label: "Devices > Cameras: Front Camera = 5M Camera, Rear Camera = Back Camera." },
+      { id: "gridPadUnlockLookLab", label: "Unlock Look Lab." }
+    ]
+  },
+  {
+    id: "folder",
+    title: "Folder",
+    items: [
+      { id: "gridPadLeftSchoolBoard", label: "Left side (bottom to top): School Board (Pediatric & LTL/STL)." },
+      { id: "gridPadLeftStickers", label: "Left side: Stickers." },
+      { id: "gridPadLeftAacScript", label: "Left side: AAC Script (Adult & LTL/STL)." },
+      { id: "gridPadLeftFaq", label: "Left side: FAQ." },
+      { id: "gridPadLeftNextSteps", label: "Left side: Next Steps." },
+      { id: "gridPadRightExamples", label: "Right side (bottom to top): Examples of Use." },
+      { id: "gridPadRightDisinfection", label: "Right side: Disinfection Sheet." },
+      { id: "gridPadRightQuickReference", label: "Right side: Zuvo & Grid Pad Quick Reference Sheet." },
+      { id: "gridPadRightUserGuide", label: "Right side: User Guide based on whether the device has eyegaze systems." },
+      { id: "gridPadRightWelcome", label: "Right side: Welcome Card." },
+      { id: "gridPadRightMagnet", label: "Right side: Magnet Warning." },
+      { id: "gridPadRightChoking", label: "Right side: Choking Hazard." }
+    ]
+  },
+  {
+    id: "remote",
+    title: "Remote (LTL or request only)",
+    items: [
+      { id: "gridPadRemotePair", label: "Connect remote by pressing the two furthest smart buttons until flashing blue, then press the down button inside remote until green light stops flashing." }
+    ]
+  },
+  {
+    id: "bagBin",
+    title: "Bag/Bin",
+    items: [
+      { id: "gridPadBagBin", label: "Place folder and bag in bin with charger and remote in bag if necessary." }
+    ]
+  }
+];
+
 const PREP_CHECKLIST_SL_CATEGORY_OVERRIDES = {
   binPreparation: {
     title: "Bin Preparation",
@@ -314,6 +414,42 @@ function clearPrepChecklist() {
 
 let prepChecklistOrderDraft = [];
 let prepChecklistVariant = "standard";
+let gridPadChecklistOrderDraft = [];
+
+function getGridPadChecklistCategoryIds() {
+  return GRIDPAD_CHECKLIST_CATEGORIES.map(category => category.id);
+}
+
+async function getGridPadChecklistCategoryOrder() {
+  const stored = await getStoredValue(GRIDPAD_CHECKLIST_ORDER_STORAGE_KEY);
+  const defaultOrder = getGridPadChecklistCategoryIds();
+  if (!Array.isArray(stored)) return defaultOrder;
+  const validIds = new Set(defaultOrder);
+  const filtered = stored.filter(id => validIds.has(id));
+  const missing = defaultOrder.filter(id => !filtered.includes(id));
+  const combined = [...filtered, ...missing];
+  return combined.length ? combined : defaultOrder;
+}
+
+function getGridPadChecklistCategoriesByOrder(order) {
+  const categoryMap = new Map(GRIDPAD_CHECKLIST_CATEGORIES.map(category => [category.id, category]));
+  const orderedCategories = [];
+  order.forEach(id => {
+    const category = categoryMap.get(id);
+    if (category) {
+      orderedCategories.push({
+        ...category,
+        items: category.items.map(item => ({ ...item }))
+      });
+      categoryMap.delete(id);
+    }
+  });
+  categoryMap.forEach(category => orderedCategories.push({
+    ...category,
+    items: category.items.map(item => ({ ...item }))
+  }));
+  return orderedCategories;
+}
 
 function getPrepChecklistCategoriesForVariant(variant) {
   const categories = PREP_CHECKLIST_CATEGORIES.map(category => ({
@@ -519,6 +655,88 @@ function showPrepChecklistOrderView() {
   showView("prepChecklistOrderView");
   void refreshPrepChecklistOrderList();
 }
+function showGridPadPrepView() {
+  showView("gridPadPrepView");
+  void refreshGridPadChecklist();
+}
+function showGridPadChecklistOrderView() {
+  showView("gridPadChecklistOrderView");
+  void refreshGridPadChecklistOrderList();
+}
+
+function clearGridPadChecklist() {
+  const gridPadPrepView = document.getElementById("gridPadPrepView");
+  if (!gridPadPrepView) return;
+  gridPadPrepView.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = false;
+  });
+  gridPadPrepView.querySelectorAll(".prep-checklist__category").forEach(wrapper => {
+    updatePrepChecklistCategoryState(wrapper);
+  });
+}
+
+async function refreshGridPadChecklist() {
+  const container = document.getElementById("gridPadChecklistContainer");
+  if (!container) return;
+  const order = await getGridPadChecklistCategoryOrder();
+  renderPrepChecklist(container, getGridPadChecklistCategoriesByOrder(order));
+}
+
+function moveGridPadChecklistCategory(index, delta) {
+  const nextIndex = index + delta;
+  if (nextIndex < 0 || nextIndex >= gridPadChecklistOrderDraft.length) return;
+  const updated = [...gridPadChecklistOrderDraft];
+  [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+  gridPadChecklistOrderDraft = updated;
+  renderGridPadChecklistOrderList();
+}
+
+function renderGridPadChecklistOrderList() {
+  const container = document.getElementById("gridPadChecklistOrderList");
+  if (!container) return;
+  container.innerHTML = "";
+  const orderedCategories = getGridPadChecklistCategoriesByOrder(gridPadChecklistOrderDraft);
+  orderedCategories.forEach((category, index) => {
+    const row = document.createElement("div");
+    row.className = "prep-checklist__order-item";
+
+    const title = document.createElement("div");
+    title.textContent = category.title;
+    row.appendChild(title);
+
+    const actions = document.createElement("div");
+    actions.className = "prep-checklist__order-actions";
+
+    const upButton = document.createElement("button");
+    upButton.type = "button";
+    upButton.className = "toggle-btn";
+    upButton.textContent = "Up";
+    upButton.disabled = index === 0;
+    upButton.addEventListener("click", () => {
+      moveGridPadChecklistCategory(index, -1);
+    });
+
+    const downButton = document.createElement("button");
+    downButton.type = "button";
+    downButton.className = "toggle-btn";
+    downButton.textContent = "Down";
+    downButton.disabled = index === orderedCategories.length - 1;
+    downButton.addEventListener("click", () => {
+      moveGridPadChecklistCategory(index, 1);
+    });
+
+    actions.appendChild(upButton);
+    actions.appendChild(downButton);
+    row.appendChild(actions);
+    container.appendChild(row);
+  });
+}
+
+async function refreshGridPadChecklistOrderList() {
+  gridPadChecklistOrderDraft = await getGridPadChecklistCategoryOrder();
+  renderGridPadChecklistOrderList();
+}
+
 function showCompleteView() { showView("completeView"); }
 function showLtlCompletionView() { showView("ltlCompletionView"); }
 function showFormView() { showView("formView"); }
@@ -7233,6 +7451,10 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     showPrepTypeView();
   });
 
+  document.getElementById("gridPadPrepBtn")?.addEventListener("click", () => {
+    showGridPadPrepView();
+  });
+
   document.getElementById("prepTypeSlBtn")?.addEventListener("click", () => {
     showPrepSlCrmView();
   });
@@ -7385,6 +7607,33 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     await incrementDailyCounter("preps");
     await logTaskOutcome("Prep", "Completed successfully");
     clearPrepChecklist();
+    showLandingView();
+  });
+
+  document.getElementById("gridPadPrepReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("gridPadPrepReorderBtn")?.addEventListener("click", () => {
+    showGridPadChecklistOrderView();
+  });
+
+  document.getElementById("gridPadOrderReturnBtn")?.addEventListener("click", () => {
+    showGridPadPrepView();
+  });
+
+  document.getElementById("gridPadOrderSaveBtn")?.addEventListener("click", async () => {
+    if (!gridPadChecklistOrderDraft.length) {
+      gridPadChecklistOrderDraft = getGridPadChecklistCategoryIds();
+    }
+    await setStoredValue(GRIDPAD_CHECKLIST_ORDER_STORAGE_KEY, gridPadChecklistOrderDraft);
+    showGridPadPrepView();
+  });
+
+  document.getElementById("gridPadPrepFinishBtn")?.addEventListener("click", async () => {
+    await incrementDailyCounter("preps");
+    await logTaskOutcome("Prep", "Completed successfully");
+    clearGridPadChecklist();
     showLandingView();
   });
 
