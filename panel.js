@@ -5762,6 +5762,7 @@ async function runDeviceLookupSearch(rawInput) {
     resetLookupCopyButtons();
     updateLookupBeginLtlUpdateButton(false);
     updateLtlUpdateRowSection();
+    await logTaskOutcome("Device Lookup", `Search attempted with invalid scan input: ${rawInput || "(blank)"}`);
     return;
   }
 
@@ -5782,6 +5783,7 @@ async function runDeviceLookupSearch(rawInput) {
     resetLookupCopyButtons();
     updateLookupBeginLtlUpdateButton(false);
     updateLtlUpdateRowSection();
+    await logTaskOutcome("Device Lookup", `Search attempted for ${extracted} but one or more workbooks were not connected`);
     return;
   }
 
@@ -5900,6 +5902,18 @@ async function runDeviceLookupSearch(rawInput) {
     tableMounts: mountResult.table.map(item => item.serial),
     rollingMounts: mountResult.rolling.map(item => item.serial)
   };
+
+  await logTaskOutcome(
+    "Device Lookup",
+    [
+      `Search: ${extracted}`,
+      `CRM: ${crmId || "N/A"}`,
+      `LTL: ${foundInLtl ? "yes" : "no"}`,
+      `RWL: ${foundInRwl ? "yes" : "no"}`,
+      `Mounts: ${hasMounts ? "yes" : "no"}`,
+      `Status: ${actionColor}`
+    ].join(" | ")
+  );
 }
 
 /* ---------------- Grid sidekick ---------------- */
