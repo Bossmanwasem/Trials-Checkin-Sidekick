@@ -6840,6 +6840,10 @@ function clearSelectedTrialFiles(messageOverride = null) {
   if (trialFilesInput) trialFilesInput.value = "";
 }
 
+function getNonZipTrialFiles(files) {
+  return (files || []).filter(file => !file.name.toLowerCase().endsWith(".zip"));
+}
+
 function getVocabTypesFromFiles(files) {
   const hasGrid = files.some(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
   const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
@@ -7027,6 +7031,18 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     await refreshTrialFilesFromFolder();
   }
   if (selectedTrialFiles.length) {
+    const nonZipFiles = getNonZipTrialFiles(selectedTrialFiles);
+    if (nonZipFiles.length) {
+      const listedFiles = nonZipFiles.slice(0, 3).map(file => file.name).join(", ");
+      const extraCount = nonZipFiles.length - 3;
+      const filePreview = extraCount > 0 ? `${listedFiles}, +${extraCount} more` : listedFiles;
+      const message = `Drop folder contains file(s) that are not zipped: ${filePreview}. Zip them before continuing.`;
+      updateTrialFilesStatus(message, true);
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
+
     if (typeof JSZip === "undefined") {
       const message = "JSZip failed to load. Please reload the panel before submitting.";
       alert(message);
