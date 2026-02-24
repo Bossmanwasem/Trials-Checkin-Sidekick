@@ -247,6 +247,31 @@ body[data-theme^="customTheme-"] .container > * {
   color: var(--text-color);
 }
 
+.landing-anime-quotes {
+  margin: 0 auto 16px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.landing-anime-quotes__title {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+  margin-bottom: 6px;
+}
+
+.landing-anime-quotes__quote {
+  margin: 0;
+  min-height: 48px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--text-color);
+}
+
 .daily-counter {
   margin: 8px auto 16px;
   padding: clamp(6px, 2.4vw, 10px) clamp(8px, 3vw, 12px);
