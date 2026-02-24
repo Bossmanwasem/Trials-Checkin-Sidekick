@@ -1191,6 +1191,26 @@
     <p class="complete-intro">
       Make sure you send this email as Trials ops.
     </p>
+
+    <div class="note-preview">
+      <div class="note-preview__title">Email fallback (copy/paste)</div>
+      <p class="hint-text email-fallback-description">
+        Just in case the Outlook email fails to populate, copy and paste this subject and body into a new email.
+      </p>
+
+      <label class="copy-label" for="emailSubjectField">Subject</label>
+      <div class="copy-row">
+        <input type="text" id="emailSubjectField" class="copy-field" readonly placeholder="Email subject" />
+        <button type="button" class="copy-btn" data-copy-target="emailSubjectField">Copy</button>
+      </div>
+
+      <label class="copy-label" for="emailBodyField">Body</label>
+      <div class="copy-row copy-row--stack">
+        <textarea id="emailBodyField" class="copy-field copy-field--multiline" rows="8" readonly placeholder="Email body"></textarea>
+        <button type="button" class="copy-btn" data-copy-target="emailBodyField">Copy</button>
+      </div>
+      <div id="emailStatus" class="status-line" style="margin-top:10px;"></div>
+    </div>
   </div>
 
   <!-- Panel logic -->

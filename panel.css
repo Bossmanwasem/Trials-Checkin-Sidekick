@@ -968,6 +968,10 @@ button[type="submit"]:hover {
   margin-top: 10px;
 }
 
+.copy-row--stack {
+  align-items: flex-start;
+}
+
 .copy-label {
   display: block;
   font-size: 0.85rem;
@@ -984,6 +988,17 @@ button[type="submit"]:hover {
   padding: 8px;
   border-radius: 6px;
   transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
+}
+
+.copy-field--multiline {
+  min-height: 130px;
+  resize: vertical;
+  font-family: Consolas, Menlo, monospace;
+  white-space: pre-wrap;
+}
+
+.email-fallback-description {
+  margin-top: 0;
 }
 
 .copy-btn {

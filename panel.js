@@ -977,6 +977,7 @@ let hasStartedGrid = false;
 let outlookEmailTabId = null;
 let outlookSetupTabId = null;
 let hasFinalizedCheckin = false;
+let outlookComposeNavigationLogged = false;
 const USER_PROFILE_STORAGE_KEY = "ttmtSidekickUserProfile";
 const USER_MASCOT_STORAGE_KEY = "ttmtSidekickUserMascot";
 const USER_MASCOT_SIZE_STORAGE_KEY = "ttmtSidekickUserMascotSize";
@@ -6598,12 +6599,30 @@ function buildOutlookComposeUrl(payload) {
   return `${OUTLOOK_COMPOSE_BASE_URL}?${query}`;
 }
 
+function isOutlookComposeUrl(url) {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.includes("/mail/deeplink/compose");
+  } catch {
+    return false;
+  }
+}
+
+async function handleOutlookComposeNavigationIssue(url) {
+  if (outlookComposeNavigationLogged) return;
+  outlookComposeNavigationLogged = true;
+  const message = `Outlook compose deeplink failed to load. Opened: ${url || "(unknown URL)"}`;
+  setText("emailStatus", "Outlook opened inbox instead of the drafted email. Use the copy/paste fallback below.");
+  await logTaskOutcome("Checkin", message);
+}
+
 async function renderOutlookEmailPreview() {
   const data = await getLastCheckinDataForDaf();
   const crmLink = buildCrmLink(data);
   const payload = buildOutlookEmailPayload(data, { crmLink });
   setValue("emailSubjectField", payload.subject);
-  setText("emailBodyPreview", payload.body);
+  setValue("emailBodyField", payload.body);
   setText("emailStatus", "");
   return payload;
 }
@@ -6613,6 +6632,7 @@ async function openOutlookComposeEmail() {
   const crmLink = buildCrmLink(data);
   const payload = buildOutlookEmailPayload(data, { crmLink });
   const url = buildOutlookComposeUrl(payload);
+  outlookComposeNavigationLogged = false;
   const tab = await chrome.tabs.create({ url });
   outlookEmailTabId = tab?.id ?? null;
 }
@@ -7254,11 +7274,18 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
   }
   showEmailView();
   await finalizeCheckinCleanupAndCounters();
+  await renderOutlookEmailPreview();
   const dafTabId = await getActiveDafTabId();
   if (dafTabId) {
     await chrome.tabs.remove(dafTabId);
   }
-  await openOutlookComposeEmail();
+  try {
+    await openOutlookComposeEmail();
+  } catch {
+    const message = "Unable to open Outlook compose deeplink. Use the copy/paste fallback fields.";
+    setText("emailStatus", message);
+    await logTaskOutcome("Checkin", message);
+  }
 });
 
 ltlCompletionRunBtn?.addEventListener("click", async () => {
@@ -7396,6 +7423,20 @@ document.getElementById("dafRecapFields")?.addEventListener("click", async (e) =
   const btn = e.target.closest("button.copy-btn");
   if (!btn || !btn.dataset.copyValue) return;
   await navigator.clipboard.writeText(btn.dataset.copyValue);
+  const original = btn.textContent;
+  btn.textContent = "Copied!";
+  setTimeout(() => { btn.textContent = original; }, 1200);
+});
+
+document.getElementById("emailView")?.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button.copy-btn");
+  if (!btn) return;
+  const targetId = btn.dataset.copyTarget;
+  if (!targetId) return;
+  const field = document.getElementById(targetId);
+  const value = field?.value || "";
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
   const original = btn.textContent;
   btn.textContent = "Copied!";
   setTimeout(() => { btn.textContent = original; }, 1200);
@@ -7896,6 +7937,9 @@ document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () 
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (tab?.active && changeInfo?.status === "complete") {
       await syncViewForTab(tab);
+    }
+    if (tabId === outlookEmailTabId && changeInfo?.status === "complete" && !isOutlookComposeUrl(tab?.url || "")) {
+      await handleOutlookComposeNavigationIssue(tab?.url || "");
     }
   });
 
