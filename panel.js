@@ -1075,58 +1075,68 @@ const SYMOJI_FILES = [
   "Yummy.png"
 ];
 
-const ANIME_QUOTES = [
-  "Hard work is worthless for those that don't believe in themselves. — Naruto",
-  "Power comes in response to a need, not a desire. — Goku",
-  "If you don't take risks, you can't create a future. — Monkey D. Luffy",
-  "A lesson without pain is meaningless. — Edward Elric",
-  "People's lives don't end when they die, it ends when they lose faith. — Itachi Uchiha",
-  "The world isn't perfect, but it's there for us trying the best it can. — Roy Mustang",
-  "Fear is not evil. It tells you what your weakness is. — Gildarts Clive",
-  "The moment you think of giving up, think of the reason why you held on so long. — Natsu Dragneel",
-  "No matter how deep the night, it always turns to day, eventually. — Brook",
-  "A person grows up when he's able to overcome hardships. — Jiraiya",
-  "I'll leave tomorrow's problems to tomorrow's me. — Saitama",
-  "Whatever you lose, you'll find it again. But what you throw away you'll never get back. — Kenshin Himura",
-  "Forgetting is like a wound. The wound may heal, but it has already left a scar. — Monkey D. Luffy",
-  "Push through the pain. Giving up hurts more. — Vegeta",
-  "A dropout will beat a genius through hard work. — Rock Lee",
-  "To know sorrow is not terrifying. What is terrifying is to know you can't go back to happiness you could have. — Matsumoto Rangiku",
-  "The strong should aid and protect the weak. Then, the weak will become strong and they in turn will aid and protect those weaker than them. — All Might",
-  "When you give up, that's when the game ends. — Mitsuyoshi Anzai",
-  "If you can't find a reason to fight, then you shouldn't be fighting. — Akame",
-  "A place where someone still thinks about you is a place you can call home. — Jiraiya",
-  "People who can't throw something important away can never hope to change anything. — Armin Arlert",
-  "The ticket to the future is always open. — Vash the Stampede",
-  "If you really want to be strong, stop caring about what your surrounding thinks of you. — Saitama",
-  "Knowledge and awareness are vague, and perhaps better called illusions. — Itachi Uchiha",
-  "No one knows what the future holds. That's why its potential is infinite. — Rintarou Okabe",
-  "Move forward, and prove your worth through your actions. — Erwin Smith",
-  "You should enjoy the little detours. To the fullest. Because that's where you'll find the things more important than what you want. — Ging Freecss",
-  "A lesson learned the hard way is remembered for life. — Tanjiro Kamado",
-  "If all you ever do is look down on people, you won't be able to recognize your own weaknesses. — Bakugo Katsuki",
-  "It's not the face that makes someone a monster; it's the choices they make with their lives. — Naruto",
-  "Humans are weak, but we can still fight. — Mikasa Ackerman",
-  "I don't know everything, I just know what I know. — Hanekawa Tsubasa",
-  "The only home that a man should ever need is within his heart. — Portgas D. Ace",
-  "There are no regrets. If one can be proud of one's life, one should not wish for another chance. — Saber",
-  "You can die anytime, but living takes true courage. — Kenshin Himura",
-  "I'm gonna be king of the pirates! — Monkey D. Luffy",
-  "Wake up to reality. Nothing ever goes as planned in this accursed world. — Madara Uchiha",
-  "The world is cruel, but also very beautiful. — Mikasa Ackerman",
-  "Those who stand at the top determine what's wrong and what's right. — Donquixote Doflamingo",
-  "A true hero always finds a way for justice to be served. — All Might",
-  "I won't run away anymore... I won't go back on my word. — Naruto",
-  "Set your heart ablaze. — Kyojuro Rengoku",
-  "When do you think people die? ...It's when they are forgotten. — Dr. Hiluluk",
-  "A human's strength is limitless as long as they have a cause to fight for. — Levi Ackerman",
-  "Whatever happens, happens. — Spike Spiegel",
-  "If you lose credibility by just admitting fault, then you didn't have any in the first place. — Fujitora",
-  "The world can be one if there's love. — Usagi Tsukino",
-  "Sometimes, we have to look beyond what we want and do what's best. — Piccolo",
-  "Don't beg for things. Do it yourself, or else you won't get anything. — Renton Thurston",
-  "Even if I'm worthless and weak, I can still stand up and fight. — Izuku Midoriya"
-];
+const ANIME_THEME_QUOTES = {
+  animeNaruto: [
+    "Hard work is worthless for those that don't believe in themselves. — Naruto Uzumaki",
+    "A place where someone still thinks about you is a place you can call home. — Jiraiya",
+    "It's not the face that makes someone a monster; it's the choices they make with their lives. — Naruto Uzumaki",
+    "People's lives don't end when they die, it ends when they lose faith. — Itachi Uchiha"
+  ],
+  animeOnePiece: [
+    "If you don't take risks, you can't create a future. — Monkey D. Luffy",
+    "No matter how deep the night, it always turns to day, eventually. — Brook",
+    "When do you think people die? ...It's when they are forgotten. — Dr. Hiluluk",
+    "I'm gonna be king of the pirates! — Monkey D. Luffy"
+  ],
+  animeDragonBall: [
+    "Power comes in response to a need, not a desire. — Goku",
+    "Push through the pain. Giving up hurts more. — Vegeta",
+    "Sometimes, we have to look beyond what we want and do what's best. — Piccolo",
+    "A warrior's strength is fueled by the battles they survive. — Goku"
+  ],
+  animeAttackOnTitan: [
+    "People who can't throw something important away can never hope to change anything. — Armin Arlert",
+    "Move forward, and prove your worth through your actions. — Erwin Smith",
+    "Humans are weak, but we can still fight. — Mikasa Ackerman",
+    "A human's strength is limitless as long as they have a cause to fight for. — Levi Ackerman"
+  ],
+  animeDemonSlayer: [
+    "Set your heart ablaze. — Kyojuro Rengoku",
+    "A lesson learned the hard way is remembered for life. — Tanjiro Kamado",
+    "No matter how many people you may lose, you have no choice but to go on living. — Tanjiro Kamado",
+    "Feel the rage, the powerful pure rage of not being able to forgive. — Giyu Tomioka"
+  ],
+  animeJujutsuKaisen: [
+    "The accumulation of those little despairs is what makes a person an adult. — Kento Nanami",
+    "Love is the most twisted curse of all. — Satoru Gojo",
+    "It's okay to be selfish. — Megumi Fushiguro",
+    "If I fall behind, if I hesitate, those people will die. — Yuji Itadori"
+  ],
+  animeMyHero: [
+    "The strong should aid and protect the weak. Then, the weak will become strong and they in turn will aid and protect those weaker than them. — All Might",
+    "If all you ever do is look down on people, you won't be able to recognize your own weaknesses. — Katsuki Bakugo",
+    "A true hero always finds a way for justice to be served. — All Might",
+    "Even if I'm worthless and weak, I can still stand up and fight. — Izuku Midoriya"
+  ],
+  animeSailorMoon: [
+    "The world can be one if there's love. — Usagi Tsukino",
+    "Believe in yourself and nothing can stop you. — Usagi Tsukino",
+    "In the name of the moon, I'll punish you! — Sailor Moon",
+    "No matter how hard things get, we can always face them together. — Usagi Tsukino"
+  ],
+  animeDeathNote: [
+    "There is no heaven or hell. No matter what you do while you're alive, everybody goes to the same place once you die. Death is equal. — L",
+    "Sometimes, the questions are complicated — and the answers are simple. — L",
+    "Humans are so interesting. — Ryuk",
+    "In this world, there are very few people who actually trust each other. — Light Yagami"
+  ],
+  animeFullmetal: [
+    "A lesson without pain is meaningless. — Edward Elric",
+    "The world isn't perfect, but it's there for us trying the best it can. — Roy Mustang",
+    "Stand up and walk. Keep moving forward. — Edward Elric",
+    "Nothing's perfect, the world's not perfect, but it's there for us, doing the best it can. — Roy Mustang"
+  ]
+};
 
 const CUSTOM_THEME_DEFAULT_VARS = {
   "bg-color": "#121212",
@@ -2795,6 +2805,11 @@ let customThemeDraft = null;
 let animeQuoteCycleIntervalId = null;
 let currentAnimeQuote = "";
 
+function getAnimeQuotesForTheme(themeId) {
+  if (!ANIME_THEME_IDS.has(themeId)) return [];
+  return ANIME_THEME_QUOTES[themeId] || [];
+}
+
 function ensureThemeTransitionLayer() {
   let layer = document.getElementById("themeTransitionLayer");
   if (!layer) {
@@ -3175,6 +3190,7 @@ function applyTheme(themeId, { persist = true } = {}) {
   if (resolvedTheme === "chaos") {
     setBodyThemeAttribute(resolvedTheme);
     updateThemeSelection(resolvedTheme);
+    updateLandingAnimeQuoteVisibility(resolvedTheme);
     startChaosRotation();
     if (persist) saveThemePreference(resolvedTheme);
     return;
@@ -3195,6 +3211,7 @@ function applyTheme(themeId, { persist = true } = {}) {
   setBodyThemeAttribute(resolvedTheme);
   setButtonTextColor(resolvedTheme, theme);
   updateThemeSelection(resolvedTheme);
+  updateLandingAnimeQuoteVisibility(resolvedTheme);
   const themeSelect = document.getElementById("onboardingThemeSelect");
   if (themeSelect) {
     themeSelect.value = resolvedTheme;
@@ -4730,26 +4747,51 @@ function applyThemeBuilderSymojiVisibility(visible) {
   applyElementVisibility(preview?.querySelector('[data-preview-element="symoji"]'), visible);
 }
 
-function getRandomAnimeQuote() {
-  const options = ANIME_QUOTES.filter(quote => quote !== currentAnimeQuote);
-  const pool = options.length ? options : ANIME_QUOTES;
+function getRandomAnimeQuote(themeId = activeThemeId) {
+  const quotes = getAnimeQuotesForTheme(themeId);
+  if (!quotes.length) {
+    currentAnimeQuote = "";
+    return "";
+  }
+  const options = quotes.filter(quote => quote !== currentAnimeQuote);
+  const pool = options.length ? options : quotes;
   const nextQuote = pool[Math.floor(Math.random() * pool.length)] || "";
   currentAnimeQuote = nextQuote;
   return nextQuote;
 }
 
-function renderLandingAnimeQuote() {
+function renderLandingAnimeQuote(themeId = activeThemeId) {
   const quoteEl = document.getElementById("landingAnimeQuoteText");
   if (!quoteEl) return;
-  quoteEl.textContent = getRandomAnimeQuote();
+  quoteEl.textContent = getRandomAnimeQuote(themeId);
 }
 
-function startLandingAnimeQuoteCycle() {
-  renderLandingAnimeQuote();
-  if (animeQuoteCycleIntervalId) return;
+function stopLandingAnimeQuoteCycle() {
+  if (!animeQuoteCycleIntervalId) return;
+  window.clearInterval(animeQuoteCycleIntervalId);
+  animeQuoteCycleIntervalId = null;
+}
+
+function updateLandingAnimeQuoteVisibility(themeId = activeThemeId) {
+  const section = document.getElementById("landingAnimeQuoteSection");
+  const isAnimeTheme = ANIME_THEME_IDS.has(themeId);
+  if (section) {
+    section.style.display = isAnimeTheme ? "" : "none";
+  }
+
+  if (!isAnimeTheme) {
+    stopLandingAnimeQuoteCycle();
+    currentAnimeQuote = "";
+    const quoteEl = document.getElementById("landingAnimeQuoteText");
+    if (quoteEl) quoteEl.textContent = "";
+    return;
+  }
+
+  stopLandingAnimeQuoteCycle();
+  renderLandingAnimeQuote(themeId);
   animeQuoteCycleIntervalId = window.setInterval(() => {
-    renderLandingAnimeQuote();
-  }, 7000);
+    renderLandingAnimeQuote(themeId);
+  }, 60000);
 }
 
 function updateLandingGreeting(profile) {
@@ -5108,7 +5150,7 @@ async function refreshLandingView() {
   applyLandingMascotVisibility(mascotVisible);
   applyLandingSymojiVisibility(symojiVisible);
   updateLandingVersion();
-  startLandingAnimeQuoteCycle();
+  updateLandingAnimeQuoteVisibility(activeThemeId);
   await updateDailyCounterVisibility();
   await updateDailyCustomCounterSettings();
   await updateWeeklyCounterVisibility();
