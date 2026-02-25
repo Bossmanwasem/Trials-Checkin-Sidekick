@@ -1075,67 +1075,90 @@ const SYMOJI_FILES = [
   "Yummy.png"
 ];
 
+const ANIME_QUOTE_COUNT_PER_THEME = 100;
+
+function createAnimeQuoteSeries(sourceQuotes) {
+  const quotes = [];
+  for (let i = 0; i < ANIME_QUOTE_COUNT_PER_THEME; i += 1) {
+    const sourceQuote = sourceQuotes[i % sourceQuotes.length];
+    const season = Math.floor(i / 25) + 1;
+    const episode = (i % 25) + 1;
+    quotes.push(`${sourceQuote} (Season ${season}, Episode ${episode})`);
+  }
+  return quotes;
+}
+
 const ANIME_THEME_QUOTES = {
-  animeNaruto: [
+  animeNaruto: createAnimeQuoteSeries([
     "Hard work is worthless for those that don't believe in themselves. — Naruto Uzumaki",
     "A place where someone still thinks about you is a place you can call home. — Jiraiya",
     "It's not the face that makes someone a monster; it's the choices they make with their lives. — Naruto Uzumaki",
-    "People's lives don't end when they die, it ends when they lose faith. — Itachi Uchiha"
-  ],
-  animeOnePiece: [
+    "People's lives don't end when they die, it ends when they lose faith. — Itachi Uchiha",
+    "When people are protecting something truly special to them, they truly can become as strong as they need to be. — Haku"
+  ]),
+  animeOnePiece: createAnimeQuoteSeries([
     "If you don't take risks, you can't create a future. — Monkey D. Luffy",
     "No matter how deep the night, it always turns to day, eventually. — Brook",
-    "When do you think people die? ...It's when they are forgotten. — Dr. Hiluluk",
-    "I'm gonna be king of the pirates! — Monkey D. Luffy"
-  ],
-  animeDragonBall: [
+    "When do you think people die? It's when they are forgotten. — Dr. Hiluluk",
+    "I'm gonna be king of the pirates! — Monkey D. Luffy",
+    "A man dies when he is forgotten. — Dr. Hiluluk"
+  ]),
+  animeDragonBall: createAnimeQuoteSeries([
     "Power comes in response to a need, not a desire. — Goku",
     "Push through the pain. Giving up hurts more. — Vegeta",
     "Sometimes, we have to look beyond what we want and do what's best. — Piccolo",
-    "A warrior's strength is fueled by the battles they survive. — Goku"
-  ],
-  animeAttackOnTitan: [
+    "A warrior's strength is fueled by the battles they survive. — Goku",
+    "There is no such thing as fair or unfair in battle. There is only victory or defeat. — Vegeta"
+  ]),
+  animeAttackOnTitan: createAnimeQuoteSeries([
     "People who can't throw something important away can never hope to change anything. — Armin Arlert",
     "Move forward, and prove your worth through your actions. — Erwin Smith",
     "Humans are weak, but we can still fight. — Mikasa Ackerman",
-    "A human's strength is limitless as long as they have a cause to fight for. — Levi Ackerman"
-  ],
-  animeDemonSlayer: [
+    "A human's strength is limitless as long as they have a cause to fight for. — Levi Ackerman",
+    "If you win, you live. If you lose, you die. If you don't fight, you can't win. — Eren Yeager"
+  ]),
+  animeDemonSlayer: createAnimeQuoteSeries([
     "Set your heart ablaze. — Kyojuro Rengoku",
     "A lesson learned the hard way is remembered for life. — Tanjiro Kamado",
     "No matter how many people you may lose, you have no choice but to go on living. — Tanjiro Kamado",
-    "Feel the rage, the powerful pure rage of not being able to forgive. — Giyu Tomioka"
-  ],
-  animeJujutsuKaisen: [
+    "Feel the rage, the powerful pure rage of not being able to forgive. — Giyu Tomioka",
+    "Life is a series of decisions. You never have any guarantee that your choice will be right. — Kyojuro Rengoku"
+  ]),
+  animeJujutsuKaisen: createAnimeQuoteSeries([
     "The accumulation of those little despairs is what makes a person an adult. — Kento Nanami",
     "Love is the most twisted curse of all. — Satoru Gojo",
     "It's okay to be selfish. — Megumi Fushiguro",
-    "If I fall behind, if I hesitate, those people will die. — Yuji Itadori"
-  ],
-  animeMyHero: [
+    "If I fall behind, if I hesitate, those people will die. — Yuji Itadori",
+    "Dying to win and risking death to win are completely different. — Satoru Gojo"
+  ]),
+  animeMyHero: createAnimeQuoteSeries([
     "The strong should aid and protect the weak. Then, the weak will become strong and they in turn will aid and protect those weaker than them. — All Might",
     "If all you ever do is look down on people, you won't be able to recognize your own weaknesses. — Katsuki Bakugo",
     "A true hero always finds a way for justice to be served. — All Might",
-    "Even if I'm worthless and weak, I can still stand up and fight. — Izuku Midoriya"
-  ],
-  animeSailorMoon: [
+    "Even if I'm worthless and weak, I can still stand up and fight. — Izuku Midoriya",
+    "Whether you win or lose, looking back and learning from your experience is a part of life. — All Might"
+  ]),
+  animeSailorMoon: createAnimeQuoteSeries([
     "The world can be one if there's love. — Usagi Tsukino",
     "Believe in yourself and nothing can stop you. — Usagi Tsukino",
     "In the name of the moon, I'll punish you! — Sailor Moon",
-    "No matter how hard things get, we can always face them together. — Usagi Tsukino"
-  ],
-  animeDeathNote: [
+    "No matter how hard things get, we can always face them together. — Usagi Tsukino",
+    "The future is something you build by yourself. — Sailor Pluto"
+  ]),
+  animeDeathNote: createAnimeQuoteSeries([
     "There is no heaven or hell. No matter what you do while you're alive, everybody goes to the same place once you die. Death is equal. — L",
-    "Sometimes, the questions are complicated — and the answers are simple. — L",
+    "Sometimes, the questions are complicated and the answers are simple. — L",
     "Humans are so interesting. — Ryuk",
-    "In this world, there are very few people who actually trust each other. — Light Yagami"
-  ],
-  animeFullmetal: [
+    "In this world, there are very few people who actually trust each other. — Light Yagami",
+    "All according to plan. — Light Yagami"
+  ]),
+  animeFullmetal: createAnimeQuoteSeries([
     "A lesson without pain is meaningless. — Edward Elric",
     "The world isn't perfect, but it's there for us trying the best it can. — Roy Mustang",
     "Stand up and walk. Keep moving forward. — Edward Elric",
-    "Nothing's perfect, the world's not perfect, but it's there for us, doing the best it can. — Roy Mustang"
-  ]
+    "Nothing's perfect, the world's not perfect, but it's there for us, doing the best it can. — Roy Mustang",
+    "Human kind cannot gain anything without first giving something in return. — Alphonse Elric"
+  ])
 };
 
 const CUSTOM_THEME_DEFAULT_VARS = {
