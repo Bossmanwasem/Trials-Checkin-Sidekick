@@ -7217,54 +7217,43 @@ function getVocabTypesFromFiles(files) {
 
   const ordered = [];
   if (hasGrid) ordered.push("Grid");
-  if (hasSaltillo) ordered.push("Saltillo");
   if (hasP2G) ordered.push("P2G");
+  if (hasSaltillo) ordered.push("Saltillo");
   return ordered;
 }
 
-function sanitizeFilename(value) {
-  return (value || "")
-    .replace(/[\\/:*?"<>|]/g, "")
-    .replace(/[\u0000-\u001F]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/[. ]+$/g, "");
-}
-
 function buildZipFilename(files) {
-  const first = sanitizeFilename(sanitizeName(getFormValue("#firstName")));
-  const last = sanitizeFilename(sanitizeName(getFormValue("#lastName")));
-  const fullName = sanitizeFilename([first, last].filter(Boolean).join(" ")) || "Client";
+  const first = sanitizeName(getFormValue("#firstName"));
+  const last = sanitizeName(getFormValue("#lastName"));
+  const fullName = [first, last].filter(Boolean).join(" ") || "Client";
   const dateStr = formatDateForFilename();
   const vocabTypes = getVocabTypesFromFiles(files);
-  const typeLabel = vocabTypes.length ? `${vocabTypes.join(", ")}` : "Vocab";
-  const filename = `${fullName} ${typeLabel} Vocab Sets from Trial ${dateStr}`;
-  return `${sanitizeFilename(filename)}.zip`;
+  const typeLabel = vocabTypes.length
+    ? `${vocabTypes.join(", ")}`
+    : "Vocab";
+  return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
 }
 
 async function promptUserDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
-  const safeFilename = sanitizeFilename(filename).toLowerCase().endsWith(".zip")
-    ? sanitizeFilename(filename)
-    : `${sanitizeFilename(filename)}.zip`;
   try {
     if (chrome?.downloads?.download) {
       const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      const targetFilename = zipFolder ? `${zipFolder}/${safeFilename}` : safeFilename;
+      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
       await chrome.downloads.download({
         url,
         filename: targetFilename,
-        saveAs: !zipFolder,
-        conflictAction: "uniquify"
+        saveAs: !zipFolder
       });
     } else {
       const link = document.createElement("a");
       link.href = url;
-      link.download = safeFilename;
+      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
+      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
       link.click();
     }
   } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    URL.revokeObjectURL(url);
   }
 }
 
