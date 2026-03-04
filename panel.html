@@ -557,14 +557,14 @@
   <!-- UPDATE NOTES VIEW -->
   <div class="container update-notes-view" id="updateNotesView" style="display:none;">
     <h1>Update notes</h1>
-    <p class="complete-intro">What’s new since version 1.0.9.</p>
+    <p class="complete-intro">What’s new since version 1.1.0.</p>
     <div class="settings-panel">
       <div class="settings-card">
-        <div class="settings-card__title">Version 1.1.0 highlights</div>
+        <div class="settings-card__title">Version 1.1.1 highlights</div>
         <ul class="update-notes-list">
-          <li>Resolved minor bugs in logging and the Device Lookup tool for improved reliability.</li>
-          <li>Added an error trigger when zip file creation fails, making failures clearer and easier to troubleshoot.</li>
-          <li>Added a fallback copy/paste email field, so if the compose-email deeplink fails to open, the Device Coordinator can still send a properly formatted email without delay.</li>
+          <li>Fixed zip downloads so files save to the selected Downloads folder (or your default Downloads folder when no subfolder is set).</li>
+          <li>Fixed zip naming so generated files use the expected naming convention (for example: Client Name Grid, Saltillo, P2G Vocab Sets from Trial MM.DD.YYYY.zip).</li>
+          <li>Improved filename sanitization so invalid characters no longer cause random GUID-style zip names.</li>
         </ul>
       </div>
     </div>
