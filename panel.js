@@ -7,11 +7,6 @@ const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]/span';
-const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
-const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
-const DOCUMENT_UPLOAD_SUCCESS_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_lblFileUploadSuccess"]';
-const DOCUMENT_TITLE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
-const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
@@ -6766,20 +6761,6 @@ async function sendToCrm(type, payload = {}) {
   return res || { ok: false };
 }
 
-async function uploadDocumentsToCrm(uploads) {
-  if (!uploads?.length) return { ok: true };
-  return sendToCrm("UPLOAD_CRM_DOCUMENTS", {
-    uploads,
-    xpaths: {
-      fileInput: DOCUMENT_UPLOAD_INPUT_XPATH,
-      uploadButton: DOCUMENT_UPLOAD_BUTTON_XPATH,
-      uploadSuccessMessage: DOCUMENT_UPLOAD_SUCCESS_XPATH,
-      documentTitle: DOCUMENT_TITLE_INPUT_XPATH,
-      addButton: DOCUMENT_ADD_BUTTON_XPATH
-    }
-  });
-}
-
 /* ---------------- Inventory identifiers storage ---------------- */
 
 function getCurrentIdentifiers() {
@@ -7389,7 +7370,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
   let gridZipName = "";
-  const zipUploads = [];
   if (!trialFilesInput?.files?.length) {
     await refreshTrialFilesFromFolder();
   }
@@ -7413,7 +7393,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       zipName = buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
       await promptUserDownload(zipBlob, zipName);
-      zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
       downloadMessages.push(`"${zipName}"`);
     }
 
@@ -7425,12 +7404,11 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       gridZipName = buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
       await promptUserDownload(gridZipBlob, gridZipName);
-      zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
       downloadMessages.push(`"${gridZipName}"`);
     }
 
     const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Preparing CRM upload.`
+      ? `Downloaded ${downloadMessages.join(" and ")}. Use these saved zip files when uploading to CRM Documents.`
       : "No files selected.";
     clearSelectedTrialFiles(downloadsNote);
   } else {
@@ -7491,9 +7469,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   let uploadMessage = "CRM note submitted. Review the details below.";
-  if (zipUploads.length || zipName || gridZipName) {
+  if (zipName || gridZipName) {
     await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-    uploadMessage = "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
+    uploadMessage = "CRM note submitted. Please manually upload the downloaded vocab zip file(s) to the Documents tab.";
     showUploadPrompt(zipName, gridZipName);
   }
   setText("completeIntro", uploadMessage);
