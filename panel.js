@@ -7,6 +7,11 @@ const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]/span';
+const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
+const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
+const DOCUMENT_UPLOAD_SUCCESS_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_lblFileUploadSuccess"]';
+const DOCUMENT_TITLE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
+const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
@@ -69,7 +74,6 @@ const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
-let activeDetailedCheckinLog = null;
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
@@ -4452,64 +4456,9 @@ async function writeLogEntry({ action, outcome }) {
   return true;
 }
 
-async function appendDetailedCheckinLogLine(message, actor = "Extension") {
-  if (!activeDetailedCheckinLog?.fileHandle) return false;
-  const now = new Date();
-  const safeMessage = (message || "").trim() || "(no details)";
-  const line = `${formatLogDate(now)} ${formatLogTime(now)} | ${actor} | ${safeMessage}`;
-  const existingFile = await activeDetailedCheckinLog.fileHandle.getFile();
-  const writable = await activeDetailedCheckinLog.fileHandle.createWritable({ keepExistingData: true });
-  await writable.seek(existingFile.size);
-  await writable.write(`${line}\n`);
-  await writable.close();
-  return true;
-}
-
-async function logDetailedCheckinAction(message, actor = "Extension") {
-  try {
-    await appendDetailedCheckinLogLine(message, actor);
-  } catch {
-    // Detailed logging should never block the user flow.
-  }
-}
-
-async function startDetailedCheckinLogSession(startReason) {
-  if (activeDetailedCheckinLog?.fileHandle) {
-    await logDetailedCheckinAction(`Session reused (${startReason || "continued flow"}).`, "Extension");
-    return true;
-  }
-  try {
-    const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
-    if (!baseHandle) return false;
-    const profile = await getUserProfile();
-    const username = buildLogUserName(profile);
-    const timestamp = formatLogTimestampForFilename(new Date());
-    const filename = `${username} Check-in Detailed log ${timestamp}.txt`;
-    // Keep detailed check-in logs in the exact folder the user selected.
-    const fileHandle = await baseHandle.getFileHandle(filename, { create: true });
-    activeDetailedCheckinLog = {
-      username,
-      filename,
-      startedAt: Date.now(),
-      fileHandle
-    };
-    await logDetailedCheckinAction(`Detailed session started (${startReason || "manual start"}).`, "Extension");
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function finishDetailedCheckinLogSession(endReason) {
-  if (!activeDetailedCheckinLog?.fileHandle) return;
-  await logDetailedCheckinAction(`Detailed session finished (${endReason || "completed"}).`, "Extension");
-  activeDetailedCheckinLog = null;
-}
-
 async function logTaskOutcome(action, outcome) {
   try {
     await writeLogEntry({ action, outcome });
-    await logDetailedCheckinAction(`${action}: ${outcome || "Completed successfully"}`, "Extension");
   } catch {
     // Logging should never block the user flow.
   }
@@ -6817,6 +6766,20 @@ async function sendToCrm(type, payload = {}) {
   return res || { ok: false };
 }
 
+async function uploadDocumentsToCrm(uploads) {
+  if (!uploads?.length) return { ok: true };
+  return sendToCrm("UPLOAD_CRM_DOCUMENTS", {
+    uploads,
+    xpaths: {
+      fileInput: DOCUMENT_UPLOAD_INPUT_XPATH,
+      uploadButton: DOCUMENT_UPLOAD_BUTTON_XPATH,
+      uploadSuccessMessage: DOCUMENT_UPLOAD_SUCCESS_XPATH,
+      documentTitle: DOCUMENT_TITLE_INPUT_XPATH,
+      addButton: DOCUMENT_ADD_BUTTON_XPATH
+    }
+  });
+}
+
 /* ---------------- Inventory identifiers storage ---------------- */
 
 function getCurrentIdentifiers() {
@@ -7030,8 +6993,6 @@ async function finalizeCheckinCleanupAndCounters() {
 
 async function handleOutlookEmailTabClosed() {
   if (activeCheckinFlow !== CHECKIN_FLOW.CHECKIN) return;
-  await logDetailedCheckinAction("Outlook draft tab closed by user; assuming email was sent.", "User");
-  await finishDetailedCheckinLogSession("Email step completed");
   await finalizeCheckinCleanupAndCounters();
   await finishCheckinAndReset({ returnToLanding: true });
 }
@@ -7414,7 +7375,6 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
 
 document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
-  await logDetailedCheckinAction("Submitted Check-in form.", "User");
 
   if (!hasValidVocabSelection()) {
     const message = "Select at least one vocab or check \"Vocab NOT returned\" before continuing.";
@@ -7429,6 +7389,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
   let gridZipName = "";
+  const zipUploads = [];
   if (!trialFilesInput?.files?.length) {
     await refreshTrialFilesFromFolder();
   }
@@ -7452,6 +7413,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       zipName = buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
       await promptUserDownload(zipBlob, zipName);
+      zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
       downloadMessages.push(`"${zipName}"`);
     }
 
@@ -7463,11 +7425,12 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       gridZipName = buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
       await promptUserDownload(gridZipBlob, gridZipName);
+      zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
       downloadMessages.push(`"${gridZipName}"`);
     }
 
     const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Use these saved zip files when uploading to CRM Documents.`
+      ? `Downloaded ${downloadMessages.join(" and ")}. Preparing CRM upload.`
       : "No files selected.";
     clearSelectedTrialFiles(downloadsNote);
   } else {
@@ -7528,9 +7491,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   let uploadMessage = "CRM note submitted. Review the details below.";
-  if (zipName || gridZipName) {
+  if (zipUploads.length || zipName || gridZipName) {
     await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-    uploadMessage = "CRM note submitted. Please manually upload the downloaded vocab zip file(s) to the Documents tab.";
+    uploadMessage = "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
     showUploadPrompt(zipName, gridZipName);
   }
   setText("completeIntro", uploadMessage);
@@ -7540,7 +7503,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 /* ---------------- Start another Checkin ---------------- */
 
 document.getElementById("startAnotherBtn")?.addEventListener("click", async () => {
-  await logDetailedCheckinAction("Clicked Start Another Check-in.", "User");
   await closeCheckinTabs();
   if (isLtlUpdateFlow()) {
     await renderDafRecap();
@@ -7622,7 +7584,6 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
-  await logDetailedCheckinAction("Clicked Final Step.", "User");
   if (isLtlUpdateFlow()) {
     await finalizeCheckinCleanupAndCounters();
     const dafTabId = await getActiveDafTabId();
@@ -7642,7 +7603,6 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
     showLtlCompletionView();
     return;
   }
-  await logDetailedCheckinAction("Opening Outlook draft email for check-in completion.", "Extension");
   showEmailView();
   await finalizeCheckinCleanupAndCounters();
   await renderOutlookEmailPreview();
@@ -7878,8 +7838,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
-    await startDetailedCheckinLogSession("Clicked Check-in Sidekick");
-    await logDetailedCheckinAction("Clicked Check-in Sidekick.", "User");
     clearLookupLtlRow();
     setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     updateDeviceRules();
@@ -7890,8 +7848,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startLtlUpdateBtn")?.addEventListener("click", async () => {
-    await startDetailedCheckinLogSession("Clicked LTL Update Sidekick");
-    await logDetailedCheckinAction("Clicked LTL Update Sidekick.", "User");
     clearLookupLtlRow();
     setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
     updateDeviceRules();
@@ -8020,7 +7976,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
-    await logDetailedCheckinAction("Clicked Device Number Lookup Sidekick.", "User");
     showDeviceLookupView();
     await refreshDeviceLookupWorkbooksFromHandles();
   });
@@ -8150,7 +8105,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Enter a device serial number to continue.");
       return;
     }
-    await logDetailedCheckinAction(`Submitted device lookup search: ${raw}.`, "User");
     await runDeviceLookupSearch(raw);
   });
 
@@ -8200,13 +8154,11 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     });
   });
 
-  document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", async () => {
+  document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", () => {
     if (!deviceLookupLastSerial) {
       alert("Search for a device to continue.");
       return;
     }
-    await startDetailedCheckinLogSession("Opened check-in from Device Number Lookup Sidekick");
-    await logDetailedCheckinAction("Clicked Open CRM + Check-in from Device Number Lookup Sidekick.", "User");
     if (!deviceLookupLastCrmId) {
       alert("No CRM ID found for this device.");
       return;
@@ -8226,8 +8178,6 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Search for a device to continue.");
       return;
     }
-    await startDetailedCheckinLogSession("Began LTL update from Device Number Lookup Sidekick");
-    await logDetailedCheckinAction("Clicked Begin LTL Update from Device Number Lookup Sidekick.", "User");
     setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
     updateDeviceRules();
     showFormView();
@@ -8302,7 +8252,6 @@ document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () 
   });
 
   document.getElementById("returnToLandingBtn")?.addEventListener("click", () => {
-    void finishDetailedCheckinLogSession("Returned to landing page before email completion");
     clearActiveCheckinFlow();
     showLandingView();
   });
