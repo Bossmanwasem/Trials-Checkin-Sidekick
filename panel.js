@@ -4483,10 +4483,10 @@ async function startDetailedCheckinLogSession(startReason) {
     if (!baseHandle) return false;
     const profile = await getUserProfile();
     const username = buildLogUserName(profile);
-    const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
     const timestamp = formatLogTimestampForFilename(new Date());
     const filename = `${username} Check-in Detailed log ${timestamp}.txt`;
-    const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+    // Keep detailed check-in logs in the exact folder the user selected.
+    const fileHandle = await baseHandle.getFileHandle(filename, { create: true });
     activeDetailedCheckinLog = {
       username,
       filename,
