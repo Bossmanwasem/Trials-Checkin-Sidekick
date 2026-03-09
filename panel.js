@@ -69,6 +69,7 @@ const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
+let activeDetailedCheckinLog = null;
 
 /* ---------------- Helpers ---------------- */
 const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
@@ -4451,9 +4452,64 @@ async function writeLogEntry({ action, outcome }) {
   return true;
 }
 
+async function appendDetailedCheckinLogLine(message, actor = "Extension") {
+  if (!activeDetailedCheckinLog?.fileHandle) return false;
+  const now = new Date();
+  const safeMessage = (message || "").trim() || "(no details)";
+  const line = `${formatLogDate(now)} ${formatLogTime(now)} | ${actor} | ${safeMessage}`;
+  const existingFile = await activeDetailedCheckinLog.fileHandle.getFile();
+  const writable = await activeDetailedCheckinLog.fileHandle.createWritable({ keepExistingData: true });
+  await writable.seek(existingFile.size);
+  await writable.write(`${line}\n`);
+  await writable.close();
+  return true;
+}
+
+async function logDetailedCheckinAction(message, actor = "Extension") {
+  try {
+    await appendDetailedCheckinLogLine(message, actor);
+  } catch {
+    // Detailed logging should never block the user flow.
+  }
+}
+
+async function startDetailedCheckinLogSession(startReason) {
+  if (activeDetailedCheckinLog?.fileHandle) {
+    await logDetailedCheckinAction(`Session reused (${startReason || "continued flow"}).`, "Extension");
+    return true;
+  }
+  try {
+    const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+    if (!baseHandle) return false;
+    const profile = await getUserProfile();
+    const username = buildLogUserName(profile);
+    const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
+    const timestamp = formatLogTimestampForFilename(new Date());
+    const filename = `${username} Check-in Detailed log ${timestamp}.txt`;
+    const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+    activeDetailedCheckinLog = {
+      username,
+      filename,
+      startedAt: Date.now(),
+      fileHandle
+    };
+    await logDetailedCheckinAction(`Detailed session started (${startReason || "manual start"}).`, "Extension");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function finishDetailedCheckinLogSession(endReason) {
+  if (!activeDetailedCheckinLog?.fileHandle) return;
+  await logDetailedCheckinAction(`Detailed session finished (${endReason || "completed"}).`, "Extension");
+  activeDetailedCheckinLog = null;
+}
+
 async function logTaskOutcome(action, outcome) {
   try {
     await writeLogEntry({ action, outcome });
+    await logDetailedCheckinAction(`${action}: ${outcome || "Completed successfully"}`, "Extension");
   } catch {
     // Logging should never block the user flow.
   }
@@ -6974,6 +7030,8 @@ async function finalizeCheckinCleanupAndCounters() {
 
 async function handleOutlookEmailTabClosed() {
   if (activeCheckinFlow !== CHECKIN_FLOW.CHECKIN) return;
+  await logDetailedCheckinAction("Outlook draft tab closed by user; assuming email was sent.", "User");
+  await finishDetailedCheckinLogSession("Email step completed");
   await finalizeCheckinCleanupAndCounters();
   await finishCheckinAndReset({ returnToLanding: true });
 }
@@ -7356,6 +7414,7 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
 
 document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
+  await logDetailedCheckinAction("Submitted Check-in form.", "User");
 
   if (!hasValidVocabSelection()) {
     const message = "Select at least one vocab or check \"Vocab NOT returned\" before continuing.";
@@ -7481,6 +7540,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
 /* ---------------- Start another Checkin ---------------- */
 
 document.getElementById("startAnotherBtn")?.addEventListener("click", async () => {
+  await logDetailedCheckinAction("Clicked Start Another Check-in.", "User");
   await closeCheckinTabs();
   if (isLtlUpdateFlow()) {
     await renderDafRecap();
@@ -7562,6 +7622,7 @@ document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
+  await logDetailedCheckinAction("Clicked Final Step.", "User");
   if (isLtlUpdateFlow()) {
     await finalizeCheckinCleanupAndCounters();
     const dafTabId = await getActiveDafTabId();
@@ -7581,6 +7642,7 @@ document.getElementById("finishCheckinBtn")?.addEventListener("click", async () 
     showLtlCompletionView();
     return;
   }
+  await logDetailedCheckinAction("Opening Outlook draft email for check-in completion.", "Extension");
   showEmailView();
   await finalizeCheckinCleanupAndCounters();
   await renderOutlookEmailPreview();
@@ -7816,6 +7878,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
+    await startDetailedCheckinLogSession("Clicked Check-in Sidekick");
+    await logDetailedCheckinAction("Clicked Check-in Sidekick.", "User");
     clearLookupLtlRow();
     setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     updateDeviceRules();
@@ -7826,6 +7890,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("startLtlUpdateBtn")?.addEventListener("click", async () => {
+    await startDetailedCheckinLogSession("Clicked LTL Update Sidekick");
+    await logDetailedCheckinAction("Clicked LTL Update Sidekick.", "User");
     clearLookupLtlRow();
     setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
     updateDeviceRules();
@@ -7954,6 +8020,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
   });
 
   document.getElementById("deviceLookupBtn")?.addEventListener("click", async () => {
+    await logDetailedCheckinAction("Clicked Device Number Lookup Sidekick.", "User");
     showDeviceLookupView();
     await refreshDeviceLookupWorkbooksFromHandles();
   });
@@ -8083,6 +8150,7 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Enter a device serial number to continue.");
       return;
     }
+    await logDetailedCheckinAction(`Submitted device lookup search: ${raw}.`, "User");
     await runDeviceLookupSearch(raw);
   });
 
@@ -8132,11 +8200,13 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
     });
   });
 
-  document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", () => {
+  document.getElementById("lookupOpenCrmBtn")?.addEventListener("click", async () => {
     if (!deviceLookupLastSerial) {
       alert("Search for a device to continue.");
       return;
     }
+    await startDetailedCheckinLogSession("Opened check-in from Device Number Lookup Sidekick");
+    await logDetailedCheckinAction("Clicked Open CRM + Check-in from Device Number Lookup Sidekick.", "User");
     if (!deviceLookupLastCrmId) {
       alert("No CRM ID found for this device.");
       return;
@@ -8156,6 +8226,8 @@ document.getElementById("dafAutofillBtn")?.addEventListener("click", async () =>
       alert("Search for a device to continue.");
       return;
     }
+    await startDetailedCheckinLogSession("Began LTL update from Device Number Lookup Sidekick");
+    await logDetailedCheckinAction("Clicked Begin LTL Update from Device Number Lookup Sidekick.", "User");
     setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
     updateDeviceRules();
     showFormView();
@@ -8230,6 +8302,7 @@ document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () 
   });
 
   document.getElementById("returnToLandingBtn")?.addEventListener("click", () => {
+    void finishDetailedCheckinLogSession("Returned to landing page before email completion");
     clearActiveCheckinFlow();
     showLandingView();
   });
