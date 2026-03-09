@@ -341,6 +341,91 @@ function waitForCondition(check, { timeoutMs = 7000, pollMs = 150 } = {}) {
   });
 }
 
+async function waitForEnabledElementByXPath(xpath, options = {}) {
+  const el = await waitForElementByXPath(xpath, options);
+  await waitForCondition(() => !el.disabled, options);
+  return el;
+}
+
+async function setFileInputByXPath(xpath, file) {
+  const input = await waitForElementByXPath(xpath);
+  if (!input || !(input instanceof HTMLInputElement)) {
+    throw new Error("File upload input not found.");
+  }
+  const dataTransfer = new DataTransfer();
+  dataTransfer.items.add(file);
+  input.files = dataTransfer.files;
+  dispatchChangeEvents(input, file.name);
+  return input;
+}
+
+async function uploadDocumentViaCrmUi({ zipArrayBuffer, zipName, documentTitle, xpaths }) {
+  const file = new File([zipArrayBuffer], zipName, { type: "application/zip" });
+  await setFileInputByXPath(xpaths.fileInput, file);
+  await waitForEnabledElementByXPath(xpaths.uploadButton, { visibleOnly: true });
+  clickByXPath(xpaths.uploadButton);
+  if (xpaths.uploadSuccessMessage) {
+    await waitForElementByXPath(xpaths.uploadSuccessMessage, { visibleOnly: true });
+  }
+
+  const titleValue = documentTitle || zipName;
+  await waitForEnabledElementByXPath(xpaths.documentTitle, { visibleOnly: true });
+  const setTitleOk = setValueByXPath(xpaths.documentTitle, titleValue);
+  if (!setTitleOk) throw new Error("Could not set document title.");
+  await waitForEnabledElementByXPath(xpaths.addButton, { visibleOnly: true });
+  clickByXPath(xpaths.addButton);
+  await delay(400);
+  return true;
+}
+
+function findUploadTarget() {
+  const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
+  if (!fileInputs.length) return null;
+
+  const candidate = fileInputs.find(isVisible) || fileInputs[0];
+  if (!candidate) return null;
+
+  const form = candidate.form || candidate.closest("form");
+  if (!form) return null;
+
+  return { fileInput: candidate, form };
+}
+
+async function uploadZipDirectlyToPage(zipArrayBuffer, zipName) {
+  const target = findUploadTarget();
+  if (!target) throw new Error("Could not find a file upload form on this CRM page.");
+
+  const { fileInput, form } = target;
+  const action = form.getAttribute("action") || window.location.href;
+  const method = (form.getAttribute("method") || "POST").toUpperCase();
+  const resolvedAction = new URL(action, window.location.href).toString();
+
+  const formData = new FormData(form);
+  const zipFile = new File([zipArrayBuffer], zipName, { type: "application/zip" });
+  formData.set(fileInput.name || "file", zipFile);
+
+  const res = await fetch(resolvedAction, {
+    method,
+    body: formData,
+    credentials: "include"
+  });
+
+  if (!res.ok) {
+    throw new Error(`Upload failed with status ${res.status}.`);
+  }
+
+  return true;
+}
+
+async function uploadDocumentsSequentially(uploads, xpaths) {
+  const tasks = Array.isArray(uploads) ? uploads : [];
+  if (!tasks.length) return true;
+  for (const upload of tasks) {
+    await uploadDocumentViaCrmUi({ ...upload, xpaths });
+  }
+  return true;
+}
+
 /* ---------------- Message Listener ---------------- */
 
 function pickInventorySearchValue({ deviceNumber = "", cameraNumber = "", luminNumber = "" } = {}) {
@@ -430,6 +515,25 @@ if (runtime?.onMessage?.addListener) {
     return true;
   }
 
+  if (msg.type === "UPLOAD_ZIP_TO_CRM") {
+    uploadZipDirectlyToPage(msg.zipArrayBuffer, msg.zipName)
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => {
+        console.error(err);
+        sendResponse({ ok: false, message: err?.message || "Upload failed." });
+      });
+    return true;
+  }
+
+  if (msg.type === "UPLOAD_CRM_DOCUMENTS") {
+    uploadDocumentsSequentially(msg.uploads, msg.xpaths)
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => {
+        console.error(err);
+        sendResponse({ ok: false, message: err?.message || "Upload failed." });
+      });
+    return true;
+  }
 
     if (msg.type === "RUN_INVENTORY_SCRIPT") {
       const identifiers = msg.identifiers || {};
