@@ -27,6 +27,7 @@ const CUSTOM_THEMES_STORAGE_KEY = "ttmtSidekickCustomThemes";
 const CUSTOM_THEME_ACTIVE_ID_STORAGE_KEY = "ttmtSidekickCustomThemeActiveId";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
 const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
+const ZIP_FOLDER_HANDLE_KEY = "zipFolder";
 const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
 const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
@@ -3998,10 +3999,30 @@ function normalizeZipFolder(folder) {
 function updateZipFolderStatus(folder) {
   if (!zipFolderStatus) return;
   if (folder) {
-    zipFolderStatus.textContent = `Saving zips to Downloads/${folder}`;
+    zipFolderStatus.textContent = `Saving zips to "${folder}".`;
     return;
   }
-  zipFolderStatus.textContent = "Saving zips to your default Downloads folder.";
+  zipFolderStatus.textContent = "No zip save folder selected yet.";
+}
+
+async function saveZipFolderHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, ZIP_FOLDER_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadZipFolderHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(ZIP_FOLDER_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 async function pickZipFolder() {
@@ -4011,12 +4032,15 @@ async function pickZipFolder() {
   }
   let handle;
   try {
-    handle = await window.showDirectoryPicker({ mode: "read" });
+    handle = await window.showDirectoryPicker({ mode: "readwrite" });
   } catch {
     return;
   }
   if (!handle) return;
   const name = normalizeZipFolder(handle.name || "Selected folder");
+  const permitted = await verifyFolderPermission(handle, "readwrite");
+  if (!permitted) return;
+  await saveZipFolderHandle(handle);
   await setStoredValue(ZIP_FOLDER_STORAGE_KEY, name);
   updateZipFolderStatus(name);
 }
@@ -7235,6 +7259,18 @@ function buildZipFilename(files) {
 }
 
 async function promptUserDownload(blob, filename) {
+  const zipHandle = await loadZipFolderHandle().catch(() => null);
+  if (zipHandle) {
+    const permitted = await verifyFolderPermission(zipHandle, "readwrite");
+    if (permitted) {
+      const fileHandle = await zipHandle.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable({ keepExistingData: false });
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+  }
+
   const url = URL.createObjectURL(blob);
   try {
     if (chrome?.downloads?.download) {
