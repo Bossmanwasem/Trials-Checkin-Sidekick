@@ -7206,7 +7206,19 @@ const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
 const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
 const gridZipFilenameField = document.getElementById("gridZipFilenameField");
 const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
+const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
 const GRID_FILE_EXTENSION = ".grid3user";
+
+let isBigFileBypassEnabled = false;
+
+function setBigFileBypass(enabled) {
+  isBigFileBypassEnabled = Boolean(enabled);
+  if (!bigFileBypassBtn) return;
+  bigFileBypassBtn.classList.toggle("active", isBigFileBypassEnabled);
+  bigFileBypassBtn.textContent = isBigFileBypassEnabled
+    ? "Big File Bypass On"
+    : "Big File Bypass";
+}
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
@@ -7292,6 +7304,10 @@ async function promptUserDownload(blob, filename) {
     URL.revokeObjectURL(url);
   }
 }
+
+bigFileBypassBtn?.addEventListener("click", () => {
+  setBigFileBypass(!isBigFileBypassEnabled);
+});
 
 trialFilesInput?.addEventListener("change", () => {
   const files = trialFilesInput.files ? Array.from(trialFilesInput.files) : [];
@@ -7381,6 +7397,7 @@ function resetAllFieldsAndUI() {
   if (msg) msg.style.display = "none";
 
   hideUploadPrompt();
+  setBigFileBypass(false);
   setText("notePreviewText", "");
   setText("completeIntro", "");
   setText("inventoryStatus", "");
@@ -7426,10 +7443,17 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   let zipName = "";
   let gridZipName = "";
   const zipUploads = [];
+  const shouldBypassZip = isBigFileBypassEnabled;
   if (!trialFilesInput?.files?.length) {
     await refreshTrialFilesFromFolder();
   }
-  if (selectedTrialFiles.length) {
+  if (selectedTrialFiles.length && shouldBypassZip) {
+    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
+    zipName = otherFiles.length ? buildZipFilename(otherFiles) : "";
+    gridZipName = gridFiles.length ? buildZipFilename(gridFiles) : "";
+    clearSelectedTrialFiles("Big File Bypass enabled. Skipping auto-zip and continuing...");
+  } else if (selectedTrialFiles.length) {
     if (typeof JSZip === "undefined") {
       const message = "JSZip failed to load. Please reload the panel before submitting.";
       alert(message);
@@ -7527,10 +7551,16 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   let uploadMessage = "CRM note submitted. Review the details below.";
-  if (zipUploads.length || zipName || gridZipName) {
+  if (zipUploads.length || zipName || gridZipName || shouldBypassZip) {
     await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-    uploadMessage = "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
-    showUploadPrompt(zipName, gridZipName);
+    uploadMessage = shouldBypassZip
+      ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files."
+      : "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
+    showUploadPrompt(zipName, gridZipName, {
+      message: shouldBypassZip
+        ? "Big File Bypass enabled: zip files yourself before uploading to CRM Documents. Keep Grid files zipped separately from non-Grid files."
+        : undefined
+    });
   }
   setText("completeIntro", uploadMessage);
   showCompleteView();
