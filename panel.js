@@ -7561,7 +7561,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   if (zipUploads.length || zipName || gridZipName || shouldBypassZip) {
     await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
     uploadMessage = shouldBypassZip
-      ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files."
+      ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files. Move the zipped files to your final folder."
       : "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
     showUploadPrompt(zipName, gridZipName, {
       message: shouldBypassZip
