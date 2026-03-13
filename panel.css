@@ -751,6 +751,15 @@ textarea {
   background-color: var(--accent-strong);
 }
 
+#bigFileBypassBtn.active {
+  background-color: var(--accent-strong);
+  color: #ffffff;
+}
+
+.big-file-bypass-note {
+  margin-top: 6px;
+}
+
 .hidden-section {
   display: none;
   animation: fadeIn 0.3s ease;
