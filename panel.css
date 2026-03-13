@@ -760,6 +760,12 @@ textarea {
   margin-top: 6px;
 }
 
+.bypass-reminder {
+  margin: 0 0 10px;
+  font-size: 17px;
+  color: var(--header-color);
+}
+
 .hidden-section {
   display: none;
   animation: fadeIn 0.3s ease;

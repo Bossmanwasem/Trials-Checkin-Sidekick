@@ -7207,6 +7207,7 @@ const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
 const gridZipFilenameField = document.getElementById("gridZipFilenameField");
 const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
 const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
+const bigFileBypassReminder = document.getElementById("bigFileBypassReminder");
 const GRID_FILE_EXTENSION = ".grid3user";
 
 let isBigFileBypassEnabled = false;
@@ -7218,6 +7219,11 @@ function setBigFileBypass(enabled) {
   bigFileBypassBtn.textContent = isBigFileBypassEnabled
     ? "Big File Bypass On"
     : "Big File Bypass";
+}
+
+function setBigFileBypassReminder(visible) {
+  if (!bigFileBypassReminder) return;
+  bigFileBypassReminder.style.display = visible ? "block" : "none";
 }
 
 function updateTrialFilesStatus(message, isError = false) {
@@ -7400,6 +7406,7 @@ function resetAllFieldsAndUI() {
   setBigFileBypass(false);
   setText("notePreviewText", "");
   setText("completeIntro", "");
+  setBigFileBypassReminder(false);
   setText("inventoryStatus", "");
   setInventoryNextStepVisibility(false);
   inventoryScriptRan = false;
@@ -7563,6 +7570,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     });
   }
   setText("completeIntro", uploadMessage);
+  setBigFileBypassReminder(shouldBypassZip);
   showCompleteView();
 });
 
