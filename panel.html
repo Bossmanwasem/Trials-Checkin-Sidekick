@@ -1070,9 +1070,9 @@
         <div id="trialFilesStatus" class="status-line">No files selected.</div>
       </div>
 
-      <button type="submit" id="submitBtn">Next Step</button>
       <button type="button" id="bigFileBypassBtn" class="toggle-btn">Big File Bypass</button>
       <p class="hint-text big-file-bypass-note">Only for large files (500MB+).</p>
+      <button type="submit" id="submitBtn">Next Step</button>
     </form>
 
     <div id="thankYouMessage">✅ Check-in completed.</div>
@@ -1081,6 +1081,9 @@
   <!-- COMPLETE VIEW -->
   <div class="container" id="completeView" style="display:none;">
     <h1>Next Steps</h1>
+    <h2 id="bigFileBypassReminder" class="bypass-reminder" style="display:none;">
+      Big File Bypass is on — edit the CRM note if vocab wording is too large for the CRM.
+    </h2>
     <p id="completeIntro" class="complete-intro"></p>
 
     <div id="uploadPrompt" class="note-preview" style="display:none;">
