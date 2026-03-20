@@ -9,19 +9,19 @@ from pathlib import Path
 HOST_NAME = "com.ttmt.crm_sidekick.zip_bridge"
 INSTALL_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "TTMT" / "CRM Sidekick Native Host"
 MANIFEST_PATH = INSTALL_DIR / f"{HOST_NAME}.json"
-HOST_SCRIPT_NAME = "zip_bridge_host.py"
+HOST_BINARY_NAME = "zip_bridge_host.exe"
 REG_PATH = rf"Software\Google\Chrome\NativeMessagingHosts\{HOST_NAME}"
 EDGE_REG_PATH = rf"Software\Microsoft\Edge\NativeMessagingHosts\{HOST_NAME}"
 
 
-def build_manifest(host_script: Path) -> dict:
+def build_manifest(host_binary: Path) -> dict:
     extension_id = os.environ.get("CRM_SIDEKICK_EXTENSION_ID", "REPLACE_WITH_EXTENSION_ID")
     return {
         "name": HOST_NAME,
         "description": "TTMT CRM Sidekick native zip bridge",
-        "path": str(host_script),
+        "path": str(host_binary),
         "type": "stdio",
-        "allowed_origins": [f"chrome-extension://{extension_id}/"]
+        "allowed_origins": [f"chrome-extension://{extension_id}/"],
     }
 
 
@@ -33,14 +33,32 @@ def write_registry_value(root, reg_path: str, manifest_path: Path) -> None:
         winreg.CloseKey(key)
 
 
+def resolve_source_binary(repo_root: Path) -> Path:
+    packaged_host = repo_root / HOST_BINARY_NAME
+    if packaged_host.exists():
+        return packaged_host
+
+    dist_host = repo_root / "dist" / HOST_BINARY_NAME
+    if dist_host.exists():
+        return dist_host
+
+    raise FileNotFoundError(
+        "Missing packaged native host executable. Build zip_bridge_host.exe before running the installer."
+    )
+
+
+def runtime_root() -> Path:
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
 def install() -> None:
-    repo_root = Path(__file__).resolve().parent
-    source_host = repo_root / HOST_SCRIPT_NAME
-    if not source_host.exists():
-        raise FileNotFoundError(f"Missing host script: {source_host}")
+    repo_root = runtime_root()
+    source_host = resolve_source_binary(repo_root)
 
     INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-    target_host = INSTALL_DIR / HOST_SCRIPT_NAME
+    target_host = INSTALL_DIR / HOST_BINARY_NAME
     shutil.copy2(source_host, target_host)
 
     manifest = build_manifest(target_host)
@@ -50,6 +68,7 @@ def install() -> None:
     write_registry_value(winreg.HKEY_CURRENT_USER, EDGE_REG_PATH, MANIFEST_PATH)
 
     print("Installed TTMT CRM Sidekick native host.")
+    print(f"Host executable: {target_host}")
     print(f"Manifest: {MANIFEST_PATH}")
     print("Set CRM_SIDEKICK_EXTENSION_ID before running if you need a real allowed_origins value.")
 
