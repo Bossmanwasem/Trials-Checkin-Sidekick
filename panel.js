@@ -7209,6 +7209,8 @@ const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn")
 const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
 const bigFileBypassReminder = document.getElementById("bigFileBypassReminder");
 const GRID_FILE_EXTENSION = ".grid3user";
+let zipWorker = null;
+let zipWorkerJobCounter = 0;
 
 let isBigFileBypassEnabled = false;
 
@@ -7274,6 +7276,59 @@ function buildZipFilename(files) {
     ? `${vocabTypes.join(", ")}`
     : "Vocab";
   return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
+}
+
+function getZipWorker() {
+  if (zipWorker) return zipWorker;
+  const workerUrl = chrome?.runtime?.getURL
+    ? chrome.runtime.getURL("zip-worker.js")
+    : "zip-worker.js";
+  zipWorker = new Worker(workerUrl);
+  return zipWorker;
+}
+
+async function createZipInWorker(files, { onProgress } = {}) {
+  const workerFiles = await Promise.all(files.map(async file => ({
+    name: file.name,
+    buffer: await file.arrayBuffer()
+  })));
+
+  return new Promise((resolve, reject) => {
+    const worker = getZipWorker();
+    const jobId = `zip-job-${++zipWorkerJobCounter}`;
+
+    const handleMessage = event => {
+      const data = event.data || {};
+      if (data.jobId !== jobId) return;
+
+      if (data.type === "ZIP_PROGRESS") {
+        onProgress?.(data);
+        return;
+      }
+
+      worker.removeEventListener("message", handleMessage);
+      worker.removeEventListener("error", handleError);
+
+      if (data.type === "ZIP_RESULT") {
+        resolve(data.zipArrayBuffer);
+        return;
+      }
+
+      reject(new Error(data.message || "Failed to create zip."));
+    };
+
+    const handleError = event => {
+      worker.removeEventListener("message", handleMessage);
+      worker.removeEventListener("error", handleError);
+      reject(event.error || new Error(event.message || "Zip worker failed."));
+    };
+
+    worker.addEventListener("message", handleMessage);
+    worker.addEventListener("error", handleError);
+
+    const transferables = workerFiles.map(file => file.buffer);
+    worker.postMessage({ type: "CREATE_ZIP", jobId, files: workerFiles }, transferables);
+  });
 }
 
 async function promptUserDownload(blob, filename) {
@@ -7473,9 +7528,14 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     const downloadMessages = [];
 
     if (otherFiles.length) {
-      const zip = new JSZip();
-      otherFiles.forEach(file => zip.file(file.name, file));
-      const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+      updateTrialFilesStatus("Zipping selected files...");
+      const zipArrayBuffer = await createZipInWorker(otherFiles, {
+        onProgress: ({ percent, currentFile }) => {
+          const percentLabel = Number.isFinite(percent) ? ` (${Math.round(percent)}%)` : "";
+          const fileLabel = currentFile ? ` ${currentFile}` : "";
+          updateTrialFilesStatus(`Zipping selected files${percentLabel}...${fileLabel}`);
+        }
+      });
       const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
       zipName = buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
@@ -7485,9 +7545,14 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     }
 
     if (gridFiles.length) {
-      const gridZip = new JSZip();
-      gridFiles.forEach(file => gridZip.file(file.name, file));
-      const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
+      updateTrialFilesStatus("Zipping Grid files...");
+      const gridZipArrayBuffer = await createZipInWorker(gridFiles, {
+        onProgress: ({ percent, currentFile }) => {
+          const percentLabel = Number.isFinite(percent) ? ` (${Math.round(percent)}%)` : "";
+          const fileLabel = currentFile ? ` ${currentFile}` : "";
+          updateTrialFilesStatus(`Zipping Grid files${percentLabel}...${fileLabel}`);
+        }
+      });
       const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
       gridZipName = buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
