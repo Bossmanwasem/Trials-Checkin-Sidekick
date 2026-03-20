@@ -5518,13 +5518,10 @@ function parseSheet(xmlText, sharedStrings) {
 
 async function loadWorkbookFromFile(file) {
   const data = await file.arrayBuffer();
-  if (!window.SidekickZip?.loadZipEntries) {
-    throw new Error("zip runtime failed to load. Please reload the panel and try again.");
-  }
-  const zip = await window.SidekickZip.loadZipEntries(data);
-  const workbookXml = await zip.getText("xl/workbook.xml");
+  const zip = await JSZip.loadAsync(data);
+  const workbookXml = await zip.file("xl/workbook.xml").async("text");
   const workbookDoc = new DOMParser().parseFromString(workbookXml, "application/xml");
-  const relsXml = await zip.getText("xl/_rels/workbook.xml.rels");
+  const relsXml = await zip.file("xl/_rels/workbook.xml.rels").async("text");
   const relsDoc = new DOMParser().parseFromString(relsXml, "application/xml");
   const rels = new Map(
     Array.from(relsDoc.getElementsByTagName("Relationship")).map(rel => [
@@ -5532,8 +5529,8 @@ async function loadWorkbookFromFile(file) {
       rel.getAttribute("Target")
     ])
   );
-  const sharedStrings = zip.has("xl/sharedStrings.xml")
-    ? parseSharedStrings(await zip.getText("xl/sharedStrings.xml"))
+  const sharedStrings = zip.file("xl/sharedStrings.xml")
+    ? parseSharedStrings(await zip.file("xl/sharedStrings.xml").async("text"))
     : [];
   const sheets = {};
   const sheetNodes = Array.from(workbookDoc.getElementsByTagName("sheet"));
@@ -5544,8 +5541,8 @@ async function loadWorkbookFromFile(file) {
     const target = rels.get(rId);
     if (!target) continue;
     const path = target.startsWith("xl/") ? target : `xl/${target}`;
-    if (!zip.has(path)) continue;
-    const xmlText = await zip.getText(path);
+    if (!zip.file(path)) continue;
+    const xmlText = await zip.file(path).async("text");
     sheets[name] = parseSheet(xmlText, sharedStrings);
   }
   return { sheets };
@@ -7212,8 +7209,6 @@ const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn")
 const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
 const bigFileBypassReminder = document.getElementById("bigFileBypassReminder");
 const GRID_FILE_EXTENSION = ".grid3user";
-let zipWorker = null;
-let zipWorkerJobCounter = 0;
 
 let isBigFileBypassEnabled = false;
 
@@ -7279,59 +7274,6 @@ function buildZipFilename(files) {
     ? `${vocabTypes.join(", ")}`
     : "Vocab";
   return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
-}
-
-function getZipWorker() {
-  if (zipWorker) return zipWorker;
-  const workerUrl = chrome?.runtime?.getURL
-    ? chrome.runtime.getURL("zip-worker.js")
-    : "zip-worker.js";
-  zipWorker = new Worker(workerUrl);
-  return zipWorker;
-}
-
-async function createZipInWorker(files, { onProgress } = {}) {
-  const workerFiles = await Promise.all(files.map(async file => ({
-    name: file.name,
-    buffer: await file.arrayBuffer()
-  })));
-
-  return new Promise((resolve, reject) => {
-    const worker = getZipWorker();
-    const jobId = `zip-job-${++zipWorkerJobCounter}`;
-
-    const handleMessage = event => {
-      const data = event.data || {};
-      if (data.jobId !== jobId) return;
-
-      if (data.type === "ZIP_PROGRESS") {
-        onProgress?.(data);
-        return;
-      }
-
-      worker.removeEventListener("message", handleMessage);
-      worker.removeEventListener("error", handleError);
-
-      if (data.type === "ZIP_RESULT") {
-        resolve(data.zipArrayBuffer);
-        return;
-      }
-
-      reject(new Error(data.message || "Failed to create zip."));
-    };
-
-    const handleError = event => {
-      worker.removeEventListener("message", handleMessage);
-      worker.removeEventListener("error", handleError);
-      reject(event.error || new Error(event.message || "Zip worker failed."));
-    };
-
-    worker.addEventListener("message", handleMessage);
-    worker.addEventListener("error", handleError);
-
-    const transferables = workerFiles.map(file => file.buffer);
-    worker.postMessage({ type: "CREATE_ZIP", jobId, files: workerFiles }, transferables);
-  });
 }
 
 async function promptUserDownload(blob, filename) {
@@ -7519,8 +7461,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     gridZipName = gridFiles.length ? buildZipFilename(gridFiles) : "";
     clearSelectedTrialFiles("Big File Bypass enabled. Skipping auto-zip and continuing...");
   } else if (selectedTrialFiles.length) {
-    if (!window.SidekickZip?.loadZipEntries) {
-      const message = "zip runtime failed to load. Please reload the panel before submitting.";
+    if (typeof JSZip === "undefined") {
+      const message = "JSZip failed to load. Please reload the panel before submitting.";
       alert(message);
       await logTaskOutcome("Checkin", message);
       return;
@@ -7531,14 +7473,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     const downloadMessages = [];
 
     if (otherFiles.length) {
-      updateTrialFilesStatus("Zipping selected files...");
-      const zipArrayBuffer = await createZipInWorker(otherFiles, {
-        onProgress: ({ percent, currentFile }) => {
-          const percentLabel = Number.isFinite(percent) ? ` (${Math.round(percent)}%)` : "";
-          const fileLabel = currentFile ? ` ${currentFile}` : "";
-          updateTrialFilesStatus(`Zipping selected files${percentLabel}...${fileLabel}`);
-        }
-      });
+      const zip = new JSZip();
+      otherFiles.forEach(file => zip.file(file.name, file));
+      const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
       const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
       zipName = buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
@@ -7548,14 +7485,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     }
 
     if (gridFiles.length) {
-      updateTrialFilesStatus("Zipping Grid files...");
-      const gridZipArrayBuffer = await createZipInWorker(gridFiles, {
-        onProgress: ({ percent, currentFile }) => {
-          const percentLabel = Number.isFinite(percent) ? ` (${Math.round(percent)}%)` : "";
-          const fileLabel = currentFile ? ` ${currentFile}` : "";
-          updateTrialFilesStatus(`Zipping Grid files${percentLabel}...${fileLabel}`);
-        }
-      });
+      const gridZip = new JSZip();
+      gridFiles.forEach(file => gridZip.file(file.name, file));
+      const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
       const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
       gridZipName = buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
