@@ -20,30 +20,29 @@ function getCompressionOptions(name = '') {
   };
 }
 
-self.importScripts('libs/jszip.min.js');
+self.importScripts('libs/zip-runtime.js');
 
 self.onmessage = async (event) => {
   const { jobId, type, files = [] } = event.data || {};
   if (type !== 'CREATE_ZIP') return;
 
   try {
-    if (typeof JSZip === 'undefined') {
-      throw new Error('JSZip failed to load in zip worker.');
+    if (!self.SidekickZip?.createZip) {
+      throw new Error('zip runtime failed to load in zip worker.');
     }
 
-    const zip = new JSZip();
-    files.forEach(file => {
-      zip.file(file.name, file.buffer, getCompressionOptions(file.name));
+    const normalizedFiles = files.map(file => {
+      const options = getCompressionOptions(file.name);
+      return {
+        name: file.name,
+        buffer: file.buffer,
+        compression: options.compression === 'STORE' ? 0 : 8,
+        lastModDate: file.lastModified ? new Date(file.lastModified).toISOString() : new Date().toISOString()
+      };
     });
 
-    const zipArrayBuffer = await zip.generateAsync(
-      {
-        type: 'arraybuffer',
-        streamFiles: true,
-        compression: 'DEFLATE',
-        compressionOptions: { level: 1 }
-      },
-      (metadata) => {
+    const zipArrayBuffer = await self.SidekickZip.createZip(normalizedFiles, {
+      onProgress: (metadata) => {
         self.postMessage({
           type: 'ZIP_PROGRESS',
           jobId,
@@ -51,7 +50,7 @@ self.onmessage = async (event) => {
           currentFile: metadata?.currentFile || ''
         });
       }
-    );
+    });
 
     self.postMessage({ type: 'ZIP_RESULT', jobId, zipArrayBuffer }, [zipArrayBuffer]);
   } catch (error) {

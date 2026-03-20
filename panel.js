@@ -5518,10 +5518,13 @@ function parseSheet(xmlText, sharedStrings) {
 
 async function loadWorkbookFromFile(file) {
   const data = await file.arrayBuffer();
-  const zip = await JSZip.loadAsync(data);
-  const workbookXml = await zip.file("xl/workbook.xml").async("text");
+  if (!window.SidekickZip?.loadZipEntries) {
+    throw new Error("zip runtime failed to load. Please reload the panel and try again.");
+  }
+  const zip = await window.SidekickZip.loadZipEntries(data);
+  const workbookXml = await zip.getText("xl/workbook.xml");
   const workbookDoc = new DOMParser().parseFromString(workbookXml, "application/xml");
-  const relsXml = await zip.file("xl/_rels/workbook.xml.rels").async("text");
+  const relsXml = await zip.getText("xl/_rels/workbook.xml.rels");
   const relsDoc = new DOMParser().parseFromString(relsXml, "application/xml");
   const rels = new Map(
     Array.from(relsDoc.getElementsByTagName("Relationship")).map(rel => [
@@ -5529,8 +5532,8 @@ async function loadWorkbookFromFile(file) {
       rel.getAttribute("Target")
     ])
   );
-  const sharedStrings = zip.file("xl/sharedStrings.xml")
-    ? parseSharedStrings(await zip.file("xl/sharedStrings.xml").async("text"))
+  const sharedStrings = zip.has("xl/sharedStrings.xml")
+    ? parseSharedStrings(await zip.getText("xl/sharedStrings.xml"))
     : [];
   const sheets = {};
   const sheetNodes = Array.from(workbookDoc.getElementsByTagName("sheet"));
@@ -5541,8 +5544,8 @@ async function loadWorkbookFromFile(file) {
     const target = rels.get(rId);
     if (!target) continue;
     const path = target.startsWith("xl/") ? target : `xl/${target}`;
-    if (!zip.file(path)) continue;
-    const xmlText = await zip.file(path).async("text");
+    if (!zip.has(path)) continue;
+    const xmlText = await zip.getText(path);
     sheets[name] = parseSheet(xmlText, sharedStrings);
   }
   return { sheets };
@@ -7516,8 +7519,8 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     gridZipName = gridFiles.length ? buildZipFilename(gridFiles) : "";
     clearSelectedTrialFiles("Big File Bypass enabled. Skipping auto-zip and continuing...");
   } else if (selectedTrialFiles.length) {
-    if (typeof JSZip === "undefined") {
-      const message = "JSZip failed to load. Please reload the panel before submitting.";
+    if (!window.SidekickZip?.loadZipEntries) {
+      const message = "zip runtime failed to load. Please reload the panel before submitting.";
       alert(message);
       await logTaskOutcome("Checkin", message);
       return;
