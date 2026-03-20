@@ -27,6 +27,8 @@ const CUSTOM_THEMES_STORAGE_KEY = "ttmtSidekickCustomThemes";
 const CUSTOM_THEME_ACTIVE_ID_STORAGE_KEY = "ttmtSidekickCustomThemeActiveId";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
 const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
+const ZIP_NATIVE_FOLDER_PATH_STORAGE_KEY = "ttmtNativeZipFolderPath";
+const ZIP_NATIVE_HOST_NAME = "com.ttmt.crm_sidekick.zip_bridge";
 const ZIP_FOLDER_HANDLE_KEY = "zipFolder";
 const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
@@ -3996,13 +3998,15 @@ function normalizeZipFolder(folder) {
     .replace(/[/\\]+$/, "");
 }
 
-function updateZipFolderStatus(folder) {
+function updateZipFolderStatus(folder, { bridgeReady = true } = {}) {
   if (!zipFolderStatus) return;
   if (folder) {
-    zipFolderStatus.textContent = `Saving zips to "${folder}".`;
+    zipFolderStatus.textContent = `Native bridge saving zips to "${folder}".`;
     return;
   }
-  zipFolderStatus.textContent = "No zip save folder selected yet.";
+  zipFolderStatus.textContent = bridgeReady
+    ? "No native zip save folder selected yet."
+    : "Native zip bridge not connected yet. Install the Windows native host to enable silent saves.";
 }
 
 async function saveZipFolderHandle(handle) {
@@ -4025,30 +4029,84 @@ async function loadZipFolderHandle() {
   });
 }
 
+async function sendNativeZipHostMessage(message) {
+  return new Promise(resolve => {
+    if (!chrome?.runtime?.sendNativeMessage) {
+      resolve({ ok: false, message: "Native Messaging is not available in this browser." });
+      return;
+    }
+    chrome.runtime.sendNativeMessage(ZIP_NATIVE_HOST_NAME, message, response => {
+      const runtimeError = chrome.runtime.lastError;
+      if (runtimeError) {
+        resolve({ ok: false, message: runtimeError.message || "Native zip bridge unavailable." });
+        return;
+      }
+      resolve(response || { ok: false, message: "Native zip bridge returned no response." });
+    });
+  });
+}
+
+async function pingNativeZipBridge() {
+  return sendNativeZipHostMessage({ command: "ping" });
+}
+
+async function pickNativeZipFolder() {
+  return sendNativeZipHostMessage({ command: "pick_folder" });
+}
+
+async function fileToNativePayload(file) {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return {
+    name: file.webkitRelativePath || file.name,
+    contentBase64: btoa(binary)
+  };
+}
+
+async function zipFilesViaNativeHost(files, filename) {
+  const destinationFolder = await getStoredValue(ZIP_NATIVE_FOLDER_PATH_STORAGE_KEY);
+  if (!destinationFolder) {
+    return { ok: false, message: "Choose a native zip save folder before zipping files." };
+  }
+  const payloadFiles = await Promise.all(files.map(fileToNativePayload));
+  return sendNativeZipHostMessage({
+    command: "zip_files",
+    destinationFolder,
+    zipName: filename,
+    files: payloadFiles
+  });
+}
+
 async function pickZipFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("Folder picking isn't supported in this browser.");
+  const bridgeStatus = await pingNativeZipBridge();
+  if (!bridgeStatus.ok) {
+    updateZipFolderStatus("", { bridgeReady: false });
+    alert(`Native zip bridge unavailable: ${bridgeStatus.message}`);
     return;
   }
-  let handle;
-  try {
-    handle = await window.showDirectoryPicker({ mode: "readwrite" });
-  } catch {
+
+  const result = await pickNativeZipFolder();
+  if (!result.ok || !result.folder) {
+    if (result.message) alert(result.message);
     return;
   }
-  if (!handle) return;
-  const name = normalizeZipFolder(handle.name || "Selected folder");
-  const permitted = await verifyFolderPermission(handle, "readwrite");
-  if (!permitted) return;
-  await saveZipFolderHandle(handle);
+
+  const name = normalizeZipFolder(result.folder.split(/[\\/]+/).filter(Boolean).pop() || result.folder);
   await setStoredValue(ZIP_FOLDER_STORAGE_KEY, name);
+  await setStoredValue(ZIP_NATIVE_FOLDER_PATH_STORAGE_KEY, result.folder);
   updateZipFolderStatus(name);
 }
 
 async function initZipFolderSetting() {
   if (!zipFolderPickBtn) return;
+  const bridgeStatus = await pingNativeZipBridge();
   const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-  updateZipFolderStatus(storedFolder);
+  updateZipFolderStatus(storedFolder, { bridgeReady: bridgeStatus.ok });
   zipFolderPickBtn.addEventListener("click", async () => {
     await pickZipFolder();
   });
@@ -7276,39 +7334,12 @@ function buildZipFilename(files) {
   return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
 }
 
-async function promptUserDownload(blob, filename) {
-  const zipHandle = await loadZipFolderHandle().catch(() => null);
-  if (zipHandle) {
-    const permitted = await verifyFolderPermission(zipHandle, "readwrite");
-    if (permitted) {
-      const fileHandle = await zipHandle.getFileHandle(filename, { create: true });
-      const writable = await fileHandle.createWritable({ keepExistingData: false });
-      await writable.write(blob);
-      await writable.close();
-      return;
-    }
+async function saveFilesAsNativeZip(files, filename) {
+  const result = await zipFilesViaNativeHost(files, filename);
+  if (!result.ok) {
+    throw new Error(result.message || "Native zip bridge could not save the zip file.");
   }
-
-  const url = URL.createObjectURL(blob);
-  try {
-    if (chrome?.downloads?.download) {
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
-      await chrome.downloads.download({
-        url,
-        filename: targetFilename,
-        saveAs: !zipFolder
-      });
-    } else {
-      const link = document.createElement("a");
-      link.href = url;
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
-      link.click();
-    }
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  return result;
 }
 
 bigFileBypassBtn?.addEventListener("click", () => {
@@ -7446,7 +7477,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const deviceNumber = getFormValue("#deviceNumberInput");
   const isMountOnly = deviceNumber.toLowerCase() === "x";
 
-  // 1) Zip vocab files (if any) and prompt download
+  // 1) Zip vocab files (if any) and save through the native bridge
   let zipName = "";
   let gridZipName = "";
   const zipUploads = [];
@@ -7476,10 +7507,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       const zip = new JSZip();
       otherFiles.forEach(file => zip.file(file.name, file));
       const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
-      const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
       zipName = buildZipFilename(otherFiles);
-      updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
-      await promptUserDownload(zipBlob, zipName);
+      updateTrialFilesStatus("Saving vocab zip through the native Windows bridge...");
+      await saveFilesAsNativeZip(otherFiles, zipName);
       zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
       downloadMessages.push(`"${zipName}"`);
     }
@@ -7488,16 +7518,15 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       const gridZip = new JSZip();
       gridFiles.forEach(file => gridZip.file(file.name, file));
       const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
-      const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
       gridZipName = buildZipFilename(gridFiles);
-      updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
-      await promptUserDownload(gridZipBlob, gridZipName);
+      updateTrialFilesStatus("Saving Grid zip through the native Windows bridge...");
+      await saveFilesAsNativeZip(gridFiles, gridZipName);
       zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
       downloadMessages.push(`"${gridZipName}"`);
     }
 
     const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Preparing CRM upload.`
+      ? `Saved ${downloadMessages.join(" and ")} through the native Windows bridge. Preparing CRM upload.`
       : "No files selected.";
     clearSelectedTrialFiles(downloadsNote);
   } else {
@@ -7562,7 +7591,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
     uploadMessage = shouldBypassZip
       ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files. Move the zipped files to your final folder."
-      : "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
+      : "CRM note submitted. Native bridge saved the vocab zip file(s). Upload them to the Documents tab if needed.";
     showUploadPrompt(zipName, gridZipName, {
       message: shouldBypassZip
         ? "Big File Bypass enabled: zip files yourself before uploading to CRM Documents. Keep Grid files zipped separately from non-Grid files."
