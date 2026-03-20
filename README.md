@@ -20,6 +20,8 @@ This repo now includes a Windows Native Messaging Host pair:
 
 Before running the installer, set `CRM_SIDEKICK_EXTENSION_ID` to the unpacked or published extension ID so the generated manifest allows your extension origin.
 
+For a full Windows deployment walkthrough, see [`docs/messaging-bridge-install.md`](docs/messaging-bridge-install.md).
+
 ## Core Functions
 
 - **Open side panel** to manage check-ins without navigating away.
