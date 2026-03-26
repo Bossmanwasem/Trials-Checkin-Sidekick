@@ -1159,18 +1159,29 @@
   <!-- INVENTORY VIEW -->
   <div class="container" id="inventoryView" style="display:none;">
     <h1>Manage Inventory</h1>
-    <p class="complete-intro">Run the inventory script using the device, camera, or Lumin-I number from your last check-in.</p>
+    <p class="complete-intro">
+      Automated inventory search is temporarily unavailable while the CRM inventory page is being updated.
+      Please complete this step manually in the Manage Inventory tab.
+    </p>
 
     <div class="note-preview">
-      <div class="note-preview__title">Search value</div>
+      <div class="note-preview__title">Search query</div>
       <pre id="inventorySearchValue" class="note-preview__body"></pre>
+      <div class="copy-row" style="margin-top:10px;">
+        <input type="text" id="inventorySearchCopyField" class="copy-field" readonly placeholder="Search query will appear here" />
+        <button id="inventorySearchCopyBtn" class="copy-btn" type="button" disabled>Copy query</button>
+      </div>
       <div id="inventoryStatus" class="status-line"></div>
     </div>
 
-    <button id="runInventoryScriptBtn" class="toggle-btn" type="button" style="margin-top:16px;">
-      Run inventory script
-    </button>
-    <button id="inventoryNextStepBtn" class="toggle-btn" type="button" style="margin-top:10px; display:none;">
+    <div class="qa-rule-card" style="margin-top:16px;">
+      <p>
+        Use <strong>Ctrl + F</strong> to find the device number or camera number shown above, mark the correct item as
+        <strong>Returned</strong>, and update the record in CRM. Only click <strong>Next Step</strong> after the return is fully saved.
+      </p>
+    </div>
+
+    <button id="inventoryNextStepBtn" class="toggle-btn" type="button" style="margin-top:16px;">
       Next Step
     </button>
   </div>

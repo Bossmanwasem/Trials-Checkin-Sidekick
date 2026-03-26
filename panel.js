@@ -7083,43 +7083,31 @@ async function renderDafRecap() {
   return data;
 }
 
-let inventoryNextStepVisible = false;
-let inventoryScriptRan = false;
-
 async function updateInventorySearchDisplay() {
   const identifiers = await getLastIdentifiers();
   const searchValue = buildInventorySearchValue(identifiers);
   const display = document.getElementById("inventorySearchValue");
-  const runBtn = document.getElementById("runInventoryScriptBtn");
+  const copyField = document.getElementById("inventorySearchCopyField");
+  const copyBtn = document.getElementById("inventorySearchCopyBtn");
   const status = document.getElementById("inventoryStatus");
 
   if (display) {
     display.textContent = searchValue || "No stored identifiers. Fill out the first page first.";
   }
-  if (runBtn) {
-    runBtn.disabled = !searchValue;
-    runBtn.style.display = searchValue && !inventoryScriptRan ? "block" : "none";
+  if (copyField) {
+    copyField.value = searchValue || "";
   }
-  if (status && !(inventoryScriptRan && inventoryNextStepVisible)) {
-    status.textContent = "";
+  if (copyBtn) {
+    copyBtn.disabled = !searchValue;
+    copyBtn.textContent = "Copy query";
   }
-
-  setInventoryNextStepVisibility(Boolean(searchValue) && inventoryNextStepVisible);
+  if (status) {
+    status.textContent = searchValue
+      ? "Manual step: use Ctrl + F in the Manage Inventory tab, mark the device returned, then click Next Step."
+      : "No stored identifiers. Fill out the first page first.";
+  }
 
   return identifiers;
-}
-
-function setInventoryNextStepVisibility(show) {
-  const btn = document.getElementById("inventoryNextStepBtn");
-  if (!btn) return;
-  inventoryNextStepVisible = !!show;
-  btn.style.display = inventoryNextStepVisible ? "block" : "none";
-}
-
-function setInventoryRunVisibility(show) {
-  const btn = document.getElementById("runInventoryScriptBtn");
-  if (!btn) return;
-  btn.style.display = show ? "block" : "none";
 }
 
 function watchIdentifierInputs() {
@@ -7408,9 +7396,11 @@ function resetAllFieldsAndUI() {
   setText("completeIntro", "");
   setBigFileBypassReminder(false);
   setText("inventoryStatus", "");
-  setInventoryNextStepVisibility(false);
-  inventoryScriptRan = false;
-  setInventoryRunVisibility(true);
+  const inventoryCopyBtn = document.getElementById("inventorySearchCopyBtn");
+  if (inventoryCopyBtn) {
+    inventoryCopyBtn.disabled = true;
+    inventoryCopyBtn.textContent = "Copy query";
+  }
 }
 
 async function finishCheckinAndReset({ returnToLanding = false } = {}) {
@@ -7624,31 +7614,17 @@ chrome.runtime.onMessage.addListener(msg => {
 
 /* ---------------- Inventory page ---------------- */
 
-document.getElementById("runInventoryScriptBtn")?.addEventListener("click", async () => {
-  const identifiers = await updateInventorySearchDisplay();
-  const searchValue = buildInventorySearchValue(identifiers);
-  if (!searchValue) {
-    alert("No device, camera, or Lumin-I number stored. Fill out the first page first.");
-    return;
+document.getElementById("inventorySearchCopyBtn")?.addEventListener("click", async () => {
+  const value = getFormValue("#inventorySearchCopyField");
+  if (!value) return;
+  await navigator.clipboard.writeText(value);
+  const btn = document.getElementById("inventorySearchCopyBtn");
+  if (btn) {
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = "Copy query";
+    }, 1200);
   }
-
-  const status = document.getElementById("inventoryStatus");
-  if (status) status.textContent = `Looking for "${searchValue}"...`;
-  setInventoryNextStepVisibility(false);
-  inventoryScriptRan = true;
-  setInventoryRunVisibility(false);
-
-  const res = await sendToCrm("RUN_INVENTORY_SCRIPT", { identifiers });
-  if (!res.ok) {
-    alert(res.message || "Failed to run inventory script.");
-    if (status) status.textContent = "";
-    inventoryScriptRan = false;
-    setInventoryRunVisibility(true);
-    return;
-  }
-
-  if (status) status.textContent = "Mark the device as returned, click Update and once the page reloads, click Next Step to continue.";
-  setInventoryNextStepVisibility(true);
 });
 
 document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async () => {
