@@ -6880,8 +6880,7 @@ function buildDafRecapEntries(data) {
   if (!data) return [];
 
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
-
-  return [
+  const rawEntries = [
     { key: "deviceNumber", label: "Device", value: data.deviceNumber },
     { key: "cameraNumber", label: "Camera", value: data.cameraNumber },
     { key: "luminNumber", label: "Lumin-I", value: data.luminNumber },
@@ -6892,6 +6891,10 @@ function buildDafRecapEntries(data) {
     { key: "tableMount", label: "Table Mount", value: data.tableMount },
     { key: "rollingMount", label: "Rolling Mount", value: data.rollingMount }
   ];
+
+  return rawEntries
+    .map(entry => ({ ...entry, value: `${entry.value ?? ""}`.trim() }))
+    .filter(entry => Boolean(entry.value));
 }
 
 const CRM_LINK_BASE = "https://portal.talktometechnologies.com/admin/EditClient.aspx?ID=";
@@ -7076,7 +7079,7 @@ async function renderDafRecap() {
 
   if (statusEl) {
     statusEl.textContent = entries.length
-      ? "We'll auto-fill the DAF form using these values. Use the Copy buttons if the form blocks autofill."
+      ? "Showing only fields that have values. Use Copy for anything you need to paste manually."
       : "No saved check-in found. Fill out the check-in form first.";
   }
 
@@ -7821,25 +7824,6 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   const original = btn.textContent;
   btn.textContent = "Copied!";
   setTimeout(() => { btn.textContent = original; }, 1200);
-});
-
-document.getElementById("dafAutofillBtn")?.addEventListener("click", async () => {
-  const status = document.getElementById("dafRecapStatus");
-  if (status) status.textContent = "Triggering autofill in the DAF form tab...";
-
-  const tabId = await getActiveDafTabId();
-  if (!tabId) {
-    if (status) status.textContent = "No DAF form tab found. Open the DAF form and try again.";
-    return;
-  }
-
-  const res = await chrome.tabs.sendMessage(tabId, { type: "RUN_DAF_AUTOFILL" }).catch(() => null);
-  if (!res?.ok) {
-    if (status) status.textContent = res?.message || "Autofill failed. Try again or use the copy buttons.";
-    return;
-  }
-
-  if (status) status.textContent = "Autofill triggered. Check the DAF form tab.";
 });
 
 /* ---------------- Init ---------------- */
