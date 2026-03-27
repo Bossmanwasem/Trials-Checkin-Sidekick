@@ -36,6 +36,7 @@ const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
 const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
 const LOGS_HANDLE_KEY = "logsFolder";
+const LOGS_SHAREPOINT_FOLDER_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FTrialsSharePoint2%2FShared%20Documents%2FTrials%20Operations%2FCRM%20Sidekick%20%2D%20Browser%20Ext%2FLogs&viewid=c09dd3c3%2Dbe9b%2D48f7%2D9635%2D46c9f9037922";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
@@ -4293,6 +4294,11 @@ async function pickLogFolder() {
     alert("Folder picking isn't supported in this browser.");
     return null;
   }
+  try {
+    await chrome.tabs.create({ url: LOGS_SHAREPOINT_FOLDER_URL, active: false });
+  } catch {
+    // Non-blocking convenience only.
+  }
   let handle;
   try {
     handle = await window.showDirectoryPicker({ mode: "readwrite" });
@@ -4308,7 +4314,12 @@ async function pickLogFolder() {
 async function initLogFolderSetting() {
   if (!logFolderPickButtons.length) return;
   const storedName = await getLogFolderName();
-  updateLogFolderStatus(storedName);
+  updateLogFolderStatus(
+    storedName,
+    storedName
+      ? null
+      : "No log folder selected yet. Sidekick will open the SharePoint Logs folder before you choose it."
+  );
   logFolderPickButtons.forEach(button => {
     button.addEventListener("click", async () => {
       await pickLogFolder();
