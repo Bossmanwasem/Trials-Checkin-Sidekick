@@ -7302,6 +7302,61 @@ async function promptUserDownload(blob, filename) {
   }
 }
 
+async function zipFilesInWorker(files) {
+  if (!files?.length) {
+    return new ArrayBuffer(0);
+  }
+
+  if (typeof Worker === "undefined") {
+    throw new Error("Web Worker API unavailable in this browser context.");
+  }
+
+  const workerUrl = chrome?.runtime?.getURL
+    ? chrome.runtime.getURL("zip-worker.js")
+    : "zip-worker.js";
+  const worker = new Worker(workerUrl);
+
+  return new Promise(async (resolve, reject) => {
+    let settled = false;
+
+    const fail = error => {
+      if (settled) return;
+      settled = true;
+      worker.terminate();
+      reject(error instanceof Error ? error : new Error(String(error)));
+    };
+
+    worker.onmessage = event => {
+      if (settled) return;
+      const data = event?.data || {};
+      if (data.type === "ZIP_DONE" && data.zipArrayBuffer) {
+        settled = true;
+        worker.terminate();
+        resolve(data.zipArrayBuffer);
+        return;
+      }
+      if (data.type === "ZIP_ERROR") {
+        fail(new Error(data.error || "Zip worker failed."));
+      }
+    };
+
+    worker.onerror = event => {
+      fail(new Error(event?.message || "Zip worker crashed."));
+    };
+
+    try {
+      const workerFiles = await Promise.all(files.map(async file => ({
+        name: file.name,
+        data: await file.arrayBuffer()
+      })));
+      const transferables = workerFiles.map(file => file.data);
+      worker.postMessage({ type: "ZIP_FILES", files: workerFiles }, transferables);
+    } catch (error) {
+      fail(error);
+    }
+  });
+}
+
 bigFileBypassBtn?.addEventListener("click", () => {
   setBigFileBypass(!isBigFileBypassEnabled);
 });
@@ -7466,9 +7521,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     const downloadMessages = [];
 
     if (otherFiles.length) {
-      const zip = new JSZip();
-      otherFiles.forEach(file => zip.file(file.name, file));
-      const zipArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+      const zipArrayBuffer = await zipFilesInWorker(otherFiles);
       const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
       zipName = buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
@@ -7478,9 +7531,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     }
 
     if (gridFiles.length) {
-      const gridZip = new JSZip();
-      gridFiles.forEach(file => gridZip.file(file.name, file));
-      const gridZipArrayBuffer = await gridZip.generateAsync({ type: "arraybuffer" });
+      const gridZipArrayBuffer = await zipFilesInWorker(gridFiles);
       const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
       gridZipName = buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
