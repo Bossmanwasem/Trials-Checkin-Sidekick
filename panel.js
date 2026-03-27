@@ -77,7 +77,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -734,6 +734,42 @@ function showGridPadPrepView() {
 function showGridPadChecklistOrderView() {
   showView("gridPadChecklistOrderView");
   void refreshGridPadChecklistOrderList();
+}
+
+function showAgeCalculatorView() {
+  showView("ageCalculatorView");
+}
+
+function calculateAgeYearsFromInput(rawBirthdate) {
+  if (!rawBirthdate) {
+    return { error: "Please select a birthdate." };
+  }
+  const parts = rawBirthdate.split("-").map(part => Number.parseInt(part, 10));
+  if (parts.length !== 3 || parts.some(Number.isNaN)) {
+    return { error: "Please enter a valid birthdate." };
+  }
+  const [year, month, day] = parts;
+  const today = new Date();
+  const birthdate = new Date(year, month - 1, day);
+  if (
+    birthdate.getFullYear() !== year ||
+    birthdate.getMonth() !== month - 1 ||
+    birthdate.getDate() !== day
+  ) {
+    return { error: "Please enter a valid birthdate." };
+  }
+  const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (birthdate > todayAtMidnight) {
+    return { error: "Birthdate cannot be in the future." };
+  }
+  let ageYears = today.getFullYear() - year;
+  const birthdayHasOccurred =
+    today.getMonth() > month - 1 ||
+    (today.getMonth() === month - 1 && today.getDate() >= day);
+  if (!birthdayHasOccurred) {
+    ageYears -= 1;
+  }
+  return { ageYears };
 }
 
 function clearGridPadChecklist() {
@@ -7992,6 +8028,10 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     await syncViewForTab(activeTab);
   });
 
+  document.getElementById("ageCalculatorBtn")?.addEventListener("click", () => {
+    showAgeCalculatorView();
+  });
+
   document.getElementById("talkPadPrepBtn")?.addEventListener("click", () => {
     showPrepTypeView();
   });
@@ -8180,6 +8220,23 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     await logTaskOutcome("Prep", "Completed successfully");
     clearGridPadChecklist();
     showLandingView();
+  });
+
+  document.getElementById("ageCalculatorReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("ageCalculatorForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const input = document.getElementById("ageBirthdateInput");
+    const result = document.getElementById("ageCalculatorResult");
+    if (!input || !result) return;
+    const calculation = calculateAgeYearsFromInput((input.value || "").trim());
+    if (calculation.error) {
+      result.textContent = calculation.error;
+      return;
+    }
+    result.textContent = `This person is ${calculation.ageYears} year${calculation.ageYears === 1 ? "" : "s"} old.`;
   });
 
   document.getElementById("deviceLookupForm")?.addEventListener("submit", async (event) => {
