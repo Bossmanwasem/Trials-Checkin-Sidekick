@@ -30,6 +30,67 @@ function buildZipFilename(payload) {
   return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
 }
 
+function runPrepFlowTask(payload) {
+  const action = typeof payload?.action === "string" ? payload.action : "";
+  const crmId = typeof payload?.crmId === "string" ? payload.crmId.trim() : "";
+
+  switch (action) {
+    case "OPEN_GRID_SIDEKICK":
+      return { status: "ok", route: "grid" };
+    case "OPEN_TALKPAD_PREP":
+      return { status: "ok", route: "prepType" };
+    case "OPEN_GRIDPAD_PREP":
+      return { status: "ok", route: "gridPadPrep" };
+    case "PREP_TYPE_SERVICE_LOAN":
+      return { status: "ok", route: "prepSlCrm" };
+    case "PREP_TYPE_STANDARD":
+      return { status: "ok", route: "prepStandard" };
+    case "PREP_TYPE_RETURN_TO_LANDING":
+      return { status: "ok", route: "landing" };
+    case "PREP_SL_RETURN_TO_TYPE":
+      return { status: "ok", route: "prepType" };
+    case "PREP_SL_SUBMIT_CRM":
+      if (!crmId) {
+        return { status: "error", message: "Enter a CRM ID to continue." };
+      }
+      return { status: "ok", route: "prepServiceLoan", crmId };
+    case "PREP_FINISH":
+      return { status: "ok", route: "landing", incrementCounter: "preps", logTask: "Prep" };
+    case "GRIDPAD_PREP_FINISH":
+      return { status: "ok", route: "landing", incrementCounter: "preps", logTask: "Prep" };
+    default:
+      throw new Error(`Unsupported prep flow task: ${action || "(empty)"}`);
+  }
+}
+
+function runQaFlowTask(payload) {
+  const action = typeof payload?.action === "string" ? payload.action : "";
+  const crmId = typeof payload?.crmId === "string" ? payload.crmId.trim() : "";
+
+  switch (action) {
+    case "OPEN_QA_FORM":
+      return { status: "ok", route: "qaComplete", openQaForm: true };
+    case "QA_FINISH":
+      return {
+        status: "ok",
+        route: "landing",
+        closeQaForm: true,
+        resetQaFields: true,
+        incrementCounter: "qas",
+        logTask: "QA"
+      };
+    case "QA_RETURN":
+      return { status: "ok", route: "landing", closeQaForm: true, resetQaFields: true };
+    case "QA_NAVIGATE_CRM":
+      if (!crmId) {
+        return { status: "error", message: "Enter a CRM ID to continue." };
+      }
+      return { status: "ok", crmId };
+    default:
+      throw new Error(`Unsupported QA flow task: ${action || "(empty)"}`);
+  }
+}
+
 self.onmessage = event => {
   const { type, payload = {}, requestId } = event?.data || {};
 
@@ -37,6 +98,16 @@ self.onmessage = event => {
     if (type === "BUILD_ZIP_FILENAME") {
       const zipName = buildZipFilename(payload);
       self.postMessage({ type: "WORKFLOW_DONE", requestId, payload: { zipName } });
+      return;
+    }
+    if (type === "RUN_PREP_FLOW") {
+      const result = runPrepFlowTask(payload);
+      self.postMessage({ type: "WORKFLOW_DONE", requestId, payload: result });
+      return;
+    }
+    if (type === "RUN_QA_FLOW") {
+      const result = runQaFlowTask(payload);
+      self.postMessage({ type: "WORKFLOW_DONE", requestId, payload: result });
       return;
     }
 

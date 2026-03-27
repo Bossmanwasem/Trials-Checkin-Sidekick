@@ -7338,6 +7338,14 @@ async function buildZipFilename(files) {
   return result?.zipName || "Client Vocab from Trial Unknown Date.zip";
 }
 
+async function runPrepFlowAction(action, payload = {}) {
+  return runCheckinWorkflowTask("RUN_PREP_FLOW", { action, ...payload });
+}
+
+async function runQaFlowAction(action, payload = {}) {
+  return runCheckinWorkflowTask("RUN_QA_FLOW", { action, ...payload });
+}
+
 async function promptUserDownload(blob, filename) {
   const zipHandle = await loadZipFolderHandle().catch(() => null);
   if (zipHandle) {
@@ -8048,6 +8056,11 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("OPEN_GRID_SIDEKICK");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to open Grid Sidekick.");
+      return;
+    }
     hasStartedGrid = true;
     showGridView();
     const activeTab = await getActiveCrmTab();
@@ -8058,39 +8071,71 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     showAgeCalculatorView();
   });
 
-  document.getElementById("talkPadPrepBtn")?.addEventListener("click", () => {
+  document.getElementById("talkPadPrepBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("OPEN_TALKPAD_PREP");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to open TalkPad prep.");
+      return;
+    }
     showPrepTypeView();
   });
 
-  document.getElementById("gridPadPrepBtn")?.addEventListener("click", () => {
+  document.getElementById("gridPadPrepBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("OPEN_GRIDPAD_PREP");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to open GridPad prep.");
+      return;
+    }
     showGridPadPrepView();
   });
 
-  document.getElementById("prepTypeSlBtn")?.addEventListener("click", () => {
+  document.getElementById("prepTypeSlBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("PREP_TYPE_SERVICE_LOAN");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to open Service Loan prep.");
+      return;
+    }
     showPrepSlCrmView();
   });
 
-  document.getElementById("prepTypeClBtn")?.addEventListener("click", () => {
+  document.getElementById("prepTypeClBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("PREP_TYPE_STANDARD");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to open prep checklist.");
+      return;
+    }
     showPrepView({ variant: "standard" });
   });
 
-  document.getElementById("prepTypeReturnBtn")?.addEventListener("click", () => {
+  document.getElementById("prepTypeReturnBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("PREP_TYPE_RETURN_TO_LANDING");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to return to landing.");
+      return;
+    }
     showLandingView();
   });
 
-  document.getElementById("prepSlCrmReturnBtn")?.addEventListener("click", () => {
+  document.getElementById("prepSlCrmReturnBtn")?.addEventListener("click", async () => {
+    const result = await runPrepFlowAction("PREP_SL_RETURN_TO_TYPE");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to return to prep type.");
+      return;
+    }
     showPrepTypeView();
   });
 
-  document.getElementById("prepSlCrmForm")?.addEventListener("submit", (event) => {
+  document.getElementById("prepSlCrmForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("prepSlCrmInput");
-    const crmId = (crmInput?.value || "").trim();
-    if (!crmId) {
-      alert("Enter a CRM ID to continue.");
+    const result = await runPrepFlowAction("PREP_SL_SUBMIT_CRM", {
+      crmId: (crmInput?.value || "").trim()
+    });
+    if (result?.status === "error") {
+      alert(result.message || "Enter a CRM ID to continue.");
       return;
     }
-    openCrmRecordTab(crmId);
+    openCrmRecordTab(result.crmId);
     if (crmInput) crmInput.value = "";
     showPrepView({ variant: "serviceLoan" });
   });
@@ -8131,24 +8176,45 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     await refreshDeviceLookupWorkbooksFromHandles();
   });
 
-  document.getElementById("qaFormBtn")?.addEventListener("click", () => {
-    chrome.tabs.create({ url: QA_FORM_URL }, tab => {
-      qaFormTabId = tab?.id ?? null;
-    });
+  document.getElementById("qaFormBtn")?.addEventListener("click", async () => {
+    const result = await runQaFlowAction("OPEN_QA_FORM");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to start QA flow.");
+      return;
+    }
+    if (result.openQaForm) {
+      chrome.tabs.create({ url: QA_FORM_URL }, tab => {
+        qaFormTabId = tab?.id ?? null;
+      });
+    }
     showQaCompleteView();
   });
 
   document.getElementById("qaFinishedBtn")?.addEventListener("click", async () => {
-    await incrementDailyCounter("qas");
-    await logTaskOutcome("QA", "Completed successfully");
-    closeQaFormTab();
-    resetQaCompleteFields();
+    const result = await runQaFlowAction("QA_FINISH");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to finish QA flow.");
+      return;
+    }
+    if (result.incrementCounter) {
+      await incrementDailyCounter(result.incrementCounter);
+    }
+    if (result.logTask) {
+      await logTaskOutcome(result.logTask, "Completed successfully");
+    }
+    if (result.closeQaForm) closeQaFormTab();
+    if (result.resetQaFields) resetQaCompleteFields();
     showLandingView();
   });
 
-  document.getElementById("qaReturnBtn")?.addEventListener("click", () => {
-    closeQaFormTab();
-    resetQaCompleteFields();
+  document.getElementById("qaReturnBtn")?.addEventListener("click", async () => {
+    const result = await runQaFlowAction("QA_RETURN");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to exit QA flow.");
+      return;
+    }
+    if (result.closeQaForm) closeQaFormTab();
+    if (result.resetQaFields) resetQaCompleteFields();
     showLandingView();
   });
 
@@ -8175,13 +8241,15 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   document.getElementById("qaCrmNavigatorForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("qaCrmNavigatorInput");
-    const crmId = (crmInput?.value || "").trim();
-    if (!crmId) {
-      alert("Enter a CRM ID to continue.");
+    const result = await runQaFlowAction("QA_NAVIGATE_CRM", {
+      crmId: (crmInput?.value || "").trim()
+    });
+    if (result?.status === "error") {
+      alert(result.message || "Enter a CRM ID to continue.");
       return;
     }
-    updateQaCrmIdCopy({ crmId });
-    const tab = await openCrmRecordTab(crmId);
+    updateQaCrmIdCopy({ crmId: result.crmId });
+    const tab = await openCrmRecordTab(result.crmId);
     void loadQaClientNameFromTab(tab?.id ?? null);
     if (crmInput) crmInput.value = "";
   });
@@ -8215,8 +8283,17 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   });
 
   document.getElementById("prepFinishBtn")?.addEventListener("click", async () => {
-    await incrementDailyCounter("preps");
-    await logTaskOutcome("Prep", "Completed successfully");
+    const result = await runPrepFlowAction("PREP_FINISH");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to finish prep.");
+      return;
+    }
+    if (result.incrementCounter) {
+      await incrementDailyCounter(result.incrementCounter);
+    }
+    if (result.logTask) {
+      await logTaskOutcome(result.logTask, "Completed successfully");
+    }
     clearPrepChecklist();
     showLandingView();
   });
@@ -8242,8 +8319,17 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   });
 
   document.getElementById("gridPadPrepFinishBtn")?.addEventListener("click", async () => {
-    await incrementDailyCounter("preps");
-    await logTaskOutcome("Prep", "Completed successfully");
+    const result = await runPrepFlowAction("GRIDPAD_PREP_FINISH");
+    if (result?.status === "error") {
+      alert(result.message || "Unable to finish GridPad prep.");
+      return;
+    }
+    if (result.incrementCounter) {
+      await incrementDailyCounter(result.incrementCounter);
+    }
+    if (result.logTask) {
+      await logTaskOutcome(result.logTask, "Completed successfully");
+    }
     clearGridPadChecklist();
     showLandingView();
   });
