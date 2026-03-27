@@ -32,7 +32,7 @@
   <!-- ONBOARDING VIEW -->
   <div class="container onboarding-view" id="onboardingView" style="display:none;">
     <h1>Welcome to CRM Sidekick</h1>
-    <p class="complete-intro">Tell us your username, choose your starting color theme, and connect your device lookup workbooks.</p>
+    <p class="complete-intro">Tell us your username, choose your starting color theme, and confirm your SharePoint workbook access.</p>
     <form id="onboardingForm">
       <label for="userFirstName">Create username</label>
       <input type="text" id="userFirstName" autocomplete="given-name" required />
@@ -104,33 +104,33 @@
       </div>
 
       <div class="note-preview">
-        <div class="note-preview__title">OneDrive workbook connections</div>
+        <div class="note-preview__title">SharePoint workbook links (auto-loaded)</div>
         <div class="lookup-file">
           <div>
             <div class="lookup-file__title">RWL &amp; LTL Update</div>
             <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
           </div>
-          <button type="button" class="toggle-btn" data-workbook-connect="ltl">Connect workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-connect="ltl">Refresh workbook</button>
           <button type="button" class="toggle-btn" data-workbook-open="ltl">Open workbook</button>
-          <div id="onboardingLtlFileStatus" data-workbook-status="ltl" class="status-line">Not connected.</div>
+          <div id="onboardingLtlFileStatus" data-workbook-status="ltl" class="status-line">Auto-loaded from SharePoint.</div>
         </div>
         <div class="lookup-file">
           <div>
             <div class="lookup-file__title">MountLog</div>
             <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
           </div>
-          <button type="button" class="toggle-btn" data-workbook-connect="mount">Connect workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-connect="mount">Refresh workbook</button>
           <button type="button" class="toggle-btn" data-workbook-open="mount">Open workbook</button>
-          <div id="onboardingMountFileStatus" data-workbook-status="mount" class="status-line">Not connected.</div>
+          <div id="onboardingMountFileStatus" data-workbook-status="mount" class="status-line">Auto-loaded from SharePoint.</div>
         </div>
         <div class="lookup-file">
           <div>
             <div class="lookup-file__title">Loan Library CRM Check</div>
             <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
           </div>
-          <button type="button" class="toggle-btn" data-workbook-connect="crm">Connect workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-connect="crm">Refresh workbook</button>
           <button type="button" class="toggle-btn" data-workbook-open="crm">Open workbook</button>
-          <div id="onboardingCrmFileStatus" data-workbook-status="crm" class="status-line">Not connected.</div>
+          <div id="onboardingCrmFileStatus" data-workbook-status="crm" class="status-line">Auto-loaded from SharePoint.</div>
         </div>
       </div>
 
@@ -640,7 +640,7 @@
   <!-- DEVICE LOOKUP VIEW -->
   <div class="container device-lookup-view" id="deviceLookupView" style="display:none;">
     <h1>Device Number Lookup Sidekick</h1>
-    <p class="complete-intro">Lookup device, mount, and camera info using the OneDrive workbooks.</p>
+    <p class="complete-intro">Lookup device, mount, and camera info using auto-loaded SharePoint workbooks.</p>
 
     <form id="deviceLookupForm" class="lookup-form">
       <label for="deviceLookupInput">Device serial number</label>
