@@ -279,6 +279,9 @@
           <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Builds Grid email/password from the current CRM (CL or LTL) with copy fields.">
             Grid Sidekick
           </button>
+          <button id="ageCalculatorBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Calculates age from a birthdate by comparing it against today's date.">
+            Age Calculator
+          </button>
           <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Basic TalkPad prep checklist (more features coming soon).">
             TalkPad Prep Sidekick
           </button>
@@ -891,6 +894,23 @@
 
     <div class="crm-nav-footer">
       <button id="gridPadOrderSaveBtn" class="toggle-btn" type="button">Save order</button>
+    </div>
+  </div>
+
+  <div class="container" id="ageCalculatorView" style="display:none;">
+    <h1>Age Calculator</h1>
+    <p class="complete-intro">Enter a birthdate and compare it against today's date to calculate age in years.</p>
+    <form id="ageCalculatorForm">
+      <label for="ageBirthdateInput">Birthdate</label>
+      <input type="date" id="ageBirthdateInput" required />
+      <button type="submit" id="ageCalculateBtn">Calculate age</button>
+    </form>
+    <div class="note-preview">
+      <div class="note-preview__title">Result</div>
+      <p id="ageCalculatorResult" class="note-preview__body">Enter a birthdate to calculate age.</p>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="ageCalculatorReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
     </div>
   </div>
 
