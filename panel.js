@@ -7236,8 +7236,12 @@ const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn")
 const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
 const bigFileBypassReminder = document.getElementById("bigFileBypassReminder");
 const GRID_FILE_EXTENSION = ".grid3user";
+const WORKERS_BASE_PATH = "workers";
+const CHECKIN_WORKER_PATH = `${WORKERS_BASE_PATH}/checkin-workflow-worker.js`;
+const ZIP_WORKER_PATH = `${WORKERS_BASE_PATH}/zip-worker.js`;
 
 let isBigFileBypassEnabled = false;
+let checkinWorkflowWorkerPromise = null;
 
 function setBigFileBypass(enabled) {
   isBigFileBypassEnabled = Boolean(enabled);
@@ -7276,31 +7280,62 @@ function clearSelectedTrialFiles(messageOverride = null) {
   if (trialFilesInput) trialFilesInput.value = "";
 }
 
-function getVocabTypesFromFiles(files) {
-  const hasGrid = files.some(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-  const hasP2G = files.some(file => file.name.toLowerCase().endsWith(".p2gbk"));
-  const hasSaltillo = files.some(file => {
-    const name = file.name.toLowerCase();
-    return name.endsWith(".ce") || name.endsWith(".wf");
-  });
-
-  const ordered = [];
-  if (hasGrid) ordered.push("Grid");
-  if (hasP2G) ordered.push("P2G");
-  if (hasSaltillo) ordered.push("Saltillo");
-  return ordered;
+function createWorkerFromPath(path) {
+  if (chrome?.runtime?.getURL) {
+    return new Worker(chrome.runtime.getURL(path));
+  }
+  return new Worker(path);
 }
 
-function buildZipFilename(files) {
+function getCheckinWorkflowWorker() {
+  if (!checkinWorkflowWorkerPromise) {
+    checkinWorkflowWorkerPromise = Promise.resolve(createWorkerFromPath(CHECKIN_WORKER_PATH));
+  }
+  return checkinWorkflowWorkerPromise;
+}
+
+function runCheckinWorkflowTask(type, payload = {}) {
+  return new Promise(async (resolve, reject) => {
+    const worker = await getCheckinWorkflowWorker();
+    const requestId = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const cleanup = () => {
+      worker.removeEventListener("message", onMessage);
+      worker.removeEventListener("error", onError);
+    };
+
+    const onMessage = event => {
+      const data = event?.data || {};
+      if (data.requestId !== requestId) return;
+      cleanup();
+      if (data.type === "WORKFLOW_ERROR") {
+        reject(new Error(data.error || "Workflow worker failed."));
+        return;
+      }
+      resolve(data.payload || {});
+    };
+
+    const onError = event => {
+      cleanup();
+      reject(new Error(event?.message || "Workflow worker crashed."));
+    };
+
+    worker.addEventListener("message", onMessage);
+    worker.addEventListener("error", onError);
+    worker.postMessage({ type, payload, requestId });
+  });
+}
+
+async function buildZipFilename(files) {
   const first = sanitizeName(getFormValue("#firstName"));
   const last = sanitizeName(getFormValue("#lastName"));
-  const fullName = [first, last].filter(Boolean).join(" ") || "Client";
-  const dateStr = formatDateForFilename();
-  const vocabTypes = getVocabTypesFromFiles(files);
-  const typeLabel = vocabTypes.length
-    ? `${vocabTypes.join(", ")}`
-    : "Vocab";
-  return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
+  const result = await runCheckinWorkflowTask("BUILD_ZIP_FILENAME", {
+    firstName: first,
+    lastName: last,
+    dateStr: formatDateForFilename(),
+    fileNames: (files || []).map(file => file?.name || "")
+  });
+  return result?.zipName || "Client Vocab from Trial Unknown Date.zip";
 }
 
 async function promptUserDownload(blob, filename) {
@@ -7347,10 +7382,7 @@ async function zipFilesInWorker(files) {
     throw new Error("Web Worker API unavailable in this browser context.");
   }
 
-  const workerUrl = chrome?.runtime?.getURL
-    ? chrome.runtime.getURL("zip-worker.js")
-    : "zip-worker.js";
-  const worker = new Worker(workerUrl);
+  const worker = createWorkerFromPath(ZIP_WORKER_PATH);
 
   return new Promise(async (resolve, reject) => {
     let settled = false;
@@ -7541,16 +7573,10 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   if (selectedTrialFiles.length && shouldBypassZip) {
     const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
     const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    zipName = otherFiles.length ? buildZipFilename(otherFiles) : "";
-    gridZipName = gridFiles.length ? buildZipFilename(gridFiles) : "";
+    zipName = otherFiles.length ? await buildZipFilename(otherFiles) : "";
+    gridZipName = gridFiles.length ? await buildZipFilename(gridFiles) : "";
     clearSelectedTrialFiles("Big File Bypass enabled. Skipping auto-zip and continuing...");
   } else if (selectedTrialFiles.length) {
-    if (typeof JSZip === "undefined") {
-      const message = "JSZip failed to load. Please reload the panel before submitting.";
-      alert(message);
-      await logTaskOutcome("Checkin", message);
-      return;
-    }
     updateTrialFilesStatus("Zipping selected files...");
     const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
     const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
@@ -7559,7 +7585,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     if (otherFiles.length) {
       const zipArrayBuffer = await zipFilesInWorker(otherFiles);
       const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
-      zipName = buildZipFilename(otherFiles);
+      zipName = await buildZipFilename(otherFiles);
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
       await promptUserDownload(zipBlob, zipName);
       zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
@@ -7569,7 +7595,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     if (gridFiles.length) {
       const gridZipArrayBuffer = await zipFilesInWorker(gridFiles);
       const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
-      gridZipName = buildZipFilename(gridFiles);
+      gridZipName = await buildZipFilename(gridFiles);
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
       await promptUserDownload(gridZipBlob, gridZipName);
       zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });

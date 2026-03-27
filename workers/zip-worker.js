@@ -1,4 +1,4 @@
-importScripts("libs/jszip.min.js");
+importScripts("../libs/jszip.min.js");
 
 self.onmessage = async event => {
   const data = event?.data || {};
