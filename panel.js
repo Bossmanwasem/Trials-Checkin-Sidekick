@@ -68,6 +68,16 @@ const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
   mount: MOUNT_LOG_EXCEL_WEB_URL,
   crm: LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL
 };
+const DEVICE_LOOKUP_WORKBOOK_DOWNLOAD_URLS = {
+  ltl: "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/download.aspx?UniqueId=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D",
+  mount: "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/download.aspx?UniqueId=%7BEA51CF43-05AC-492F-B9E5-5AC8573EF54C%7D",
+  crm: "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/download.aspx?UniqueId=%7BB8051643-3F1F-4B3B-858C-2F63A9D55E9E%7D"
+};
+const DEVICE_LOOKUP_WORKBOOK_DISPLAY_NAMES = {
+  ltl: "RWL and LTL Update.xlsx",
+  mount: "MountLog.xlsx",
+  crm: "Loan Library CRM Check V3.xlsm"
+};
 const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
@@ -5470,7 +5480,7 @@ function setWorkbookStatusMessage(targetKey, message) {
 
 function updateWorkbookStatus(targetKey, { name, saved } = {}) {
   if (!name) {
-    setWorkbookStatusMessage(targetKey, "Not connected.");
+    setWorkbookStatusMessage(targetKey, "Workbook unavailable.");
     return;
   }
   setWorkbookStatusMessage(targetKey, `Connected: ${name}${saved ? " (saved)" : ""}`);
@@ -5493,14 +5503,12 @@ async function loadDeviceLookupWorkbooksFromStorage() {
     };
   }
   await chrome.storage.local.remove(DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY);
-  await Promise.all(DEVICE_LOOKUP_WORKBOOK_KEYS.map(async key => {
-    const handle = await loadDeviceLookupWorkbookHandle(key).catch(() => null);
-    const meta = deviceLookupWorkbookMeta[key];
+  DEVICE_LOOKUP_WORKBOOK_KEYS.forEach(key => {
     updateWorkbookStatus(key, {
-      name: handle ? (meta?.name || "Saved workbook") : "",
-      saved: Boolean(handle)
+      name: DEVICE_LOOKUP_WORKBOOK_DISPLAY_NAMES[key] || "SharePoint workbook",
+      saved: true
     });
-  }));
+  });
 }
 
 function columnLettersToIndex(letters) {
@@ -5666,20 +5674,60 @@ async function refreshDeviceLookupWorkbookFromHandle(targetKey, { handleOverride
 }
 
 async function connectDeviceLookupWorkbook(targetKey) {
-  setWorkbookStatusMessage(targetKey, "Waiting for workbook selection...");
-  const handle = await pickDeviceLookupWorkbook(targetKey);
-  if (!handle) {
-    await refreshDeviceLookupWorkbookFromHandle(targetKey);
-    return;
+  setWorkbookStatusMessage(targetKey, "Refreshing workbook from SharePoint...");
+  await refreshDeviceLookupWorkbookFromSharePoint(targetKey, { force: true });
+}
+
+async function refreshDeviceLookupWorkbookFromSharePoint(targetKey, { force = false } = {}) {
+  const downloadUrl = DEVICE_LOOKUP_WORKBOOK_DOWNLOAD_URLS[targetKey];
+  const displayName = DEVICE_LOOKUP_WORKBOOK_DISPLAY_NAMES[targetKey] || "SharePoint workbook";
+  if (!downloadUrl) {
+    setWorkbookStatusMessage(targetKey, "Workbook download link is missing.");
+    return false;
   }
-  setWorkbookStatusMessage(targetKey, "Loading workbook...");
-  await refreshDeviceLookupWorkbookFromHandle(targetKey, { handleOverride: handle, force: true });
+  setWorkbookStatusMessage(targetKey, "Loading workbook from SharePoint...");
+  try {
+    const response = await fetch(downloadUrl, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include"
+    });
+    if (!response.ok) {
+      throw new Error(`Download failed (${response.status})`);
+    }
+    const blob = await response.blob();
+    const workbookFile = new File([blob], displayName, {
+      type: blob.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      lastModified: Date.now()
+    });
+    const workbook = await loadWorkbookFromFile(workbookFile);
+    deviceLookupWorkbooks[targetKey] = workbook;
+    deviceLookupWorkbookMeta[targetKey] = {
+      name: displayName,
+      savedAt: new Date().toISOString(),
+      lastModified: workbookFile.lastModified,
+      size: workbookFile.size,
+      source: "sharepoint"
+    };
+    await persistDeviceLookupWorkbooks();
+    updateWorkbookStatus(targetKey, { name: displayName, saved: true });
+    return true;
+  } catch (error) {
+    console.error(error);
+    const previousName = deviceLookupWorkbookMeta[targetKey]?.name || displayName;
+    updateWorkbookStatus(targetKey, { name: previousName, saved: true });
+    setWorkbookStatusMessage(targetKey, "Unable to refresh from SharePoint. Open workbook to verify access.");
+    return force ? false : Boolean(deviceLookupWorkbooks[targetKey]);
+  }
 }
 
 async function refreshDeviceLookupWorkbooksFromHandles({ force = false } = {}) {
+  let allLoaded = true;
   for (const targetKey of DEVICE_LOOKUP_WORKBOOK_KEYS) {
-    await refreshDeviceLookupWorkbookFromHandle(targetKey, { force });
+    const loaded = await refreshDeviceLookupWorkbookFromSharePoint(targetKey, { force });
+    if (!loaded) allLoaded = false;
   }
+  return allLoaded;
 }
 
 function normalizeLookupValue(value) {
@@ -6185,9 +6233,9 @@ async function runDeviceLookupSearch(rawInput) {
   const crmWorkbook = deviceLookupWorkbooks.crm;
 
   if (!ltlWorkbook || !mountWorkbook || !crmWorkbook) {
-    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Connect all three workbooks before searching.", "red");
+    updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Unable to load all three SharePoint workbooks before searching.", "red");
     updateLookupResultCard("lookupMountCard", "lookupMountResult", "", "");
-    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Connect the OneDrive files using the selectors above.", "red");
+    updateLookupResultCard("lookupActionCard", "lookupActionResult", "Use the Open workbook buttons to verify SharePoint access, then try again.", "red");
     resetLookupCopyButtons();
     updateLookupBeginLtlUpdateButton(false);
     updateLtlUpdateRowSection();
