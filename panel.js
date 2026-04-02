@@ -13,9 +13,8 @@ const DOCUMENT_UPLOAD_SUCCESS_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocumen
 const DOCUMENT_TITLE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
 const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
-const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
-const QA_FORM_URL = "https://forms.office.com/pages/responsepage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&route=shorturl";
+const QA_FORM_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&b2b=true";
 const KG_REQUESTS_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?e=io5Jrk&siteid=%7B551ABA4E-AFDD-40EB-909B-2091F063C2D7%7D&webid=%7BFE759ED0-F9C4-4656-B80C-7ABB6753DE39%7D&uniqueid=%7B332C40DB-DF9D-4F37-81B2-CD90F8E81F9A%7D&env=WebViewList";
 const OUTLOOK_COMPOSE_BASE_URL = "https://outlook.office.com/mail/deeplink/compose";
 const OUTLOOK_SETUP_URL = "https://outlook.office365.com/mail/";
@@ -57,22 +56,22 @@ const DEFAULT_CHAOS_ROTATION_SECONDS = 30;
 const CUSTOM_THEME_ID_PREFIX = "customTheme-";
 const DEFAULT_CUSTOM_THEME_NAME = "Custom Theme";
 const DEFAULT_CUSTOM_COUNTER_LABEL = "Custom";
-const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D&file=RWL%20and%20LTL%20Update.xlsx&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0&action=default&mobileredirect=true";
+const DEVICE_LOOKUP_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B26B9A3EE-E208-45EA-802D-1537F50DB403%7D&file=RWL%20and%20LTL%20Update.xlsx&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": DEVICE_LOOKUP_EXCEL_WEB_URL,
   "Return Watchlist": DEVICE_LOOKUP_EXCEL_WEB_URL
 };
-const MOUNT_LOG_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7BEA51CF43-05AC-492F-B9E5-5AC8573EF54C%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
-const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://talktometechnologies2com.sharepoint.com/:x:/r/sites/TrialsSharePoint2/_layouts/15/Doc.aspx?sourcedoc=%7BB8051643-3F1F-4B3B-858C-2F63A9D55E9E%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
+const MOUNT_LOG_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
+const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
   ltl: DEVICE_LOOKUP_EXCEL_WEB_URL,
   mount: MOUNT_LOG_EXCEL_WEB_URL,
   crm: LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL
 };
 const DEVICE_LOOKUP_WORKBOOK_DOWNLOAD_URLS = {
-  ltl: "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/download.aspx?UniqueId=%7B657E4C75-FDB4-4009-9557-90AAB8DB29F2%7D",
-  mount: "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/download.aspx?UniqueId=%7BEA51CF43-05AC-492F-B9E5-5AC8573EF54C%7D",
-  crm: "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/download.aspx?UniqueId=%7BB8051643-3F1F-4B3B-858C-2F63A9D55E9E%7D"
+  ltl: "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B26B9A3EE-E208-45EA-802D-1537F50DB403%7D",
+  mount: "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D",
+  crm: "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D"
 };
 const DEVICE_LOOKUP_WORKBOOK_DISPLAY_NAMES = {
   ltl: "RWL and LTL Update.xlsx",
@@ -7726,7 +7725,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   if (isMountOnly && !isLtlUpdateFlow()) {
     await renderDafRecap();
     showDafView();
-    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
     return;
   }
 
@@ -7754,7 +7752,6 @@ document.getElementById("startAnotherBtn")?.addEventListener("click", async () =
   if (isLtlUpdateFlow()) {
     await renderDafRecap();
     showDafView();
-    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
     return;
   }
   if (smartboxRepairRequired) {
@@ -7813,7 +7810,6 @@ document.getElementById("inventorySearchCopyBtn")?.addEventListener("click", asy
 document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async () => {
   await renderDafRecap();
   showDafView();
-  chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {

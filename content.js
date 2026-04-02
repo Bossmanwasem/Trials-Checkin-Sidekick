@@ -601,17 +601,7 @@ if (runtime?.onMessage?.addListener) {
     }
 
     if (msg.type === "RUN_DAF_AUTOFILL") {
-      fillDafFormFromStorage()
-        .then(didRun => {
-          sendResponse({
-            ok: didRun,
-            message: didRun ? "" : "No saved check-in found. Fill out the check-in form first."
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          sendResponse({ ok: false, message: err?.message || "DAF autofill failed." });
-        });
+      sendResponse({ ok: false, message: "DAF autofill is disabled." });
       return true;
     }
 
@@ -684,8 +674,7 @@ async function pasteLtlCompletedRow(rowValues) {
 /* ---------------- DAF form autofill ---------------- */
 
 function isDafFormPage() {
-  return window.location.host.includes("talktometechnologies2com.sharepoint.com")
-    && window.location.href.includes("listforms.aspx");
+  return false;
 }
 
 function getLastCheckinDataForDaf() {
