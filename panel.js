@@ -13,6 +13,7 @@ const DOCUMENT_UPLOAD_SUCCESS_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocumen
 const DOCUMENT_TITLE_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_txtDocumentTitle"]';
 const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnAddDocument"]';
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
+const INVENTORY_NEXT_STEP_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/_layouts/15/listforms.aspx?cid=ZTg4MWI0ZDItYWRiOS00ODc2LThlNmMtODliMWZkMDY2MTY2&nav=MTY3M2YzY2ItNDI0OC00ZGI2LTkwNzItYjA0MDAxMjEyMDNk&preview=true";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
 const QA_FORM_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&b2b=true";
 const KG_REQUESTS_URL = "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?sortField=DateFinished&isAscending=false&viewid=26746a42%2Db61a%2D4461%2D9dae%2D989709a73549";
@@ -7221,7 +7222,8 @@ function isManageInventoryUrl(url) {
 
 function isDafFormUrl(url) {
   return typeof url === "string"
-    && url.includes("smartboxassistivetnam.sharepoint.com/")
+    && (url.includes("smartboxassistivetnam.sharepoint.com/")
+      || url.includes("talktometechnologies2com.sharepoint.com/"))
     && url.includes("listforms.aspx");
 }
 
@@ -7725,6 +7727,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   if (isMountOnly && !isLtlUpdateFlow()) {
     await renderDafRecap();
     showDafView();
+    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
     return;
   }
 
@@ -7752,6 +7755,7 @@ document.getElementById("startAnotherBtn")?.addEventListener("click", async () =
   if (isLtlUpdateFlow()) {
     await renderDafRecap();
     showDafView();
+    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
     return;
   }
   if (smartboxRepairRequired) {
@@ -7810,6 +7814,7 @@ document.getElementById("inventorySearchCopyBtn")?.addEventListener("click", asy
 document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async () => {
   await renderDafRecap();
   showDafView();
+  chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
 });
 
 document.getElementById("finishCheckinBtn")?.addEventListener("click", async () => {
