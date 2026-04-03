@@ -7051,8 +7051,8 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
     lines.push("", crmLink);
   }
 
-  const to = "Trials@talktometechnologies.com";
-  const from = "TrialsOperations@talktometechnologies.com";
+  const to = "Trials@smartboxaac.com";
+  const from = "Trialsoperations@smartboxaac.com";
   return { subject, body: lines.join("\n"), to, from };
 }
 
