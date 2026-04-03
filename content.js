@@ -85,9 +85,10 @@ const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
-  '//*[@id="CommonEditorCalloutId"]/div/div'
+  '//*[@id="CommonEditorCalloutId"]/div/div',
+  '//*[@id="CommonEditorCalloutId"]'
 ];
-const DAF_AAC_FIELD_XPATH = "/html/body/div[1]/div/div/form/div/div/div/div[6]/div/span/div";
+const DAF_AAC_FIELD_XPATH = "/html/body/div[1]/div/div/form/div/div/div/div[6]/div/span";
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -822,14 +823,45 @@ async function openDafAacPicker() {
       timeoutMs: 7000,
       visibleOnly: true
     });
-    const clickable = aacContainer.querySelector("input, button, [role='combobox']") || aacContainer;
+    const clickable = aacContainer.querySelector(
+      "input, textarea, button, [role='combobox'], [role='textbox'], [contenteditable='true']"
+    ) || aacContainer;
     clickable.click();
-    dispatchChangeEvents(clickable);
+    if (typeof clickable.focus === "function") clickable.focus();
     return true;
   } catch (err) {
     console.warn("Failed to open DAF AAC picker", err);
     return false;
   }
+}
+
+function setTextEditorValue(target, value) {
+  if (!target) return false;
+  const safeValue = String(value ?? "");
+
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    setNativeValue(target, safeValue);
+    dispatchChangeEvents(target, safeValue);
+    return true;
+  }
+
+  if (target.isContentEditable) {
+    target.focus();
+    target.textContent = safeValue;
+    target.dispatchEvent(new InputEvent("input", { bubbles: true, data: safeValue, inputType: "insertText" }));
+    target.dispatchEvent(new Event("change", { bubbles: true }));
+    target.dispatchEvent(new KeyboardEvent("keyup", { key: "Enter", bubbles: true }));
+    return true;
+  }
+
+  return false;
+}
+
+function findVisibleConsultantListBox() {
+  const candidates = Array.from(document.querySelectorAll(
+    "[role='listbox'], #CommonEditorCalloutId, [id*='Callout'], [class*='callout']"
+  ));
+  return candidates.find(isVisible) || null;
 }
 
 async function selectDafConsultantByAac(aacName) {
@@ -838,6 +870,15 @@ async function selectDafConsultantByAac(aacName) {
 
   try {
     await openDafAacPicker();
+
+    const aacContainer = await waitForElementByXPath(DAF_AAC_FIELD_XPATH, {
+      timeoutMs: 4000,
+      visibleOnly: true
+    });
+    const editorTarget = aacContainer.querySelector(
+      "input, textarea, [role='combobox'], [role='textbox'], [contenteditable='true']"
+    ) || aacContainer;
+    setTextEditorValue(editorTarget, safeName);
 
     let listBox = null;
     for (const xpath of DAF_CONSULTANT_LISTBOX_XPATHS) {
@@ -850,6 +891,9 @@ async function selectDafConsultantByAac(aacName) {
       } catch {
         listBox = null;
       }
+    }
+    if (!listBox) {
+      listBox = findVisibleConsultantListBox();
     }
     if (!listBox) {
       throw new Error("No consultant list box found for known XPaths.");
