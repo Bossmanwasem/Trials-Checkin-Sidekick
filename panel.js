@@ -15,7 +15,7 @@ const DOCUMENT_ADD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_b
 const IDENTIFIER_STORAGE_KEY = "ttmtLastInventoryIdentifiers";
 const SMARTBOX_REPAIR_TRACKER_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-zRigd1y0vpNv1t3mP7sBCRURVZLWVgwUVlKSVhHSFNXTEY0SUpNSDVTTS4u";
 const QA_FORM_URL = "https://forms.office.com/Pages/ResponsePage.aspx?id=Dnb3TzlsSUSiaxNgEojZ-7I1BCOObO5Ah2w6na92nwhUQjMxRkU0NUVQRkg1R0kxV05QUFZLNENTNyQlQCN0PWcu&b2b=true";
-const KG_REQUESTS_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?e=io5Jrk&siteid=%7B551ABA4E-AFDD-40EB-909B-2091F063C2D7%7D&webid=%7BFE759ED0-F9C4-4656-B80C-7ABB6753DE39%7D&uniqueid=%7B332C40DB-DF9D-4F37-81B2-CD90F8E81F9A%7D&env=WebViewList";
+const KG_REQUESTS_URL = "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/Lists/Keyguard%20Requests%20%20CF%20Test/AllItems.aspx?sortField=DateFinished&isAscending=false&viewid=26746a42%2Db61a%2D4461%2D9dae%2D989709a73549";
 const OUTLOOK_COMPOSE_BASE_URL = "https://outlook.office.com/mail/deeplink/compose";
 const OUTLOOK_SETUP_URL = "https://outlook.office365.com/mail/";
 const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in";
