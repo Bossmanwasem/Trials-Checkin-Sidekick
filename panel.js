@@ -5289,7 +5289,7 @@ async function getActiveDafTabId() {
   if (tab?.id && isDafFormUrl(tab.url)) return tab.id;
 
   const tabs = await chrome.tabs.query({
-    url: "*://talktometechnologies2com.sharepoint.com/*listforms.aspx*"
+    url: "*://smartboxassistivetnam.sharepoint.com/*listforms.aspx*"
   });
   return tabs?.[0]?.id || null;
 }
@@ -7221,7 +7221,7 @@ function isManageInventoryUrl(url) {
 
 function isDafFormUrl(url) {
   return typeof url === "string"
-    && url.includes("talktometechnologies2com.sharepoint.com/")
+    && url.includes("smartboxassistivetnam.sharepoint.com/")
     && url.includes("listforms.aspx");
 }
 

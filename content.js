@@ -87,6 +87,7 @@ const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div'
 ];
+const DAF_AAC_FIELD_XPATH = "/html/body/div[1]/div/div/form/div/div/div/div[6]/div/span/div";
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -601,7 +602,12 @@ if (runtime?.onMessage?.addListener) {
     }
 
     if (msg.type === "RUN_DAF_AUTOFILL") {
-      sendResponse({ ok: false, message: "DAF autofill is disabled." });
+      fillDafFormFromStorage()
+        .then(ok => sendResponse({ ok }))
+        .catch(err => {
+          console.error(err);
+          sendResponse({ ok: false, message: err?.message || "DAF autofill failed." });
+        });
       return true;
     }
 
@@ -674,7 +680,9 @@ async function pasteLtlCompletedRow(rowValues) {
 /* ---------------- DAF form autofill ---------------- */
 
 function isDafFormPage() {
-  return false;
+  return typeof window?.location?.href === "string"
+    && window.location.href.includes("smartboxassistivetnam.sharepoint.com/")
+    && window.location.href.includes("listforms.aspx");
 }
 
 function getLastCheckinDataForDaf() {
@@ -808,11 +816,29 @@ async function fillDafFieldWithFallback({ value, xpath, xpaths, labels }) {
   }
 }
 
+async function openDafAacPicker() {
+  try {
+    const aacContainer = await waitForElementByXPath(DAF_AAC_FIELD_XPATH, {
+      timeoutMs: 7000,
+      visibleOnly: true
+    });
+    const clickable = aacContainer.querySelector("input, button, [role='combobox']") || aacContainer;
+    clickable.click();
+    dispatchChangeEvents(clickable);
+    return true;
+  } catch (err) {
+    console.warn("Failed to open DAF AAC picker", err);
+    return false;
+  }
+}
+
 async function selectDafConsultantByAac(aacName) {
   const safeName = (aacName || "").trim();
   if (!safeName) return false;
 
   try {
+    await openDafAacPicker();
+
     let listBox = null;
     for (const xpath of DAF_CONSULTANT_LISTBOX_XPATHS) {
       try {
@@ -886,44 +912,43 @@ async function fillDafFormFromStorage() {
     {
       value: data.deviceNumber,
       xpaths: [
-        '//*[@id="TextField1"]',
-        "/html/body/div/div/div/form/div/div/div/div[1]/div/span/div/div/div/input"
+        '/html/body/div[1]/div/div/form/div/div/div/div[1]/div/span/div/div/div/input'
       ],
       labels: ["device serial", "device number", "device serial number", "device serial #"]
     },
     {
       value: data.cameraNumber,
-      xpath: '//*[@id="TextField7"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[2]/div/span/div/div/div/input',
       labels: ["camera", "camera number", "camera serial"]
     },
     {
       value: data.luminNumber,
-      xpath: '//*[@id="TextField13"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[3]/div/span/div/div/div/input',
       labels: ["lumin-i", "lumin", "lumin i number"]
     },
     {
       value: data.crmId,
-      xpath: '//*[@id="TextField19"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[4]/div/span/div/div/div/input',
       labels: ["crm id", "crm number"]
     },
     {
       value: fullName,
-      xpath: '//*[@id="TextField25"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[5]/div/span/div/div/div/input',
       labels: ["client name", "full name", "name of client"]
     },
     {
       value: data.clampMount,
-      xpath: '//*[@id="TextField32"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[7]/div/span/div/div/div/input',
       labels: ["clamp mount"]
     },
     {
       value: data.tableMount,
-      xpath: '//*[@id="TextField38"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[8]/div/span/div/div/div/input',
       labels: ["table mount"]
     },
     {
       value: data.rollingMount,
-      xpath: '//*[@id="TextField44"]',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[9]/div/span/div/div/div/input',
       labels: ["rolling mount"]
     }
   ];
@@ -931,12 +956,8 @@ async function fillDafFormFromStorage() {
   await Promise.all(fields.map(f => fillDafFieldWithFallback(f)));
   await selectDafConsultantByAac(data.aac);
 
-  const dafCheckboxXPath = data.isLtlUpdate
-    ? '//*[@id="ChoiceGroupLabel51-LTL Update"]'
-    : '//*[@id="field-element-9"]/div/span/div/div/div/div[2]/div/label';
-
   await ensureDafCheckboxChecked(
-    dafCheckboxXPath,
+    '/html/body/div[1]/div/div/form/div/div/div/div[10]/div/span/div/div/div/div[2]/div/label',
     ["device returned", "daf", "device received back", "ttmt device confirmation"]
   );
 
