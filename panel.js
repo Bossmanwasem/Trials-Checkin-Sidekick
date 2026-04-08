@@ -85,6 +85,7 @@ const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
+let nativeBridgeSetupPromise = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
@@ -4446,6 +4447,9 @@ initZipFolderSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
+initializeNativeBridgeOnce().catch(error => {
+  console.warn("Native bridge initialization failed:", error);
+});
 
 function setValue(id, val) {
   const el = document.getElementById(id);
@@ -7299,6 +7303,8 @@ const GRID_FILE_EXTENSION = ".grid3user";
 const WORKERS_BASE_PATH = "workers";
 const CHECKIN_WORKER_PATH = `${WORKERS_BASE_PATH}/checkin-workflow-worker.js`;
 const ZIP_WORKER_PATH = `${WORKERS_BASE_PATH}/zip-worker.js`;
+const WINDOWS_ABSOLUTE_PATH_REGEX = /^[a-zA-Z]:\\/;
+const UNC_ABSOLUTE_PATH_REGEX = /^\\\\[^\\]+\\[^\\]+/;
 
 let isBigFileBypassEnabled = false;
 let checkinWorkflowWorkerPromise = null;
@@ -7345,6 +7351,60 @@ function createWorkerFromPath(path) {
     return new Worker(chrome.runtime.getURL(path));
   }
   return new Worker(path);
+}
+
+function isAbsolutePath(path) {
+  if (typeof path !== "string") return false;
+  return WINDOWS_ABSOLUTE_PATH_REGEX.test(path) || UNC_ABSOLUTE_PATH_REGEX.test(path);
+}
+
+function getAbsolutePathFromFile(file) {
+  const candidates = [
+    file?.path,
+    file?.fullPath,
+    file?.absolutePath,
+    file?._path
+  ];
+  const match = candidates.find(candidate => isAbsolutePath(candidate));
+  return typeof match === "string" ? match : "";
+}
+
+function getAbsolutePathsFromFiles(files) {
+  return (files || [])
+    .map(getAbsolutePathFromFile)
+    .filter(Boolean);
+}
+
+async function initializeNativeBridgeOnce() {
+  if (nativeBridgeSetupPromise) return nativeBridgeSetupPromise;
+  nativeBridgeSetupPromise = chrome.runtime.sendMessage({ type: "NATIVE_BRIDGE_INITIALIZE" })
+    .then(response => {
+      if (!response?.ok) {
+        throw new Error(response?.message || "Native bridge initialize failed.");
+      }
+      return true;
+    })
+    .catch(error => {
+      nativeBridgeSetupPromise = null;
+      throw error instanceof Error ? error : new Error(String(error));
+    });
+  return nativeBridgeSetupPromise;
+}
+
+async function requestNativeZipComplete(files, zipName) {
+  const filePaths = getAbsolutePathsFromFiles(files);
+  if (!filePaths.length) {
+    throw new Error("Selected files are missing absolute paths for native zip_request.");
+  }
+  const response = await chrome.runtime.sendMessage({
+    type: "NATIVE_ZIP_REQUEST",
+    zipName,
+    filePaths
+  });
+  if (!response?.ok) {
+    throw new Error(response?.message || "Native zip_request failed.");
+  }
+  return response.response || {};
 }
 
 function getCheckinWorkflowWorker() {
@@ -7654,6 +7714,16 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       const zipArrayBuffer = await zipFilesInWorker(otherFiles);
       const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
       zipName = await buildZipFilename(otherFiles);
+      updateTrialFilesStatus("Sending native zip_request for vocab files...");
+      try {
+        await requestNativeZipComplete(otherFiles, zipName);
+      } catch (error) {
+        const message = `Native zip_request failed for "${zipName}": ${error?.message || "Unknown error."}`;
+        updateTrialFilesStatus(message, true);
+        alert(message);
+        await logTaskOutcome("Checkin", message);
+        return;
+      }
       updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
       await promptUserDownload(zipBlob, zipName);
       zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
@@ -7664,6 +7734,16 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
       const gridZipArrayBuffer = await zipFilesInWorker(gridFiles);
       const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
       gridZipName = await buildZipFilename(gridFiles);
+      updateTrialFilesStatus("Sending native zip_request for Grid files...");
+      try {
+        await requestNativeZipComplete(gridFiles, gridZipName);
+      } catch (error) {
+        const message = `Native zip_request failed for "${gridZipName}": ${error?.message || "Unknown error."}`;
+        updateTrialFilesStatus(message, true);
+        alert(message);
+        await logTaskOutcome("Checkin", message);
+        return;
+      }
       updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
       await promptUserDownload(gridZipBlob, gridZipName);
       zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
