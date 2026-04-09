@@ -26,8 +26,6 @@ const CUSTOM_THEME_STORAGE_KEY = "ttmtSidekickCustomTheme";
 const CUSTOM_THEMES_STORAGE_KEY = "ttmtSidekickCustomThemes";
 const CUSTOM_THEME_ACTIVE_ID_STORAGE_KEY = "ttmtSidekickCustomThemeActiveId";
 const CHAOS_ROTATION_STORAGE_KEY = "ttmtSidekickChaosRotationSeconds";
-const ZIP_FOLDER_STORAGE_KEY = "ttmtZipDownloadFolder";
-const ZIP_FOLDER_HANDLE_KEY = "zipFolder";
 const CHECKIN_CLEANUP_FOLDER_NAME_STORAGE_KEY = "ttmtCheckinCleanupFolderName";
 const CHECKIN_CLEANUP_HANDLE_DB = "ttmtSidekickHandles";
 const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
@@ -4024,82 +4022,14 @@ function initThemeControls() {
   });
 }
 
-const zipFolderPickBtn = document.getElementById("zipFolderPickBtn");
-const zipFolderStatus = document.getElementById("zipFolderStatus");
 const cleanupFolderPickBtn = document.getElementById("cleanupFolderPickBtn");
 const cleanupFolderStatus = document.getElementById("cleanupFolderStatus");
-const trialFilesInput = document.getElementById("trialFilesInput");
 const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn");
 const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
 const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
 const trialFilesStatus = document.getElementById("trialFilesStatus");
 const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
 const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
-
-function normalizeZipFolder(folder) {
-  return (folder || "")
-    .trim()
-    .replace(/^[/\\]+/, "")
-    .replace(/[/\\]+$/, "");
-}
-
-function updateZipFolderStatus(folder) {
-  if (!zipFolderStatus) return;
-  if (folder) {
-    zipFolderStatus.textContent = `Saving zips to "${folder}".`;
-    return;
-  }
-  zipFolderStatus.textContent = "No zip save folder selected yet.";
-}
-
-async function saveZipFolderHandle(handle) {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
-    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, ZIP_FOLDER_HANDLE_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function loadZipFolderHandle() {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
-    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(ZIP_FOLDER_HANDLE_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function pickZipFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("Folder picking isn't supported in this browser.");
-    return;
-  }
-  let handle;
-  try {
-    handle = await window.showDirectoryPicker({ mode: "readwrite" });
-  } catch {
-    return;
-  }
-  if (!handle) return;
-  const name = normalizeZipFolder(handle.name || "Selected folder");
-  const permitted = await verifyFolderPermission(handle, "readwrite");
-  if (!permitted) return;
-  await saveZipFolderHandle(handle);
-  await setStoredValue(ZIP_FOLDER_STORAGE_KEY, name);
-  updateZipFolderStatus(name);
-}
-
-async function initZipFolderSetting() {
-  if (!zipFolderPickBtn) return;
-  const storedFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-  updateZipFolderStatus(storedFolder);
-  zipFolderPickBtn.addEventListener("click", async () => {
-    await pickZipFolder();
-  });
-}
 
 function openCleanupHandleDb() {
   return new Promise((resolve, reject) => {
@@ -4334,10 +4264,10 @@ function updateTrialFilesFolderStatus(name, messageOverride = null) {
     return;
   }
   if (name) {
-    trialFilesFolderStatus.textContent = `Using "${name}" for trial file zips.`;
+    trialFilesFolderStatus.textContent = `Using "${name}" for saved zips.`;
     return;
   }
-  trialFilesFolderStatus.textContent = "No trial files folder selected yet.";
+  trialFilesFolderStatus.textContent = "No saved zips folder selected yet.";
 }
 
 async function setTrialFilesFolderName(name) {
@@ -4392,10 +4322,9 @@ async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOver
     return false;
   }
   const files = await getTrialFilesFromFolder(handle);
-  if (trialFilesInput) trialFilesInput.value = "";
-  setSelectedTrialFiles(files, storedName
-    ? `Using "${storedName}" (${files.length} file(s)) for the zip.`
-    : `${files.length} file(s) ready to zip.`);
+  updateTrialFilesStatus(storedName
+    ? `Using "${storedName}" (${files.length} file(s)) as the saved zips folder.`
+    : `${files.length} file(s) found in saved zips folder.`);
   return true;
 }
 
@@ -4406,7 +4335,7 @@ async function pickTrialFilesFolder() {
   }
   let handle;
   try {
-    handle = await window.showDirectoryPicker({ mode: "read" });
+    handle = await window.showDirectoryPicker({ mode: "readwrite" });
   } catch {
     return null;
   }
@@ -4442,7 +4371,6 @@ void initThemeSystem();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
-initZipFolderSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -7108,7 +7036,6 @@ async function openOutlookComposeEmail() {
 
 async function finalizeCheckinCleanupAndCounters() {
   if (hasFinalizedCheckin) return;
-  await runCleanupFolderFlow({ promptIfMissing: false });
   await incrementDailyCounter("checkins");
   hasFinalizedCheckin = true;
 }
@@ -7282,62 +7209,16 @@ async function syncViewForTab(tab) {
   }
 }
 
-/* ---------------- Trial file zip + upload ---------------- */
+/* ---------------- Saved zip rename helpers ---------------- */
 
-const selectedTrialFiles = [];
-const uploadPrompt = document.getElementById("uploadPrompt");
-const uploadPromptText = document.getElementById("uploadPromptText");
-const zipFilenameRow = document.getElementById("zipFilenameRow");
-const zipFilenameField = document.getElementById("zipFilenameField");
-const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
-const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
-const gridZipFilenameField = document.getElementById("gridZipFilenameField");
-const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
-const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
-const bigFileBypassReminder = document.getElementById("bigFileBypassReminder");
-const GRID_FILE_EXTENSION = ".grid3user";
 const WORKERS_BASE_PATH = "workers";
 const CHECKIN_WORKER_PATH = `${WORKERS_BASE_PATH}/checkin-workflow-worker.js`;
-const ZIP_WORKER_PATH = `${WORKERS_BASE_PATH}/zip-worker.js`;
-
-let isBigFileBypassEnabled = false;
 let checkinWorkflowWorkerPromise = null;
-
-function setBigFileBypass(enabled) {
-  isBigFileBypassEnabled = Boolean(enabled);
-  if (!bigFileBypassBtn) return;
-  bigFileBypassBtn.classList.toggle("active", isBigFileBypassEnabled);
-  bigFileBypassBtn.textContent = isBigFileBypassEnabled
-    ? "Big File Bypass On"
-    : "Big File Bypass";
-}
-
-function setBigFileBypassReminder(visible) {
-  if (!bigFileBypassReminder) return;
-  bigFileBypassReminder.style.display = visible ? "block" : "none";
-}
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
   trialFilesStatus.textContent = message;
   trialFilesStatus.classList.toggle("error-text", isError);
-}
-
-function setSelectedTrialFiles(files, messageOverride = null) {
-  selectedTrialFiles.length = 0;
-  if (files?.length) {
-    selectedTrialFiles.push(...files);
-  }
-  if (!selectedTrialFiles.length) {
-    updateTrialFilesStatus(messageOverride || "No files selected.");
-    return;
-  }
-  updateTrialFilesStatus(messageOverride || `${selectedTrialFiles.length} file(s) ready to zip.`);
-}
-
-function clearSelectedTrialFiles(messageOverride = null) {
-  setSelectedTrialFiles([], messageOverride);
-  if (trialFilesInput) trialFilesInput.value = "";
 }
 
 function createWorkerFromPath(path) {
@@ -7386,18 +7267,6 @@ function runCheckinWorkflowTask(type, payload = {}) {
   });
 }
 
-async function buildZipFilename(files) {
-  const first = sanitizeName(getFormValue("#firstName"));
-  const last = sanitizeName(getFormValue("#lastName"));
-  const result = await runCheckinWorkflowTask("BUILD_ZIP_FILENAME", {
-    firstName: first,
-    lastName: last,
-    dateStr: formatDateForFilename(),
-    fileNames: (files || []).map(file => file?.name || "")
-  });
-  return result?.zipName || "Client Vocab from Trial Unknown Date.zip";
-}
-
 async function runPrepFlowAction(action, payload = {}) {
   return runCheckinWorkflowTask("RUN_PREP_FLOW", { action, ...payload });
 }
@@ -7406,143 +7275,93 @@ async function runQaFlowAction(action, payload = {}) {
   return runCheckinWorkflowTask("RUN_QA_FLOW", { action, ...payload });
 }
 
-async function promptUserDownload(blob, filename) {
-  const zipHandle = await loadZipFolderHandle().catch(() => null);
-  if (zipHandle) {
-    const permitted = await verifyFolderPermission(zipHandle, "readwrite");
-    if (permitted) {
-      const fileHandle = await zipHandle.getFileHandle(filename, { create: true });
-      const writable = await fileHandle.createWritable({ keepExistingData: false });
-      await writable.write(blob);
-      await writable.close();
-      return;
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  try {
-    if (chrome?.downloads?.download) {
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
-      await chrome.downloads.download({
-        url,
-        filename: targetFilename,
-        saveAs: !zipFolder
-      });
-    } else {
-      const link = document.createElement("a");
-      link.href = url;
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
-      link.click();
-    }
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+function buildZipFilenameFromVocabTypes(vocabTypes = []) {
+  const first = sanitizeName(getFormValue("#firstName"));
+  const last = sanitizeName(getFormValue("#lastName"));
+  const fullName = [first, last].filter(Boolean).join(" ") || "Client";
+  const types = Array.isArray(vocabTypes) ? vocabTypes.filter(Boolean) : [];
+  const typeLabel = types.length ? types.join(", ") : "Vocab";
+  return `${fullName} ${typeLabel} Vocab from Trial ${formatDateForFilename()}.zip`;
 }
 
-async function zipFilesInWorker(files) {
-  if (!files?.length) {
-    return new ArrayBuffer(0);
-  }
-
-  if (typeof Worker === "undefined") {
-    throw new Error("Web Worker API unavailable in this browser context.");
-  }
-
-  const worker = createWorkerFromPath(ZIP_WORKER_PATH);
-
-  return new Promise(async (resolve, reject) => {
-    let settled = false;
-
-    const fail = error => {
-      if (settled) return;
-      settled = true;
-      worker.terminate();
-      reject(error instanceof Error ? error : new Error(String(error)));
-    };
-
-    worker.onmessage = event => {
-      if (settled) return;
-      const data = event?.data || {};
-      if (data.type === "ZIP_DONE" && data.zipArrayBuffer) {
-        settled = true;
-        worker.terminate();
-        resolve(data.zipArrayBuffer);
-        return;
-      }
-      if (data.type === "ZIP_ERROR") {
-        fail(new Error(data.error || "Zip worker failed."));
-      }
-    };
-
-    worker.onerror = event => {
-      fail(new Error(event?.message || "Zip worker crashed."));
-    };
-
-    try {
-      const workerFiles = await Promise.all(files.map(async file => ({
-        name: file.name,
-        data: await file.arrayBuffer()
-      })));
-      const transferables = workerFiles.map(file => file.data);
-      worker.postMessage({ type: "ZIP_FILES", files: workerFiles }, transferables);
-    } catch (error) {
-      fail(error);
-    }
-  });
+function findEntryNameIgnoreCase(entries, expectedName) {
+  const target = (expectedName || "").toLowerCase();
+  return entries.find(name => name.toLowerCase() === target) || null;
 }
 
-bigFileBypassBtn?.addEventListener("click", () => {
-  setBigFileBypass(!isBigFileBypassEnabled);
-});
-
-trialFilesInput?.addEventListener("change", () => {
-  const files = trialFilesInput.files ? Array.from(trialFilesInput.files) : [];
-  setSelectedTrialFiles(files);
-  if (!files.length) {
-    hideUploadPrompt();
+async function renameFileInFolder(folderHandle, entries, fromName, toName) {
+  const sourceName = findEntryNameIgnoreCase(entries, fromName);
+  if (!sourceName || !toName || sourceName === toName) {
+    return false;
   }
-});
 
-function hideUploadPrompt() {
-  if (uploadPrompt) uploadPrompt.style.display = "none";
-  if (zipFilenameField) zipFilenameField.value = "";
-  if (gridZipFilenameField) gridZipFilenameField.value = "";
-  if (zipFilenameRow) zipFilenameRow.style.display = "none";
-  if (gridZipFilenameRow) gridZipFilenameRow.style.display = "none";
+  const sourceHandle = await folderHandle.getFileHandle(sourceName);
+  const sourceFile = await sourceHandle.getFile();
+
+  const existingTarget = findEntryNameIgnoreCase(entries, toName);
+  if (existingTarget) {
+    await folderHandle.removeEntry(existingTarget);
+  }
+
+  const targetHandle = await folderHandle.getFileHandle(toName, { create: true });
+  const writable = await targetHandle.createWritable({ keepExistingData: false });
+  await writable.write(sourceFile);
+  await writable.close();
+  await folderHandle.removeEntry(sourceName);
+  return true;
 }
 
-function showUploadPrompt(zipName, gridZipName = "", { message } = {}) {
-  if (!uploadPrompt || !zipFilenameField || !uploadPromptText) return;
-  const displayName = zipName ? zipName.replace(/\.zip$/i, "") : "";
-  const displayGridName = gridZipName ? gridZipName.replace(/\.zip$/i, "") : "";
-  zipFilenameField.value = displayName;
-  if (gridZipFilenameField) gridZipFilenameField.value = displayGridName;
-  if (zipFilenameRow) zipFilenameRow.style.display = zipName ? "flex" : "none";
-  if (gridZipFilenameRow) gridZipFilenameRow.style.display = gridZipName ? "flex" : "none";
-  const promptText = message || (zipName || gridZipName
-    ? "Upload the downloaded zip file(s) to the CRM Documents tab using the filenames below."
-    : "Upload the downloaded zip file(s) to the CRM Documents tab.");
-  uploadPromptText.textContent = promptText;
-  uploadPrompt.style.display = "block";
+async function renameSavedZipFilesForCheckin() {
+  const folderHandle = await loadTrialFilesFolderHandle().catch(() => null);
+  if (!folderHandle) {
+    updateTrialFilesStatus("No saved zips folder selected. Skipping zip rename.", true);
+    return { renamed: [], skipped: ["folder-missing"] };
+  }
+
+  const permitted = await verifyFolderPermission(folderHandle, "readwrite");
+  if (!permitted) {
+    updateTrialFilesStatus("Saved zips folder access blocked. Re-authorize in settings.", true);
+    return { renamed: [], skipped: ["permission-blocked"] };
+  }
+
+  const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
+  if (vocabNotReturned) {
+    updateTrialFilesStatus("Vocab not returned selected. No zip rename needed.");
+    return { renamed: [], skipped: ["vocab-not-returned"] };
+  }
+
+  const selectedVocabs = getSelectedVocabTypes();
+  const nonGridVocabs = selectedVocabs.filter(type => type !== "Grid");
+  const shouldRenameGridZip = selectedVocabs.includes("Grid");
+  const entries = [];
+  for await (const [name] of folderHandle.entries()) {
+    entries.push(name);
+  }
+
+  const renamed = [];
+  const skipped = [];
+
+  if (nonGridVocabs.length) {
+    const targetName = buildZipFilenameFromVocabTypes(nonGridVocabs);
+    const didRename = await renameFileInFolder(folderHandle, entries, "Current Checkin.zip", targetName);
+    if (didRename) renamed.push(targetName);
+    else skipped.push("Current Checkin.zip");
+  }
+
+  if (shouldRenameGridZip) {
+    const gridTargetName = buildZipFilenameFromVocabTypes(["Grid"]);
+    const didRenameGrid = await renameFileInFolder(folderHandle, entries, "Current Grid user.zip", gridTargetName);
+    if (didRenameGrid) renamed.push(gridTargetName);
+    else skipped.push("Current Grid user.zip");
+  }
+
+  if (renamed.length) {
+    updateTrialFilesStatus(`Renamed ${renamed.length} saved zip file(s).`);
+  } else {
+    updateTrialFilesStatus("No matching saved zip files found to rename.", true);
+  }
+  return { renamed, skipped };
 }
-
-copyZipFilenameBtn?.addEventListener("click", async () => {
-  const name = zipFilenameField?.value;
-  if (!name) return;
-  await navigator.clipboard.writeText(name);
-  copyZipFilenameBtn.textContent = "Copied!";
-  setTimeout(() => { copyZipFilenameBtn.textContent = "Copy filename"; }, 1200);
-});
-
-copyGridZipFilenameBtn?.addEventListener("click", async () => {
-  const name = gridZipFilenameField?.value;
-  if (!name) return;
-  await navigator.clipboard.writeText(name);
-  copyGridZipFilenameBtn.textContent = "Copied!";
-  setTimeout(() => { copyGridZipFilenameBtn.textContent = "Copy Grid filename"; }, 1200);
-});
 
 /* ---------------- Reset everything after success ---------------- */
 
@@ -7584,11 +7403,9 @@ function resetAllFieldsAndUI() {
   const msg = document.getElementById("thankYouMessage");
   if (msg) msg.style.display = "none";
 
-  hideUploadPrompt();
-  setBigFileBypass(false);
   setText("notePreviewText", "");
   setText("completeIntro", "");
-  setBigFileBypassReminder(false);
+  updateTrialFilesStatus("Waiting to rename saved zip files.");
   setText("inventoryStatus", "");
   const inventoryCopyBtn = document.getElementById("inventorySearchCopyBtn");
   if (inventoryCopyBtn) {
@@ -7601,7 +7418,6 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
   resetAllFieldsAndUI();
   hasFinalizedCheckin = false;
   smartboxRepairRequired = false;
-  clearSelectedTrialFiles();
   await clearStoredCheckinData();
   await updateInventorySearchDisplay();
   await renderDafRecap();
@@ -7630,53 +7446,9 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const deviceNumber = getFormValue("#deviceNumberInput");
   const isMountOnly = deviceNumber.toLowerCase() === "x";
 
-  // 1) Zip vocab files (if any) and prompt download
-  let zipName = "";
-  let gridZipName = "";
-  const zipUploads = [];
-  const shouldBypassZip = isBigFileBypassEnabled;
-  if (!trialFilesInput?.files?.length) {
-    await refreshTrialFilesFromFolder();
-  }
-  if (selectedTrialFiles.length && shouldBypassZip) {
-    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    zipName = otherFiles.length ? await buildZipFilename(otherFiles) : "";
-    gridZipName = gridFiles.length ? await buildZipFilename(gridFiles) : "";
-    clearSelectedTrialFiles("Big File Bypass enabled. Skipping auto-zip and continuing...");
-  } else if (selectedTrialFiles.length) {
-    updateTrialFilesStatus("Zipping selected files...");
-    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const downloadMessages = [];
-
-    if (otherFiles.length) {
-      const zipArrayBuffer = await zipFilesInWorker(otherFiles);
-      const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
-      zipName = await buildZipFilename(otherFiles);
-      updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
-      await promptUserDownload(zipBlob, zipName);
-      zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
-      downloadMessages.push(`"${zipName}"`);
-    }
-
-    if (gridFiles.length) {
-      const gridZipArrayBuffer = await zipFilesInWorker(gridFiles);
-      const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
-      gridZipName = await buildZipFilename(gridFiles);
-      updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
-      await promptUserDownload(gridZipBlob, gridZipName);
-      zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
-      downloadMessages.push(`"${gridZipName}"`);
-    }
-
-    const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Preparing CRM upload.`
-      : "No files selected.";
-    clearSelectedTrialFiles(downloadsNote);
-  } else {
-    hideUploadPrompt();
-  }
+  // 1) Rename the saved zip files generated outside Sidekick
+  await refreshTrialFilesFromFolder();
+  const renamedZipResult = await renameSavedZipFilesForCheckin();
 
   // 2) Build note + clipboard backup
   const note = buildCannedNote();
@@ -7731,20 +7503,12 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     return;
   }
 
-  let uploadMessage = "CRM note submitted. Review the details below.";
-  if (zipUploads.length || zipName || gridZipName || shouldBypassZip) {
-    await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-    uploadMessage = shouldBypassZip
-      ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files. Move the zipped files to your final folder."
-      : "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
-    showUploadPrompt(zipName, gridZipName, {
-      message: shouldBypassZip
-        ? "Big File Bypass enabled: zip files yourself before uploading to CRM Documents. Keep Grid files zipped separately from non-Grid files."
-        : undefined
-    });
-  }
+  await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
+  const renamedSummary = renamedZipResult.renamed.length
+    ? ` Renamed: ${renamedZipResult.renamed.join(" | ")}.`
+    : " No matching Current Checkin.zip / Current Grid user.zip files were renamed.";
+  const uploadMessage = `CRM note submitted. Upload your renamed zip file(s) to the Documents tab.${renamedSummary}`;
   setText("completeIntro", uploadMessage);
-  setBigFileBypassReminder(shouldBypassZip);
   showCompleteView();
 });
 
