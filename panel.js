@@ -7302,6 +7302,7 @@ const ZIP_WORKER_PATH = `${WORKERS_BASE_PATH}/zip-worker.js`;
 
 let isBigFileBypassEnabled = false;
 let checkinWorkflowWorkerPromise = null;
+let pendingZipRenameTargets = null;
 
 function setBigFileBypass(enabled) {
   isBigFileBypassEnabled = Boolean(enabled);
@@ -7389,13 +7390,86 @@ function runCheckinWorkflowTask(type, payload = {}) {
 async function buildZipFilename(files) {
   const first = sanitizeName(getFormValue("#firstName"));
   const last = sanitizeName(getFormValue("#lastName"));
+  const selectedTypes = getSelectedVocabTypes();
   const result = await runCheckinWorkflowTask("BUILD_ZIP_FILENAME", {
     firstName: first,
     lastName: last,
     dateStr: formatDateForFilename(),
-    fileNames: (files || []).map(file => file?.name || "")
+    selectedTypes,
+    forcedType: files?.forcedType || ""
   });
   return result?.zipName || "Client Vocab from Trial Unknown Date.zip";
+}
+
+function buildPendingZipRenameTargets() {
+  const selectedTypes = getSelectedVocabTypes();
+  const hasGrid = selectedTypes.includes("Grid");
+  const nonGridSelected = selectedTypes.filter(type => type !== "Grid");
+  return {
+    checkinZipName: hasGrid && !nonGridSelected.length
+      ? ""
+      : [sanitizeName(getFormValue("#firstName")), sanitizeName(getFormValue("#lastName"))].filter(Boolean).join(" ")
+        ? `${[sanitizeName(getFormValue("#firstName")), sanitizeName(getFormValue("#lastName"))].filter(Boolean).join(" ")} ${(nonGridSelected.length ? nonGridSelected.join(", ") : "Vocab")} Vocab from Trial ${formatDateForFilename()}.zip`
+        : `Client ${(nonGridSelected.length ? nonGridSelected.join(", ") : "Vocab")} Vocab from Trial ${formatDateForFilename()}.zip`,
+    gridZipName: hasGrid
+      ? `${[sanitizeName(getFormValue("#firstName")), sanitizeName(getFormValue("#lastName"))].filter(Boolean).join(" ") || "Client"} Grid Vocab from Trial ${formatDateForFilename()}.zip`
+      : ""
+  };
+}
+
+async function renameSavedZipIfPresent(folderHandle, originalName, renamedName) {
+  if (!renamedName) {
+    return { renamed: false, missing: true, originalName, renamedName };
+  }
+  try {
+    const sourceHandle = await folderHandle.getFileHandle(originalName);
+    const sourceFile = await sourceHandle.getFile();
+    const destinationHandle = await folderHandle.getFileHandle(renamedName, { create: true });
+    const writable = await destinationHandle.createWritable({ keepExistingData: false });
+    await writable.write(sourceFile);
+    await writable.close();
+    await folderHandle.removeEntry(originalName);
+    return { renamed: true, missing: false, originalName, renamedName };
+  } catch (error) {
+    if (error?.name === "NotFoundError") {
+      return { renamed: false, missing: true, originalName, renamedName };
+    }
+    throw error;
+  }
+}
+
+async function renameSavedZipFilesFromFolder() {
+  if (!pendingZipRenameTargets?.checkinZipName && !pendingZipRenameTargets?.gridZipName) return;
+  const zipHandle = await loadZipFolderHandle().catch(() => null);
+  if (!zipHandle) {
+    updateTrialFilesStatus("No zip folder selected. Unable to rename Current Checkin.zip files.", true);
+    return;
+  }
+  const permitted = await verifyFolderPermission(zipHandle, "readwrite");
+  if (!permitted) {
+    updateTrialFilesStatus("Zip folder access is blocked. Re-select the zip folder and try again.", true);
+    return;
+  }
+  const renameResults = [];
+  renameResults.push(await renameSavedZipIfPresent(
+    zipHandle,
+    "Current Checkin.zip",
+    pendingZipRenameTargets.checkinZipName
+  ));
+  renameResults.push(await renameSavedZipIfPresent(
+    zipHandle,
+    "Current Grid User.zip",
+    pendingZipRenameTargets.gridZipName
+  ));
+  const renamed = renameResults.filter(result => result.renamed);
+  const missing = renameResults.filter(result => result.missing);
+  if (renamed.length) {
+    const renamedText = renamed.map(result => `"${result.originalName}" → "${result.renamedName}"`).join(" | ");
+    updateTrialFilesStatus(`Renamed saved zip(s): ${renamedText}`);
+  } else if (missing.length) {
+    updateTrialFilesStatus("No saved zip files named Current Checkin.zip or Current Grid User.zip were found.", true);
+  }
+  pendingZipRenameTargets = null;
 }
 
 async function runPrepFlowAction(action, payload = {}) {
@@ -7633,47 +7707,20 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   // 1) Zip vocab files (if any) and prompt download
   let zipName = "";
   let gridZipName = "";
-  const zipUploads = [];
   const shouldBypassZip = isBigFileBypassEnabled;
   if (!trialFilesInput?.files?.length) {
     await refreshTrialFilesFromFolder();
   }
-  if (selectedTrialFiles.length && shouldBypassZip) {
-    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    zipName = otherFiles.length ? await buildZipFilename(otherFiles) : "";
-    gridZipName = gridFiles.length ? await buildZipFilename(gridFiles) : "";
-    clearSelectedTrialFiles("Big File Bypass enabled. Skipping auto-zip and continuing...");
-  } else if (selectedTrialFiles.length) {
-    updateTrialFilesStatus("Zipping selected files...");
-    const gridFiles = selectedTrialFiles.filter(file => file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const otherFiles = selectedTrialFiles.filter(file => !file.name.toLowerCase().endsWith(GRID_FILE_EXTENSION));
-    const downloadMessages = [];
-
-    if (otherFiles.length) {
-      const zipArrayBuffer = await zipFilesInWorker(otherFiles);
-      const zipBlob = new Blob([zipArrayBuffer], { type: "application/zip" });
-      zipName = await buildZipFilename(otherFiles);
-      updateTrialFilesStatus("Prompting download so you can save the vocab zip...");
-      await promptUserDownload(zipBlob, zipName);
-      zipUploads.push({ zipName, zipArrayBuffer, documentTitle: zipName });
-      downloadMessages.push(`"${zipName}"`);
-    }
-
-    if (gridFiles.length) {
-      const gridZipArrayBuffer = await zipFilesInWorker(gridFiles);
-      const gridZipBlob = new Blob([gridZipArrayBuffer], { type: "application/zip" });
-      gridZipName = await buildZipFilename(gridFiles);
-      updateTrialFilesStatus("Prompting download so you can save the Grid zip...");
-      await promptUserDownload(gridZipBlob, gridZipName);
-      zipUploads.push({ zipName: gridZipName, zipArrayBuffer: gridZipArrayBuffer, documentTitle: gridZipName });
-      downloadMessages.push(`"${gridZipName}"`);
-    }
-
-    const downloadsNote = downloadMessages.length
-      ? `Downloaded ${downloadMessages.join(" and ")}. Preparing CRM upload.`
-      : "No files selected.";
-    clearSelectedTrialFiles(downloadsNote);
+  if (selectedTrialFiles.length) {
+    const pendingNames = buildPendingZipRenameTargets();
+    zipName = pendingNames.checkinZipName;
+    gridZipName = pendingNames.gridZipName;
+    pendingZipRenameTargets = pendingNames;
+    clearSelectedTrialFiles(
+      shouldBypassZip
+        ? "Big File Bypass enabled. Skipping zip handling and continuing..."
+        : "Zip creation disabled. Sidekick will rename saved zip files on Next Step."
+    );
   } else {
     hideUploadPrompt();
   }
@@ -7732,15 +7779,15 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   let uploadMessage = "CRM note submitted. Review the details below.";
-  if (zipUploads.length || zipName || gridZipName || shouldBypassZip) {
+  if (zipName || gridZipName || shouldBypassZip) {
     await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
     uploadMessage = shouldBypassZip
       ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files. Move the zipped files to your final folder."
-      : "CRM note submitted. Please upload the vocab zip file(s) to the Documents tab.";
+      : "CRM note submitted. Click Next Step to rename saved zip files (Current Checkin.zip / Current Grid User.zip) in your zip folder.";
     showUploadPrompt(zipName, gridZipName, {
       message: shouldBypassZip
         ? "Big File Bypass enabled: zip files yourself before uploading to CRM Documents. Keep Grid files zipped separately from non-Grid files."
-        : undefined
+        : "Click Next Step to find Current Checkin.zip and Current Grid User.zip in your selected zip folder and rename them."
     });
   }
   setText("completeIntro", uploadMessage);
@@ -7812,6 +7859,7 @@ document.getElementById("inventorySearchCopyBtn")?.addEventListener("click", asy
 });
 
 document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async () => {
+  await renameSavedZipFilesFromFolder();
   await renderDafRecap();
   showDafView();
   chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });

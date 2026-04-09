@@ -2,18 +2,16 @@ function normalizeFileName(name) {
   return typeof name === "string" ? name.toLowerCase() : "";
 }
 
-function getVocabTypesFromFileNames(fileNames) {
-  const hasGrid = fileNames.some(name => normalizeFileName(name).endsWith(".grid3user"));
-  const hasP2G = fileNames.some(name => normalizeFileName(name).endsWith(".p2gbk"));
-  const hasSaltillo = fileNames.some(name => {
-    const normalized = normalizeFileName(name);
-    return normalized.endsWith(".ce") || normalized.endsWith(".wf");
-  });
-
+function getVocabTypesFromSelection(selectedTypes = []) {
+  const selected = selectedTypes
+    .map(type => normalizeFileName(type))
+    .filter(Boolean);
   const ordered = [];
-  if (hasGrid) ordered.push("Grid");
-  if (hasP2G) ordered.push("P2G");
-  if (hasSaltillo) ordered.push("Saltillo");
+  if (selected.includes("grid")) ordered.push("Grid");
+  if (selected.includes("p2g")) ordered.push("P2G");
+  if (selected.includes("tc")) ordered.push("TC");
+  if (selected.includes("lamp")) ordered.push("LAMP");
+  if (selected.includes("dialogue")) ordered.push("Dialogue");
   return ordered;
 }
 
@@ -21,10 +19,11 @@ function buildZipFilename(payload) {
   const firstName = typeof payload?.firstName === "string" ? payload.firstName : "";
   const lastName = typeof payload?.lastName === "string" ? payload.lastName : "";
   const dateStr = typeof payload?.dateStr === "string" && payload.dateStr ? payload.dateStr : "Unknown Date";
-  const fileNames = Array.isArray(payload?.fileNames) ? payload.fileNames : [];
+  const selectedTypes = Array.isArray(payload?.selectedTypes) ? payload.selectedTypes : [];
+  const forcedType = typeof payload?.forcedType === "string" ? payload.forcedType.trim() : "";
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Client";
-  const vocabTypes = getVocabTypesFromFileNames(fileNames);
+  const vocabTypes = forcedType ? [forcedType] : getVocabTypesFromSelection(selectedTypes);
   const typeLabel = vocabTypes.length ? vocabTypes.join(", ") : "Vocab";
 
   return `${fullName} ${typeLabel} Vocab from Trial ${dateStr}.zip`;
