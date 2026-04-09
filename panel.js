@@ -4028,6 +4028,9 @@ const trialFilesFolderPickBtn = document.getElementById("trialFilesFolderPickBtn
 const trialFilesFolderRefreshBtn = document.getElementById("trialFilesFolderRefreshBtn");
 const trialFilesFolderStatus = document.getElementById("trialFilesFolderStatus");
 const trialFilesStatus = document.getElementById("trialFilesStatus");
+const renameWorkflowStatusBar = document.getElementById("renameWorkflowStatusBar");
+const renameWorkflowStatusFill = document.getElementById("renameWorkflowStatusFill");
+const renameWorkflowStatusText = document.getElementById("renameWorkflowStatusText");
 const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
 const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
 
@@ -7221,6 +7224,15 @@ function updateTrialFilesStatus(message, isError = false) {
   trialFilesStatus.classList.toggle("error-text", isError);
 }
 
+function setRenameWorkflowProgress({ percent = 0, message = "", visible = false } = {}) {
+  if (!renameWorkflowStatusBar || !renameWorkflowStatusFill || !renameWorkflowStatusText) return;
+  const clampedPercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  renameWorkflowStatusFill.style.width = `${clampedPercent}%`;
+  renameWorkflowStatusText.textContent = message || "";
+  renameWorkflowStatusBar.style.display = visible ? "" : "none";
+  renameWorkflowStatusText.style.display = visible ? "" : "none";
+}
+
 function createWorkerFromPath(path) {
   if (chrome?.runtime?.getURL) {
     return new Worker(chrome.runtime.getURL(path));
@@ -7327,22 +7339,24 @@ async function renameFileInFolder(folderHandle, entries, fromName, toName) {
 }
 
 async function renameSavedZipFilesForCheckin() {
+  let checkinName = "";
+  let gridName = "";
   const folderHandle = await loadTrialFilesFolderHandle().catch(() => null);
   if (!folderHandle) {
     updateTrialFilesStatus("No saved zips folder selected. Skipping zip rename.", true);
-    return { renamed: [], skipped: ["folder-missing"] };
+    return { renamed: [], skipped: ["folder-missing"], checkinName, gridName };
   }
 
   const permitted = await verifyFolderPermission(folderHandle, "readwrite");
   if (!permitted) {
     updateTrialFilesStatus("Saved zips folder access blocked. Re-authorize in settings.", true);
-    return { renamed: [], skipped: ["permission-blocked"] };
+    return { renamed: [], skipped: ["permission-blocked"], checkinName, gridName };
   }
 
   const vocabNotReturned = document.getElementById("vocabNotReturned")?.checked === true;
   if (vocabNotReturned) {
     updateTrialFilesStatus("Vocab not returned selected. No zip rename needed.");
-    return { renamed: [], skipped: ["vocab-not-returned"] };
+    return { renamed: [], skipped: ["vocab-not-returned"], checkinName, gridName };
   }
 
   const selectedVocabs = getSelectedVocabTypes();
@@ -7357,16 +7371,16 @@ async function renameSavedZipFilesForCheckin() {
   const skipped = [];
 
   if (nonGridVocabs.length) {
-    const targetName = buildZipFilenameFromVocabTypes(nonGridVocabs);
-    const didRename = await renameFileInFolder(folderHandle, entries, "Current Checkin.zip", targetName);
-    if (didRename) renamed.push(targetName);
+    checkinName = buildZipFilenameFromVocabTypes(nonGridVocabs);
+    const didRename = await renameFileInFolder(folderHandle, entries, "Current Checkin.zip", checkinName);
+    if (didRename) renamed.push(checkinName);
     else skipped.push("Current Checkin.zip");
   }
 
   if (shouldRenameGridZip) {
-    const gridTargetName = buildZipFilenameFromVocabTypes(["Grid"]);
-    const didRenameGrid = await renameFileInFolder(folderHandle, entries, "Current Grid user.zip", gridTargetName);
-    if (didRenameGrid) renamed.push(gridTargetName);
+    gridName = buildZipFilenameFromVocabTypes(["Grid"]);
+    const didRenameGrid = await renameFileInFolder(folderHandle, entries, "Current Grid user.zip", gridName);
+    if (didRenameGrid) renamed.push(gridName);
     else skipped.push("Current Grid user.zip");
   }
 
@@ -7375,26 +7389,29 @@ async function renameSavedZipFilesForCheckin() {
   } else {
     updateTrialFilesStatus("No matching saved zip files found to rename.", true);
   }
-  return { renamed, skipped };
+  return { renamed, skipped, checkinName, gridName };
 }
 
-function renderRenamedFileCopyFields(fileNames = []) {
+function renderRenamedFileCopyFields({ checkinName = "", gridName = "" } = {}) {
   const section = document.getElementById("renamedFilesCopySection");
   const rows = document.getElementById("renamedFilesCopyRows");
   if (!section || !rows) return;
 
   rows.innerHTML = "";
-  const names = Array.isArray(fileNames) ? fileNames.filter(Boolean) : [];
-  if (!names.length) {
+  const entries = [
+    { label: "File 1", value: (checkinName || "").trim() },
+    { label: "Grid file Name", value: (gridName || "").trim() }
+  ].filter(entry => Boolean(entry.value));
+  if (!entries.length) {
     section.style.display = "none";
     return;
   }
 
-  names.forEach((name, index) => {
+  entries.forEach((entry, index) => {
     const label = document.createElement("label");
     label.className = "copy-label";
     label.setAttribute("for", `renamedFileCopyField${index}`);
-    label.textContent = `File ${index + 1}`;
+    label.textContent = entry.label;
 
     const row = document.createElement("div");
     row.className = "copy-row";
@@ -7404,13 +7421,13 @@ function renderRenamedFileCopyFields(fileNames = []) {
     input.id = `renamedFileCopyField${index}`;
     input.className = "copy-field";
     input.readOnly = true;
-    input.value = name;
+    input.value = entry.value;
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "copy-btn";
     button.textContent = "Copy name";
-    button.dataset.copyValue = name;
+    button.dataset.copyValue = entry.value;
 
     row.appendChild(input);
     row.appendChild(button);
@@ -7463,8 +7480,9 @@ function resetAllFieldsAndUI() {
 
   setText("notePreviewText", "");
   setText("completeIntro", "");
-  renderRenamedFileCopyFields([]);
+  renderRenamedFileCopyFields({});
   updateTrialFilesStatus("Waiting to rename saved zip files.");
+  setRenameWorkflowProgress();
   setText("inventoryStatus", "");
   const inventoryCopyBtn = document.getElementById("inventorySearchCopyBtn");
   if (inventoryCopyBtn) {
@@ -7494,82 +7512,111 @@ async function finishCheckinAndReset({ returnToLanding = false } = {}) {
 
 document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   e.preventDefault();
+  const submitBtn = document.getElementById("submitBtn");
+  if (submitBtn) submitBtn.disabled = true;
 
-  if (!hasValidVocabSelection()) {
-    const message = "Select at least one vocab or check \"Vocab NOT returned\" before continuing.";
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
+  try {
+    if (!hasValidVocabSelection()) {
+      const message = "Select at least one vocab or check \"Vocab NOT returned\" before continuing.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
+
+    const deviceNumber = getFormValue("#deviceNumberInput");
+    const isMountOnly = deviceNumber.toLowerCase() === "x";
+    setRenameWorkflowProgress({
+      percent: 10,
+      message: "Working: preparing saved zip rename…",
+      visible: true
+    });
+
+    // 1) Rename the saved zip files generated outside Sidekick
+    await refreshTrialFilesFromFolder();
+    setRenameWorkflowProgress({
+      percent: 35,
+      message: "Working: renaming saved zip files…",
+      visible: true
+    });
+    const renamedZipResult = await renameSavedZipFilesForCheckin();
+    setRenameWorkflowProgress({
+      percent: 65,
+      message: "Working: updating CRM note and opening Documents tab…",
+      visible: true
+    });
+
+    // 2) Build note + clipboard backup
+    const note = buildCannedNote();
+    await navigator.clipboard.writeText(note);
+
+    const condition = getFormValue("#conditionSelect");
+    smartboxRepairRequired = !isMountOnly
+      && condition === "Needs Repair"
+      && isSmartboxRepairModel(deviceNumber);
+
+    // 2.5) Remember identifiers for the inventory page + DAF recap
+    await saveLastIdentifiers(getCurrentIdentifiers());
+    await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
+
+    // 3) Fill note in CRM
+    const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
+    if (!setNoteRes.ok) {
+      const message = "Failed to fill CRM note box.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
+
+    // 4) Select category
+    const isDeviceUpdated = isLtlUpdateFlow();
+    const noteCategory = isDeviceUpdated ? "Device Updated" : "Device Returned";
+    const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
+    if (!setCatRes.ok) {
+      const message = `Failed to select note category "${noteCategory}".`;
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
+
+    // 5) Submit note
+    const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
+    if (!clickRes.ok) {
+      const message = "Failed to submit the note.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
+
+    // ✅ SUCCESS
+    await logTaskOutcome("Checkin", "Completed successfully");
+    resetAllFieldsAndUI();
+    setText("notePreviewText", note);
+    if (isMountOnly && !isLtlUpdateFlow()) {
+      await renderDafRecap();
+      showDafView();
+      chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
+      return;
+    }
+
+    await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
+    setRenameWorkflowProgress({
+      percent: 100,
+      message: "Done: renamed files and opened Documents tab.",
+      visible: true
+    });
+    const renamedSummary = renamedZipResult.renamed.length
+      ? ` Renamed: ${renamedZipResult.renamed.join(" | ")}.`
+      : " No matching Current Checkin.zip / Current Grid user.zip files were renamed.";
+    const uploadMessage = `CRM note submitted. Upload your renamed zip file(s) to the Documents tab.${renamedSummary}`;
+    setText("completeIntro", uploadMessage);
+    renderRenamedFileCopyFields({
+      checkinName: renamedZipResult.checkinName,
+      gridName: renamedZipResult.gridName
+    });
+    showCompleteView();
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
-
-  const deviceNumber = getFormValue("#deviceNumberInput");
-  const isMountOnly = deviceNumber.toLowerCase() === "x";
-
-  // 1) Rename the saved zip files generated outside Sidekick
-  await refreshTrialFilesFromFolder();
-  const renamedZipResult = await renameSavedZipFilesForCheckin();
-
-  // 2) Build note + clipboard backup
-  const note = buildCannedNote();
-  await navigator.clipboard.writeText(note);
-
-  const condition = getFormValue("#conditionSelect");
-  smartboxRepairRequired = !isMountOnly
-    && condition === "Needs Repair"
-    && isSmartboxRepairModel(deviceNumber);
-
-  // 2.5) Remember identifiers for the inventory page + DAF recap
-  await saveLastIdentifiers(getCurrentIdentifiers());
-  await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
-
-  // 3) Fill note in CRM
-  const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
-  if (!setNoteRes.ok) {
-    const message = "Failed to fill CRM note box.";
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
-  }
-
-  // 4) Select category
-  const isDeviceUpdated = isLtlUpdateFlow();
-  const noteCategory = isDeviceUpdated ? "Device Updated" : "Device Returned";
-  const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
-  if (!setCatRes.ok) {
-    const message = `Failed to select note category "${noteCategory}".`;
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
-  }
-
-  // 5) Submit note
-  const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
-  if (!clickRes.ok) {
-    const message = "Failed to submit the note.";
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
-  }
-
-  // ✅ SUCCESS
-  await logTaskOutcome("Checkin", "Completed successfully");
-  resetAllFieldsAndUI();
-  setText("notePreviewText", note);
-  if (isMountOnly && !isLtlUpdateFlow()) {
-    await renderDafRecap();
-    showDafView();
-    chrome.tabs.create({ url: INVENTORY_NEXT_STEP_URL });
-    return;
-  }
-
-  await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-  const renamedSummary = renamedZipResult.renamed.length
-    ? ` Renamed: ${renamedZipResult.renamed.join(" | ")}.`
-    : " No matching Current Checkin.zip / Current Grid user.zip files were renamed.";
-  const uploadMessage = `CRM note submitted. Upload your renamed zip file(s) to the Documents tab.${renamedSummary}`;
-  setText("completeIntro", uploadMessage);
-  renderRenamedFileCopyFields(renamedZipResult.renamed);
-  showCompleteView();
 });
 
 /* ---------------- Start another Checkin ---------------- */
