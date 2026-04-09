@@ -7378,6 +7378,49 @@ async function renameSavedZipFilesForCheckin() {
   return { renamed, skipped };
 }
 
+function renderRenamedFileCopyFields(fileNames = []) {
+  const section = document.getElementById("renamedFilesCopySection");
+  const rows = document.getElementById("renamedFilesCopyRows");
+  if (!section || !rows) return;
+
+  rows.innerHTML = "";
+  const names = Array.isArray(fileNames) ? fileNames.filter(Boolean) : [];
+  if (!names.length) {
+    section.style.display = "none";
+    return;
+  }
+
+  names.forEach((name, index) => {
+    const label = document.createElement("label");
+    label.className = "copy-label";
+    label.setAttribute("for", `renamedFileCopyField${index}`);
+    label.textContent = `File ${index + 1}`;
+
+    const row = document.createElement("div");
+    row.className = "copy-row";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = `renamedFileCopyField${index}`;
+    input.className = "copy-field";
+    input.readOnly = true;
+    input.value = name;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-btn";
+    button.textContent = "Copy name";
+    button.dataset.copyValue = name;
+
+    row.appendChild(input);
+    row.appendChild(button);
+    rows.appendChild(label);
+    rows.appendChild(row);
+  });
+
+  section.style.display = "";
+}
+
 /* ---------------- Reset everything after success ---------------- */
 
 function resetAllFieldsAndUI() {
@@ -7420,6 +7463,7 @@ function resetAllFieldsAndUI() {
 
   setText("notePreviewText", "");
   setText("completeIntro", "");
+  renderRenamedFileCopyFields([]);
   updateTrialFilesStatus("Waiting to rename saved zip files.");
   setText("inventoryStatus", "");
   const inventoryCopyBtn = document.getElementById("inventorySearchCopyBtn");
@@ -7524,6 +7568,7 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     : " No matching Current Checkin.zip / Current Grid user.zip files were renamed.";
   const uploadMessage = `CRM note submitted. Upload your renamed zip file(s) to the Documents tab.${renamedSummary}`;
   setText("completeIntro", uploadMessage);
+  renderRenamedFileCopyFields(renamedZipResult.renamed);
   showCompleteView();
 });
 
@@ -7764,6 +7809,15 @@ document.getElementById("qaCrmIdCopyBtn")?.addEventListener("click", async () =>
 });
 
 document.getElementById("dafRecapFields")?.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button.copy-btn");
+  if (!btn || !btn.dataset.copyValue) return;
+  await navigator.clipboard.writeText(btn.dataset.copyValue);
+  const original = btn.textContent;
+  btn.textContent = "Copied!";
+  setTimeout(() => { btn.textContent = original; }, 1200);
+});
+
+document.getElementById("renamedFilesCopyRows")?.addEventListener("click", async (e) => {
   const btn = e.target.closest("button.copy-btn");
   if (!btn || !btn.dataset.copyValue) return;
   await navigator.clipboard.writeText(btn.dataset.copyValue);
