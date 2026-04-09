@@ -7280,7 +7280,22 @@ function buildZipFilenameFromVocabTypes(vocabTypes = []) {
   const last = sanitizeName(getFormValue("#lastName"));
   const fullName = [first, last].filter(Boolean).join(" ") || "Client";
   const types = Array.isArray(vocabTypes) ? vocabTypes.filter(Boolean) : [];
-  const typeLabel = types.length ? types.join(", ") : "Vocab";
+  const saltilloTypes = new Set(["TC", "LAMP", "Dialogue"]);
+  const normalizedTypes = [];
+  let hasSaltillo = false;
+
+  for (const type of types) {
+    if (saltilloTypes.has(type)) {
+      hasSaltillo = true;
+      continue;
+    }
+    normalizedTypes.push(type);
+  }
+
+  if (hasSaltillo) {
+    normalizedTypes.push("Saltillo");
+  }
+  const typeLabel = normalizedTypes.length ? normalizedTypes.join(", ") : "Vocab";
   return `${fullName} ${typeLabel} Vocab from Trial ${formatDateForFilename()}.zip`;
 }
 
