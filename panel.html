@@ -74,26 +74,6 @@
       </label>
 
       <div class="settings-card">
-        <div class="settings-card__title">Zip save folder</div>
-        <label for="zipFolderPickBtn">Default zip save folder</label>
-        <p class="hint-text">Choose any folder and Sidekick will save zip files there directly with the Sidekick filename.</p>
-        <button class="toggle-btn settings-card__action" id="zipFolderPickBtn" type="button">
-          Choose zip folder
-        </button>
-        <div id="zipFolderStatus" class="status-line">No zip save folder selected yet.</div>
-      </div>
-
-      <div class="settings-card">
-        <div class="settings-card__title">Cleanup folder</div>
-        <label for="cleanupFolderPickBtn">Start another check-in cleanup folder</label>
-        <p class="hint-text">Choose a folder to clear whenever you start another check-in.</p>
-        <button class="toggle-btn settings-card__action" id="cleanupFolderPickBtn" type="button">
-          Choose cleanup folder
-        </button>
-        <div id="cleanupFolderStatus" class="status-line">No cleanup folder selected yet.</div>
-      </div>
-
-      <div class="settings-card">
         <div class="settings-card__title">Check-in logging</div>
         <label>OneDrive log folder</label>
         <p class="hint-text">Expected: OneDrive - Talk to Me Technologies\Trials SharePoint (Do not email) - Trials Operations\CRM Sidekick - Browser Ext\Logs</p>
@@ -1079,29 +1059,23 @@
         <input type="text" name="accessories" />
       </div>
 
-      <!-- Trial files -->
+      <!-- Saved zip files -->
       <div class="upload-block">
-        <label>Trial Vocab/Export Files</label>
+        <label>Saved zips folder</label>
         <button class="toggle-btn" id="trialFilesFolderPickBtn" type="button">
-          Choose trial files folder
+          Choose saved zips folder
         </button>
         <button class="toggle-btn" id="trialFilesFolderRefreshBtn" type="button">
-          Refresh folder files
+          Refresh folder access
         </button>
-        <div id="trialFilesFolderStatus" class="status-line">No trial files folder selected yet.</div>
+        <div id="trialFilesFolderStatus" class="status-line">No saved zips folder selected yet.</div>
         <div class="hint-text">
-          The Sidekick will pull every file from the selected folder when you click Next Step.
+          Sidekick will rename <strong>Current Checkin.zip</strong> and <strong>Current Grid user.zip</strong>
+          in this folder when you click Next Step.
         </div>
-        <input type="file" id="trialFilesInput" multiple />
-        <div class="hint-text">
-          Select the Grid, Saltillo, and P2G exports you want zipped if you don't use a folder.
-          We'll prompt you to save the zip when you click Next Step.
-        </div>
-        <div id="trialFilesStatus" class="status-line">No files selected.</div>
+        <div id="trialFilesStatus" class="status-line">Waiting to rename saved zip files.</div>
       </div>
 
-      <button type="button" id="bigFileBypassBtn" class="toggle-btn">Big File Bypass</button>
-      <p class="hint-text big-file-bypass-note">Only for large files (500MB+).</p>
       <button type="submit" id="submitBtn">Next Step</button>
     </form>
 
@@ -1111,23 +1085,7 @@
   <!-- COMPLETE VIEW -->
   <div class="container" id="completeView" style="display:none;">
     <h1>Next Steps</h1>
-    <h2 id="bigFileBypassReminder" class="bypass-reminder" style="display:none;">
-      Big File Bypass is on — edit the CRM note if vocab file was too large for the CRM.
-    </h2>
     <p id="completeIntro" class="complete-intro"></p>
-
-    <div id="uploadPrompt" class="note-preview" style="display:none;">
-      <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
-      <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
-      <div class="copy-row" id="zipFilenameRow">
-        <input type="text" id="zipFilenameField" class="copy-field" readonly />
-        <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
-      </div>
-      <div class="copy-row" id="gridZipFilenameRow" style="display:none;">
-        <input type="text" id="gridZipFilenameField" class="copy-field" readonly />
-        <button id="copyGridZipFilenameBtn" class="copy-btn" type="button">Copy Grid filename</button>
-      </div>
-    </div>
 
     <div class="note-preview">
       <div class="note-preview__title">CRM note submitted</div>
