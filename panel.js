@@ -4334,7 +4334,7 @@ function updateTrialFilesFolderStatus(name, messageOverride = null) {
     return;
   }
   if (name) {
-    trialFilesFolderStatus.textContent = `Using "${name}" for trial file zips.`;
+    trialFilesFolderStatus.textContent = `Using "${name}" for trial files.`;
     return;
   }
   trialFilesFolderStatus.textContent = "No trial files folder selected yet.";
@@ -4394,8 +4394,8 @@ async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOver
   const files = await getTrialFilesFromFolder(handle);
   if (trialFilesInput) trialFilesInput.value = "";
   setSelectedTrialFiles(files, storedName
-    ? `Using "${storedName}" (${files.length} file(s)) for the zip.`
-    : `${files.length} file(s) ready to zip.`);
+    ? `Using "${storedName}" (${files.length} file(s)) from your trial files folder.`
+    : `${files.length} file(s) ready.`);
   return true;
 }
 
@@ -7293,30 +7293,11 @@ const copyZipFilenameBtn = document.getElementById("copyZipFilenameBtn");
 const gridZipFilenameRow = document.getElementById("gridZipFilenameRow");
 const gridZipFilenameField = document.getElementById("gridZipFilenameField");
 const copyGridZipFilenameBtn = document.getElementById("copyGridZipFilenameBtn");
-const bigFileBypassBtn = document.getElementById("bigFileBypassBtn");
-const bigFileBypassReminder = document.getElementById("bigFileBypassReminder");
-const GRID_FILE_EXTENSION = ".grid3user";
 const WORKERS_BASE_PATH = "workers";
 const CHECKIN_WORKER_PATH = `${WORKERS_BASE_PATH}/checkin-workflow-worker.js`;
-const ZIP_WORKER_PATH = `${WORKERS_BASE_PATH}/zip-worker.js`;
 
-let isBigFileBypassEnabled = false;
 let checkinWorkflowWorkerPromise = null;
 let pendingZipRenameTargets = null;
-
-function setBigFileBypass(enabled) {
-  isBigFileBypassEnabled = Boolean(enabled);
-  if (!bigFileBypassBtn) return;
-  bigFileBypassBtn.classList.toggle("active", isBigFileBypassEnabled);
-  bigFileBypassBtn.textContent = isBigFileBypassEnabled
-    ? "Big File Bypass On"
-    : "Big File Bypass";
-}
-
-function setBigFileBypassReminder(visible) {
-  if (!bigFileBypassReminder) return;
-  bigFileBypassReminder.style.display = visible ? "block" : "none";
-}
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
@@ -7333,7 +7314,7 @@ function setSelectedTrialFiles(files, messageOverride = null) {
     updateTrialFilesStatus(messageOverride || "No files selected.");
     return;
   }
-  updateTrialFilesStatus(messageOverride || `${selectedTrialFiles.length} file(s) ready to zip.`);
+  updateTrialFilesStatus(messageOverride || `${selectedTrialFiles.length} file(s) ready.`);
 }
 
 function clearSelectedTrialFiles(messageOverride = null) {
@@ -7480,97 +7461,6 @@ async function runQaFlowAction(action, payload = {}) {
   return runCheckinWorkflowTask("RUN_QA_FLOW", { action, ...payload });
 }
 
-async function promptUserDownload(blob, filename) {
-  const zipHandle = await loadZipFolderHandle().catch(() => null);
-  if (zipHandle) {
-    const permitted = await verifyFolderPermission(zipHandle, "readwrite");
-    if (permitted) {
-      const fileHandle = await zipHandle.getFileHandle(filename, { create: true });
-      const writable = await fileHandle.createWritable({ keepExistingData: false });
-      await writable.write(blob);
-      await writable.close();
-      return;
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  try {
-    if (chrome?.downloads?.download) {
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      const targetFilename = zipFolder ? `${zipFolder}/${filename}` : filename;
-      await chrome.downloads.download({
-        url,
-        filename: targetFilename,
-        saveAs: !zipFolder
-      });
-    } else {
-      const link = document.createElement("a");
-      link.href = url;
-      const zipFolder = normalizeZipFolder(await getStoredValue(ZIP_FOLDER_STORAGE_KEY));
-      link.download = zipFolder ? `${zipFolder}/${filename}` : filename;
-      link.click();
-    }
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-async function zipFilesInWorker(files) {
-  if (!files?.length) {
-    return new ArrayBuffer(0);
-  }
-
-  if (typeof Worker === "undefined") {
-    throw new Error("Web Worker API unavailable in this browser context.");
-  }
-
-  const worker = createWorkerFromPath(ZIP_WORKER_PATH);
-
-  return new Promise(async (resolve, reject) => {
-    let settled = false;
-
-    const fail = error => {
-      if (settled) return;
-      settled = true;
-      worker.terminate();
-      reject(error instanceof Error ? error : new Error(String(error)));
-    };
-
-    worker.onmessage = event => {
-      if (settled) return;
-      const data = event?.data || {};
-      if (data.type === "ZIP_DONE" && data.zipArrayBuffer) {
-        settled = true;
-        worker.terminate();
-        resolve(data.zipArrayBuffer);
-        return;
-      }
-      if (data.type === "ZIP_ERROR") {
-        fail(new Error(data.error || "Zip worker failed."));
-      }
-    };
-
-    worker.onerror = event => {
-      fail(new Error(event?.message || "Zip worker crashed."));
-    };
-
-    try {
-      const workerFiles = await Promise.all(files.map(async file => ({
-        name: file.name,
-        data: await file.arrayBuffer()
-      })));
-      const transferables = workerFiles.map(file => file.data);
-      worker.postMessage({ type: "ZIP_FILES", files: workerFiles }, transferables);
-    } catch (error) {
-      fail(error);
-    }
-  });
-}
-
-bigFileBypassBtn?.addEventListener("click", () => {
-  setBigFileBypass(!isBigFileBypassEnabled);
-});
-
 trialFilesInput?.addEventListener("change", () => {
   const files = trialFilesInput.files ? Array.from(trialFilesInput.files) : [];
   setSelectedTrialFiles(files);
@@ -7659,10 +7549,8 @@ function resetAllFieldsAndUI() {
   if (msg) msg.style.display = "none";
 
   hideUploadPrompt();
-  setBigFileBypass(false);
   setText("notePreviewText", "");
   setText("completeIntro", "");
-  setBigFileBypassReminder(false);
   setText("inventoryStatus", "");
   const inventoryCopyBtn = document.getElementById("inventorySearchCopyBtn");
   if (inventoryCopyBtn) {
@@ -7704,26 +7592,14 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   const deviceNumber = getFormValue("#deviceNumberInput");
   const isMountOnly = deviceNumber.toLowerCase() === "x";
 
-  // 1) Zip vocab files (if any) and prompt download
+  // 1) Build planned filenames for saved zip files
   let zipName = "";
   let gridZipName = "";
-  const shouldBypassZip = isBigFileBypassEnabled;
-  if (!trialFilesInput?.files?.length) {
-    await refreshTrialFilesFromFolder();
-  }
-  if (selectedTrialFiles.length) {
-    const pendingNames = buildPendingZipRenameTargets();
-    zipName = pendingNames.checkinZipName;
-    gridZipName = pendingNames.gridZipName;
-    pendingZipRenameTargets = pendingNames;
-    clearSelectedTrialFiles(
-      shouldBypassZip
-        ? "Big File Bypass enabled. Skipping zip handling and continuing..."
-        : "Zip creation disabled. Sidekick will rename saved zip files on Next Step."
-    );
-  } else {
-    hideUploadPrompt();
-  }
+  const pendingNames = buildPendingZipRenameTargets();
+  zipName = pendingNames.checkinZipName;
+  gridZipName = pendingNames.gridZipName;
+  pendingZipRenameTargets = pendingNames;
+  clearSelectedTrialFiles("Zip creation disabled. Sidekick will rename saved zip files on Next Step.");
 
   // 2) Build note + clipboard backup
   const note = buildCannedNote();
@@ -7738,33 +7614,36 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   await saveLastIdentifiers(getCurrentIdentifiers());
   await saveLastCheckinDataForDaf(collectCheckinFormDataForDaf());
 
-  // 3) Fill note in CRM
-  const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
-  if (!setNoteRes.ok) {
-    const message = "Failed to fill CRM note box.";
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
-  }
+  const activeCrmTabId = await getActiveCrmTabId();
+  if (activeCrmTabId) {
+    // 3) Fill note in CRM
+    const setNoteRes = await sendToCrm("SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
+    if (!setNoteRes.ok) {
+      const message = "Failed to fill CRM note box.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
 
-  // 4) Select category
-  const isDeviceUpdated = isLtlUpdateFlow();
-  const noteCategory = isDeviceUpdated ? "Device Updated" : "Device Returned";
-  const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
-  if (!setCatRes.ok) {
-    const message = `Failed to select note category "${noteCategory}".`;
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
-  }
+    // 4) Select category
+    const isDeviceUpdated = isLtlUpdateFlow();
+    const noteCategory = isDeviceUpdated ? "Device Updated" : "Device Returned";
+    const setCatRes = await sendToCrm("SET_DROPDOWN_BY_TEXT", { xpath: NOTE_CATEGORY_XPATH, text: noteCategory });
+    if (!setCatRes.ok) {
+      const message = `Failed to select note category "${noteCategory}".`;
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
 
-  // 5) Submit note
-  const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
-  if (!clickRes.ok) {
-    const message = "Failed to submit the note.";
-    alert(message);
-    await logTaskOutcome("Checkin", message);
-    return;
+    // 5) Submit note
+    const clickRes = await sendToCrm("CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
+    if (!clickRes.ok) {
+      const message = "Failed to submit the note.";
+      alert(message);
+      await logTaskOutcome("Checkin", message);
+      return;
+    }
   }
 
   // ✅ SUCCESS
@@ -7779,19 +7658,18 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
   }
 
   let uploadMessage = "CRM note submitted. Review the details below.";
-  if (zipName || gridZipName || shouldBypassZip) {
-    await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
-    uploadMessage = shouldBypassZip
-      ? "CRM note submitted. Big File Bypass was used, so zip files manually before uploading to Documents. Zip Grid files separately from non-Grid files. Move the zipped files to your final folder."
-      : "CRM note submitted. Click Next Step to rename saved zip files (Current Checkin.zip / Current Grid User.zip) in your zip folder.";
+  if (zipName || gridZipName) {
+    if (activeCrmTabId) {
+      await sendToCrm("CLICK_BY_XPATH", { xpath: DOCUMENTS_TAB_XPATH });
+    }
+    uploadMessage = activeCrmTabId
+      ? "CRM note submitted. Click Next Step to rename saved zip files (Current Checkin.zip / Current Grid User.zip) in your zip folder."
+      : "No CRM tab detected. Click Next Step to rename saved zip files (Current Checkin.zip / Current Grid User.zip) in your zip folder.";
     showUploadPrompt(zipName, gridZipName, {
-      message: shouldBypassZip
-        ? "Big File Bypass enabled: zip files yourself before uploading to CRM Documents. Keep Grid files zipped separately from non-Grid files."
-        : "Click Next Step to find Current Checkin.zip and Current Grid User.zip in your selected zip folder and rename them."
+      message: "Click Next Step to find Current Checkin.zip and Current Grid User.zip in your selected zip folder and rename them."
     });
   }
   setText("completeIntro", uploadMessage);
-  setBigFileBypassReminder(shouldBypassZip);
   showCompleteView();
 });
 

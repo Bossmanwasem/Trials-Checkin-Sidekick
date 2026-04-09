@@ -245,7 +245,14 @@
           </div>
         </div>
       </div>
-      <!-- CRM Navigator temporarily removed while zip renaming flow is under test. -->
+      <div class="landing-crm-nav" data-layout-item="crmNavigator">
+        <div class="landing-crm-nav__title">CRM Navigator</div>
+        <form id="landingCrmNavigatorForm" class="landing-crm-nav__form">
+          <label class="landing-crm-nav__label" for="landingCrmNavigatorInput">CRM ID</label>
+          <input type="text" id="landingCrmNavigatorInput" class="landing-crm-nav__input" placeholder="Enter CRM ID" required />
+          <button type="submit" class="toggle-btn landing-crm-nav__btn">Go</button>
+        </form>
+      </div>
       <div class="landing-section" data-layout-item="checkinTools">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false" data-tooltip="Folder housing check-in tools. Click to reveal the Device Lookup tool and the Check-in form.">
           Check-in Tools
@@ -1087,14 +1094,10 @@
         </div>
         <input type="file" id="trialFilesInput" multiple />
         <div class="hint-text">
-          Select the Grid, Saltillo, and P2G exports you want zipped if you don't use a folder.
-          We'll prompt you to save the zip when you click Next Step.
+          Select files manually if you don't use a folder. Sidekick will rename your saved zip files on Next Step.
         </div>
         <div id="trialFilesStatus" class="status-line">No files selected.</div>
       </div>
-
-      <button type="button" id="bigFileBypassBtn" class="toggle-btn">Big File Bypass</button>
-      <p class="hint-text big-file-bypass-note">Only for large files (500MB+).</p>
       <button type="submit" id="submitBtn">Next Step</button>
     </form>
 
@@ -1104,14 +1107,11 @@
   <!-- COMPLETE VIEW -->
   <div class="container" id="completeView" style="display:none;">
     <h1>Next Steps</h1>
-    <h2 id="bigFileBypassReminder" class="bypass-reminder" style="display:none;">
-      Big File Bypass is on — edit the CRM note if vocab file was too large for the CRM.
-    </h2>
     <p id="completeIntro" class="complete-intro"></p>
 
     <div id="uploadPrompt" class="note-preview" style="display:none;">
-      <div class="note-preview__title">Upload vocab zip to CRM Documents</div>
-      <p id="uploadPromptText" class="hint-text">Upload the downloaded zip file to the CRM Documents tab.</p>
+      <div class="note-preview__title">Zip filenames for CRM Documents</div>
+      <p id="uploadPromptText" class="hint-text">Use these filenames after Next Step renames your saved zip files.</p>
       <div class="copy-row" id="zipFilenameRow">
         <input type="text" id="zipFilenameField" class="copy-field" readonly />
         <button id="copyZipFilenameBtn" class="copy-btn" type="button">Copy filename</button>
