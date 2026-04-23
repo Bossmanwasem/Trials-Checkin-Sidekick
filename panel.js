@@ -7311,6 +7311,10 @@ function buildZipFilenameFromVocabTypes(vocabTypes = []) {
   return `${fullName} ${typeLabel} Vocab from Trial ${formatDateForFilename()}.zip`;
 }
 
+function stripZipExtension(filename = "") {
+  return String(filename || "").replace(/\.zip$/i, "");
+}
+
 function findEntryNameIgnoreCase(entries, expectedName) {
   const target = (expectedName || "").toLowerCase();
   return entries.find(name => name.toLowerCase() === target) || null;
@@ -7399,8 +7403,8 @@ function renderRenamedFileCopyFields({ checkinName = "", gridName = "" } = {}) {
 
   rows.innerHTML = "";
   const entries = [
-    { label: "File 1", value: (checkinName || "").trim() },
-    { label: "Grid file Name", value: (gridName || "").trim() }
+    { label: "File 1", value: stripZipExtension((checkinName || "").trim()) },
+    { label: "Grid file Name", value: stripZipExtension((gridName || "").trim()) }
   ].filter(entry => Boolean(entry.value));
   if (!entries.length) {
     section.style.display = "none";
@@ -7992,6 +7996,14 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
       const delta = Number.parseInt(btn.dataset.delta || "0", 10);
       if (!counterKey || Number.isNaN(delta)) return;
       await adjustDailyCounter(counterKey, delta);
+    });
+  });
+
+  document.querySelectorAll("[data-weekly-delta]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const delta = Number.parseInt(btn.dataset.weeklyDelta || "0", 10);
+      if (Number.isNaN(delta)) return;
+      await adjustWeeklyCounterByDelta(delta);
     });
   });
 

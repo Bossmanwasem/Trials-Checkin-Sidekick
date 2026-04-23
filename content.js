@@ -88,7 +88,7 @@ const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div/div',
   '//*[@id="CommonEditorCalloutId"]'
 ];
-const DAF_AAC_FIELD_XPATH = "/html/body/div[1]/div/div/form/div/div/div/div[6]/div/span";
+const DAF_AAC_FIELD_XPATH = "/html/body/div/div/div/form/div/div/div/div[6]/div/span/div/div/div/input";
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -998,7 +998,11 @@ async function fillDafFormFromStorage() {
   ];
 
   await Promise.all(fields.map(f => fillDafFieldWithFallback(f)));
-  await selectDafConsultantByAac(data.aac);
+  await fillDafFieldWithFallback({
+    value: data.aac,
+    xpath: DAF_AAC_FIELD_XPATH,
+    labels: ["aac", "consultant", "aac consultant"]
+  });
 
   await ensureDafCheckboxChecked(
     '/html/body/div[1]/div/div/form/div/div/div/div[10]/div/span/div/div/div/div[2]/div/label',

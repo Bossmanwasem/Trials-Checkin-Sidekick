@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>Check-in Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="panel.css" />
   <script src="libs/jszip.min.js"></script>
 </head>
@@ -178,11 +181,19 @@
           <div class="daily-counter__grid">
           <div class="daily-counter__item">
             <span class="daily-counter__label">Checkins</span>
-            <span class="daily-counter__value" id="dailyCheckinsCount">0</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="checkins" data-delta="-1" aria-label="Decrease checkins count">-</button>
+              <span class="daily-counter__value" id="dailyCheckinsCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="checkins" data-delta="1" aria-label="Increase checkins count">+</button>
+            </div>
           </div>
           <div class="daily-counter__item">
             <span class="daily-counter__label">QA's</span>
-            <span class="daily-counter__value" id="dailyQasCount">0</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="-1" aria-label="Decrease QA count">-</button>
+              <span class="daily-counter__value" id="dailyQasCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="1" aria-label="Increase QA count">+</button>
+            </div>
           </div>
           <div class="daily-counter__item">
             <span class="daily-counter__label">Preps</span>
@@ -220,7 +231,11 @@
           <div class="daily-counter__grid weekly-counter__grid">
             <div class="daily-counter__item">
               <span class="daily-counter__label">Total</span>
-              <span class="daily-counter__value" id="weeklyTotalCount">0</span>
+              <div class="daily-counter__controls">
+                <button class="daily-counter__btn" type="button" data-weekly-delta="-1" aria-label="Decrease weekly total">-</button>
+                <span class="daily-counter__value" id="weeklyTotalCount">0</span>
+                <button class="daily-counter__btn" type="button" data-weekly-delta="1" aria-label="Increase weekly total">+</button>
+              </div>
             </div>
           </div>
         </div>
