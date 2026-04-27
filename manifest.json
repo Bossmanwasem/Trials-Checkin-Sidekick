@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Smartbox CRM Sidekick",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Side panel check-in form for TTMT CRM pages. Auto-fills client data and copies a summary to clipboard.",
   "permissions": ["sidePanel", "activeTab", "tabs", "scripting", "downloads", "storage", "hid"],
   "host_permissions": [
