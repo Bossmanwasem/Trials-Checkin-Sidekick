@@ -75,6 +75,272 @@
         <input type="checkbox" id="onboardingTooltipToggle" />
         Show tooltips on landing buttons
       </label>
+
+      <div class="settings-card">
+        <div class="settings-card__title">Check-in logging</div>
+        <label>OneDrive log folder</label>
+        <p class="hint-text">Expected: OneDrive - Talk to Me Technologies\Trials SharePoint (Do not email) - Trials Operations\CRM Sidekick - Browser Ext\Logs</p>
+        <p class="hint-text"><a href="https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FTrialsSharePoint2%2FShared%20Documents%2FTrials%20Operations%2FCRM%20Sidekick%20%2D%20Browser%20Ext%2FLogs&viewid=c09dd3c3%2Dbe9b%2D48f7%2D9635%2D46c9f9037922" target="_blank" rel="noopener noreferrer">Open SharePoint Logs folder</a></p>
+        <button class="toggle-btn settings-card__action" type="button" data-log-folder-pick>
+          Choose log folder
+        </button>
+        <div class="status-line" data-log-folder-status>No log folder selected yet.</div>
+      </div>
+
+      <div class="note-preview">
+        <div class="note-preview__title">SharePoint workbook links (auto-loaded)</div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">RWL &amp; LTL Update</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Python\RWL and LTL Update.xlsx</p>
+          </div>
+          <button type="button" class="toggle-btn" data-workbook-connect="ltl">Refresh workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-open="ltl">Open workbook</button>
+          <div id="onboardingLtlFileStatus" data-workbook-status="ltl" class="status-line">Auto-loaded from SharePoint.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">MountLog</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\MountLog.xlsx</p>
+          </div>
+          <button type="button" class="toggle-btn" data-workbook-connect="mount">Refresh workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-open="mount">Open workbook</button>
+          <div id="onboardingMountFileStatus" data-workbook-status="mount" class="status-line">Auto-loaded from SharePoint.</div>
+        </div>
+        <div class="lookup-file">
+          <div>
+            <div class="lookup-file__title">Loan Library CRM Check</div>
+            <p class="hint-text">Expected: OneDrive\Trials SharePoint (Do not email) - Trials Operations\Loan Libraries\Loan Library CRM Check V3.xlsm</p>
+          </div>
+          <button type="button" class="toggle-btn" data-workbook-connect="crm">Refresh workbook</button>
+          <button type="button" class="toggle-btn" data-workbook-open="crm">Open workbook</button>
+          <div id="onboardingCrmFileStatus" data-workbook-status="crm" class="status-line">Auto-loaded from SharePoint.</div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card__title">Outlook setup</div>
+        <p class="hint-text">Open Outlook in a new tab and walk through the setup checklist.</p>
+        <button class="toggle-btn settings-card__action" id="beginOutlookSetupBtn" type="button">
+          Begin Outlook setup
+        </button>
+      </div>
+
+      <button type="submit">Save &amp; Continue</button>
+    </form>
+  </div>
+
+  <!-- OUTLOOK SETUP VIEW -->
+  <div class="container outlook-setup-view" id="outlookSetupView" style="display:none;">
+    <h1>Outlook Setup</h1>
+    <p class="complete-intro">We opened Outlook in a new tab. Sign in there, then follow these steps.</p>
+    <ol class="outlook-setup-steps">
+      <li>Once you're logged in, click <strong>File</strong>, then <strong>Settings</strong>.</li>
+      <li>In the new window, click <strong>Mail</strong> on the left side.</li>
+      <li>In the next column, select <strong>Compose and reply</strong>.</li>
+      <li>Under <strong>Message format</strong>, enable the checkbox labeled <strong>Always show From</strong>.</li>
+      <li>Close the settings window, then return here.</li>
+    </ol>
+
+    <div class="outlook-setup-finish">
+      <img class="outlook-setup-thumb" src="assets/Symojis/Thumbs-Up.png" alt="Thumbs up Symoji" />
+      <button id="finishOutlookSetupBtn" class="toggle-btn outlook-setup-finish-btn" type="button">
+        Finish Outlook setup
+      </button>
+    </div>
+  </div>
+
+  <!-- LANDING VIEW -->
+  <div class="container landing-view" id="landingView">
+    <div class="landing-content">
+      <div class="landing-header">
+        <h1 class="landing-title">CRM Sidekick</h1>
+      </div>
+      <img class="landing-symojo" id="landingMascot" src="assets/sparknsymoji.png" alt="Spark mascot" />
+      <p class="landing-greeting" id="landingGreeting"></p>
+      <p class="landing-subtitle">Pick a workflow to get started.</p>
+      <section class="landing-anime-quotes" id="landingAnimeQuoteSection" aria-live="polite" style="display:none;">
+        <div class="landing-anime-quotes__title">Anime quote spotlight</div>
+        <blockquote class="landing-anime-quotes__quote" id="landingAnimeQuoteText"></blockquote>
+      </section>
+      <div class="landing-layout" id="landingLayout">
+      <div class="daily-counter" id="dailyCounterSection" data-layout-item="dailyCounter" aria-label="Daily task counter">
+        <div class="daily-counter__header">
+          <span>Daily task counter</span>
+          <div class="daily-counter__actions">
+            <button id="clearDailyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear daily counters">
+              Clear
+            </button>
+            <button id="toggleDailyCounterBtn" class="daily-counter__toggle" type="button" aria-expanded="true" aria-controls="dailyCounterContent">
+              <span class="daily-counter__toggle-text">Hide</span>
+              <span class="daily-counter__chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
+        </div>
+        <div class="daily-counter__content" id="dailyCounterContent">
+          <div class="daily-counter__grid">
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">Checkins</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="checkins" data-delta="-1" aria-label="Decrease checkins count">-</button>
+              <span class="daily-counter__value" id="dailyCheckinsCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="checkins" data-delta="1" aria-label="Increase checkins count">+</button>
+            </div>
+          </div>
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">QA's</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="-1" aria-label="Decrease QA count">-</button>
+              <span class="daily-counter__value" id="dailyQasCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="qas" data-delta="1" aria-label="Increase QA count">+</button>
+            </div>
+          </div>
+          <div class="daily-counter__item">
+            <span class="daily-counter__label">Preps</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="-1" aria-label="Decrease prep count">-</button>
+              <span class="daily-counter__value" id="dailyPrepsCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="preps" data-delta="1" aria-label="Increase prep count">+</button>
+            </div>
+          </div>
+          <div class="daily-counter__item" id="dailyCustomCounterItem">
+            <span class="daily-counter__label" id="dailyCustomLabel">Custom</span>
+            <div class="daily-counter__controls">
+              <button class="daily-counter__btn" type="button" data-counter="custom" data-delta="-1" aria-label="Decrease custom count">-</button>
+              <span class="daily-counter__value" id="dailyCustomCount">0</span>
+              <button class="daily-counter__btn" type="button" data-counter="custom" data-delta="1" aria-label="Increase custom count">+</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+      <div class="daily-counter" id="weeklyCounterSection" data-layout-item="weeklyCounter" aria-label="Weekly task counter">
+        <div class="daily-counter__header">
+          <span>Weekly task counter</span>
+          <div class="daily-counter__actions">
+            <button id="clearWeeklyCountersBtn" class="daily-counter__clear" type="button" aria-label="Clear weekly counter">
+              Clear
+            </button>
+            <button id="toggleWeeklyCounterBtn" class="daily-counter__toggle" type="button" aria-expanded="true" aria-controls="weeklyCounterContent">
+              <span class="daily-counter__toggle-text">Hide</span>
+              <span class="daily-counter__chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
+        </div>
+        <div class="daily-counter__content" id="weeklyCounterContent">
+          <div class="daily-counter__grid weekly-counter__grid">
+            <div class="daily-counter__item">
+              <span class="daily-counter__label">Total</span>
+              <div class="daily-counter__controls">
+                <button class="daily-counter__btn" type="button" data-weekly-delta="-1" aria-label="Decrease weekly total">-</button>
+                <span class="daily-counter__value" id="weeklyTotalCount">0</span>
+                <button class="daily-counter__btn" type="button" data-weekly-delta="1" aria-label="Increase weekly total">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="landing-crm-nav" data-layout-item="crmNavigator">
+        <div class="landing-crm-nav__title">CRM Navigator</div>
+        <form id="landingCrmNavigatorForm" class="landing-crm-nav__form">
+          <label class="landing-crm-nav__label" for="landingCrmNavigatorInput">CRM ID</label>
+          <input type="text" id="landingCrmNavigatorInput" class="landing-crm-nav__input" placeholder="Enter CRM ID" required />
+          <button type="submit" class="toggle-btn landing-crm-nav__btn">Go</button>
+        </form>
+      </div>
+      <div class="landing-section" data-layout-item="checkinTools">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="checkin-tools" aria-expanded="false" data-tooltip="Folder housing check-in tools. Click to reveal the Device Lookup tool and the Check-in form.">
+          Check-in Tools
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="checkin-tools" hidden>
+          <button id="deviceLookupBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Full device lookup tool with CRM navigation and check-in auto-fill.">
+            Device Number Lookup Sidekick
+          </button>
+          <button id="startCheckinBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Check-in form that auto-fills name and AAC from the current CRM.">
+            Check-in Sidekick
+          </button>
+          <button id="startLtlUpdateBtn" class="toggle-btn landing-btn" type="button" data-tooltip="LTL Update check-in form without camera and mount sections.">
+            LTL Update Sidekick
+            <span class="landing-btn__tag">Beta</span>
+          </button>
+        </div>
+      </div>
+      <div class="landing-section" data-layout-item="prepTools">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="prep-tools" aria-expanded="false" data-tooltip="Folder housing prep tools. Click to reveal Grid Sidekick, TalkPad Prep Sidekick, and GridPad Prep Sidekick.">
+          Prep Tools
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="prep-tools" hidden>
+          <button id="gridSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Builds Grid email/password from the current CRM (CL or LTL) with copy fields.">
+            Grid Sidekick
+          </button>
+          <button id="ageCalculatorBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Calculates age from a birthdate by comparing it against today's date.">
+            Age Calculator
+          </button>
+          <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Basic TalkPad prep checklist (more features coming soon).">
+            TalkPad Prep Sidekick
+          </button>
+          <button id="gridPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Categorized GridPad Go prep checklist with reorderable categories.">
+            GridPad &amp; GridPad Go Prep Side Kicik
+            <span class="landing-btn__tag">Beta</span>
+          </button>
+        </div>
+      </div>
+      <button id="qaFormBtn" class="toggle-btn landing-btn" data-layout-item="qaForm" type="button" data-tooltip="Opens the QA form.">
+        QA Form
+      </button>
+      <div class="landing-section" data-layout-item="trialsLinks">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false" data-tooltip="Folder of useful links like CRM Navigator, APP override codes, and KG request form.">
+          Trials Links
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="trials-links" hidden>
+          <button id="appOverridesBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens a window with our app override codes.">
+            APP Overrides
+          </button>
+          <button id="kgRequestsBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens the KG request form.">
+            KG Requests
+          </button>
+        </div>
+      </div>
+      <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" data-layout-item="userSettings" type="button">
+        <span class="landing-settings-icon" aria-hidden="true">⚙</span>
+        <span>User settings</span>
+      </button>
+      </div>
+    </div>
+    <div class="landing-version" id="landingVersion"></div>
+    <button class="landing-corner-symojo-btn" id="landingCornerSymojiBtn" type="button" aria-label="Change corner Symoji">
+      <img class="landing-corner-symojo" id="landingCornerSymoji" src="assets/symoji.png" alt="Symoji mascot" />
+    </button>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="container settings-view" id="settingsView" style="display:none;">
+    <h1>User settings</h1>
+    <p class="complete-intro">Manage your profile details and theme preferences.</p>
+    <div class="settings-panel">
+      <div class="settings-card">
+        <div class="settings-card__title">User profile</div>
+        <p class="hint-text">Update your name, daily and weekly counter preferences, and workbook connections.</p>
+        <label class="checkbox-row" for="settingsTooltipToggle">
+          <input type="checkbox" id="settingsTooltipToggle" />
+          Show tooltips on landing buttons
+        </label>
+        <button id="editUserProfileBtn" class="toggle-btn settings-card__action" type="button">
+          Edit user profile
+        </button>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card__title">Check-in logging</div>
+        <p class="hint-text">Logs are saved to OneDrive - Talk to Me Technologies\Trials SharePoint (Do not email) - Trials Operations\CRM Sidekick - Browser Ext\Logs.</p>
+        <p class="hint-text"><a href="https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FTrialsSharePoint2%2FShared%20Documents%2FTrials%20Operations%2FCRM%20Sidekick%20%2D%20Browser%20Ext%2FLogs&viewid=c09dd3c3%2Dbe9b%2D48f7%2D9635%2D46c9f9037922" target="_blank" rel="noopener noreferrer">Open SharePoint Logs folder</a></p>
+        <button class="toggle-btn settings-card__action" type="button" data-log-folder-pick>
+          Choose log folder
+        </button>
+        <div class="status-line" data-log-folder-status>No log folder selected yet.</div>
+      </div>
       <div class="settings-card">
         <div class="settings-card__title">Theme picker</div>
         <div class="theme-menu" aria-live="polite">
@@ -107,24 +373,18 @@
           </div>
         </div>
       </div>
-
-      <button class="toggle-btn" id="beginOutlookSetupBtn" type="button">Begin Outlook setup flow</button>
-      <button class="toggle-btn" type="submit">Save and Continue</button>
-    </form>
-  </div>
-
-  <!-- OUTLOOK SETUP VIEW -->
-  <div class="container" id="outlookSetupView" style="display:none;">
-    <h1>Outlook setup</h1>
-    <p class="complete-intro">Finish the one-time Outlook setup so email drafting works in CRM Sidekick.</p>
-    <ol class="outlook-setup-steps">
-      <li>Sign in to Outlook in the tab that just opened.</li>
-      <li>Allow Outlook web access and keep the tab open while setup completes.</li>
-      <li>When you're done, return here and click the button below.</li>
-    </ol>
-    <div class="outlook-setup-finish">
-      <img class="outlook-setup-thumb" src="assets/sparknsymoji.png" alt="Outlook setup helper mascot" />
-      <button class="toggle-btn outlook-setup-finish-btn" id="finishOutlookSetupBtn" type="button">I finished Outlook setup</button>
+      <div class="settings-card">
+        <div class="settings-card__title">Update notes</div>
+        <p class="hint-text">See what has changed since the last release.</p>
+        <button id="updateNotesBtn" class="toggle-btn settings-card__action" type="button">
+          View update notes
+        </button>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="settingsReturnBtn" class="toggle-btn" type="button">
+        Return to CRM Sidekick
+      </button>
     </div>
   </div>
 
@@ -294,6 +554,35 @@
     </div>
   </div>
 
+  <!-- UPDATE NOTES VIEW -->
+  <div class="container update-notes-view" id="updateNotesView" style="display:none;">
+    <h1>Update notes</h1>
+    <p class="complete-intro">What’s new since version 1.1.2.</p>
+    <div class="settings-panel">
+      <div class="settings-card">
+        <div class="settings-card__title">Version 1.1.2 highlights</div>
+        <ul class="update-notes-list">
+          <li>Added a new Big File Bypass flow for oversized trial file sets.</li>
+          <li>When bypass is enabled, Sidekick skips auto-zipping so you can package and upload files manually.</li>
+          <li>Clarified prompts to keep Grid files zipped separately from non-Grid files before CRM upload.</li>
+        </ul>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card__title">Version 1.1.1 highlights</div>
+        <ul class="update-notes-list">
+          <li>Improve and enhance.</li>
+          <li>Adjusted naming and zip handeling.</li>
+          <li>Testing OneDrive sync updates for extension.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="updateNotesReturnBtn" class="toggle-btn" type="button">
+        Back to user settings
+      </button>
+    </div>
+  </div>
+
   <!-- QA COMPLETE VIEW -->
   <div class="container qa-complete-view" id="qaCompleteView" style="display:none;">
     <h1>QA Complete</h1>
@@ -431,6 +720,7 @@
 
     <div class="mini-row grid-actions-row">
       <button id="gridRefreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
+      <button id="gridGenerateQrBtn" class="toggle-btn" type="button">Generate QR for VPN Station (Beta)</button>
       <button id="gridRegisterLicenseBtn" class="toggle-btn" type="button">Register Grid License</button>
       <button id="gridLockChangesBtn" class="toggle-btn" type="button">Lock Changes: Off</button>
       <button id="gridReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
@@ -483,6 +773,23 @@
       <div id="gridStatus" class="status-line"></div>
     </div>
 
+    <div class="note-preview grid-qr-block" id="gridQrBlock" style="display:none;">
+      <div class="note-preview__title">Device setup QR</div>
+      <p class="hint-text">Scan this code with the device being prepped so you have the email for the VPN station when you make Dropbox, or you can paste it into the Grid app.</p>
+      <img id="gridQrImage" class="grid-qr-image" alt="Grid setup QR code" />
+
+      <label class="copy-label" for="gridQrEmailField">QR email</label>
+      <div class="copy-row">
+        <input type="text" id="gridQrEmailField" class="copy-field" readonly placeholder="Generated Grid email" />
+        <button id="gridQrEmailCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
+      </div>
+
+      <label class="copy-label" for="gridQrPasswordField">QR password</label>
+      <div class="copy-row">
+        <input type="text" id="gridQrPasswordField" class="copy-field" readonly placeholder="Generated Grid password" />
+        <button id="gridQrPasswordCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
+      </div>
+    </div>
   </div>
 
   <!-- TALKPAD PREP SIDEKICK VIEW -->
