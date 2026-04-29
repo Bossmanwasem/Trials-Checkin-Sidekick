@@ -32,6 +32,9 @@ const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
+const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
+const LOGS_HANDLE_KEY = "logsFolder";
+const LOGS_SHAREPOINT_FOLDER_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FTrialsSharePoint2%2FShared%20Documents%2FTrials%20Operations%2FCRM%20Sidekick%20%2D%20Browser%20Ext%2FLogs&viewid=c09dd3c3%2Dbe9b%2D48f7%2D9635%2D46c9f9037922";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
@@ -83,7 +86,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -464,6 +467,7 @@ function showThemeBuilderView() {
   showView("themeBuilderView");
   refreshThemeBuilderFromActiveTheme();
 }
+function showUpdateNotesView() { showView("updateNotesView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
@@ -4027,6 +4031,8 @@ const trialFilesStatus = document.getElementById("trialFilesStatus");
 const renameWorkflowStatusBar = document.getElementById("renameWorkflowStatusBar");
 const renameWorkflowStatusFill = document.getElementById("renameWorkflowStatusFill");
 const renameWorkflowStatusText = document.getElementById("renameWorkflowStatusText");
+const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
+const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
 
 function openCleanupHandleDb() {
   return new Promise((resolve, reject) => {
@@ -4178,12 +4184,93 @@ async function initCleanupFolderSetting() {
   });
 }
 
-async function logTaskOutcome(action, outcome) {
-  return;
+function updateLogFolderStatus(name, messageOverride = null) {
+  if (!logFolderStatusEls.length) return;
+  const message = messageOverride
+    || (name ? `Saving logs to "${name}".` : "No log folder selected yet.");
+  logFolderStatusEls.forEach(el => {
+    el.textContent = message;
+  });
 }
 
-async function logLtlUpdateOutcome(outcome) {
-  return;
+async function setLogFolderName(name) {
+  await setStoredValue(LOGS_FOLDER_NAME_STORAGE_KEY, name || "");
+  updateLogFolderStatus(name);
+}
+
+async function getLogFolderName() {
+  return await getStoredValue(LOGS_FOLDER_NAME_STORAGE_KEY);
+}
+
+async function saveLogFolderHandle(handle) {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
+    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, LOGS_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadLogFolderHandle() {
+  const db = await openCleanupHandleDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
+    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(LOGS_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function pickLogFolder() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Folder picking isn't supported in this browser.");
+    return null;
+  }
+  try {
+    await chrome.tabs.create({ url: LOGS_SHAREPOINT_FOLDER_URL, active: false });
+  } catch {
+    // Non-blocking convenience only.
+  }
+  let handle;
+  try {
+    handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  } catch {
+    return null;
+  }
+  if (!handle) return null;
+  await saveLogFolderHandle(handle);
+  await setLogFolderName(handle.name || "Selected folder");
+  return handle;
+}
+
+async function initLogFolderSetting() {
+  if (!logFolderPickButtons.length) return;
+  const storedName = await getLogFolderName();
+  updateLogFolderStatus(
+    storedName,
+    storedName
+      ? null
+      : "No log folder selected yet. Sidekick will open the SharePoint Logs folder before you choose it."
+  );
+  logFolderPickButtons.forEach(button => {
+    button.addEventListener("click", async () => {
+      await pickLogFolder();
+    });
+  });
+}
+
+function updateTrialFilesFolderStatus(name, messageOverride = null) {
+  if (!trialFilesFolderStatus) return;
+  if (messageOverride) {
+    trialFilesFolderStatus.textContent = messageOverride;
+    return;
+  }
+  if (name) {
+    trialFilesFolderStatus.textContent = `Using "${name}" for saved zips.`;
+    return;
+  }
+  trialFilesFolderStatus.textContent = "No saved zips folder selected yet.";
 }
 
 async function setTrialFilesFolderName(name) {
@@ -4288,6 +4375,7 @@ initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
 initCleanupFolderSetting();
+initLogFolderSetting();
 initTrialFilesFolderSetting();
 
 function setValue(id, val) {
@@ -4343,6 +4431,76 @@ function buildLogUserName(profile) {
   const last = (profile?.lastName || "").trim();
   const combined = `${first} ${last}`.trim();
   return sanitizeLogLabel(combined || first || "User");
+}
+
+async function getLogBaseHandle({ promptIfMissing = false } = {}) {
+  let handle = await loadLogFolderHandle().catch(() => null);
+  if (!handle && promptIfMissing) {
+    handle = await pickLogFolder();
+  }
+  if (!handle) return null;
+  const permitted = await verifyFolderPermission(handle, "readwrite");
+  if (!permitted) {
+    const storedName = await getLogFolderName();
+    updateLogFolderStatus(storedName, "Folder access blocked. Click Choose log folder to re-authorize.");
+    return null;
+  }
+  return handle;
+}
+
+async function writeLogEntry({ action, outcome }) {
+  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  if (!baseHandle) return false;
+  const profile = await getUserProfile();
+  const username = buildLogUserName(profile);
+  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
+  const now = new Date();
+  const actionLabel = formatActionLogLabel(action);
+  const filename = `${username} ${actionLabel} logs.txt`;
+  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+  const outcomeText = outcome && outcome.trim() ? outcome : "Completed successfully";
+  const line = `${username}--${formatLogDate(now)}--${formatLogTime(now)}--${outcomeText}`;
+  const existingFile = await fileHandle.getFile();
+  const writable = await fileHandle.createWritable({ keepExistingData: true });
+  await writable.seek(existingFile.size);
+  await writable.write(`${line}\n`);
+  await writable.close();
+  return true;
+}
+
+async function logTaskOutcome(action, outcome) {
+  try {
+    await writeLogEntry({ action, outcome });
+  } catch {
+    // Logging should never block the user flow.
+  }
+}
+
+async function writeLtlUpdateLogEntry(outcome) {
+  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
+  if (!baseHandle) return false;
+  const profile = await getUserProfile();
+  const username = buildLogUserName(profile);
+  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
+  const filename = "LTL Update Logs.txt";
+  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
+  const outcomeText = outcome && outcome.trim() ? outcome : "LTL Update Completed successfully";
+  const now = new Date();
+  const line = `${username}--${formatLogDate(now)}--${outcomeText}`;
+  const existingFile = await fileHandle.getFile();
+  const writable = await fileHandle.createWritable({ keepExistingData: true });
+  await writable.seek(existingFile.size);
+  await writable.write(`${line}\n`);
+  await writable.close();
+  return true;
+}
+
+async function logLtlUpdateOutcome(outcome) {
+  try {
+    await writeLtlUpdateLogEntry(outcome);
+  } catch {
+    // Logging should never block the user flow.
+  }
 }
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
@@ -6160,6 +6318,68 @@ async function runDeviceLookupSearch(rawInput) {
 
 const GRID_EMAIL_DOMAIN = "wegotalk.com";
 const GRID_PASSWORD = "Xqxq77##";
+const GRID_QR_API_BASE_URL = "https://api.qrserver.com/v1/create-qr-code/";
+let isGridChangesLocked = false;
+
+function buildGridQrPayload(email) {
+  // Keep this as plain text so scanners don't treat it as an email/mailto payload.
+  return [
+    "GRID LOGIN",
+    `email=${email}`,
+    `password=${GRID_PASSWORD}`
+  ].join("\n");
+}
+
+function hideGridQrBlock() {
+  const qrBlock = document.getElementById("gridQrBlock");
+  const qrImage = document.getElementById("gridQrImage");
+  if (qrBlock) qrBlock.style.display = "none";
+  if (qrImage) qrImage.removeAttribute("src");
+  setValue("gridQrEmailField", "");
+  setValue("gridQrPasswordField", "");
+  const emailCopyBtn = document.getElementById("gridQrEmailCopyBtn");
+  const passwordCopyBtn = document.getElementById("gridQrPasswordCopyBtn");
+  if (emailCopyBtn) {
+    emailCopyBtn.disabled = true;
+    emailCopyBtn.textContent = "Copy";
+  }
+  if (passwordCopyBtn) {
+    passwordCopyBtn.disabled = true;
+    passwordCopyBtn.textContent = "Copy";
+  }
+}
+
+function renderGridQr(email) {
+  const qrBlock = document.getElementById("gridQrBlock");
+  const qrImage = document.getElementById("gridQrImage");
+  const status = document.getElementById("gridStatus");
+  if (!email || !qrBlock || !qrImage) {
+    if (status) status.textContent = "Generate a Grid email first, then create the setup QR.";
+    return;
+  }
+
+  const payload = buildGridQrPayload(email);
+  const qrUrl = `${GRID_QR_API_BASE_URL}?size=260x260&margin=10&data=${encodeURIComponent(payload)}`;
+
+  qrImage.src = qrUrl;
+  qrBlock.style.display = "block";
+  setValue("gridQrEmailField", email);
+  setValue("gridQrPasswordField", GRID_PASSWORD);
+
+  const emailCopyBtn = document.getElementById("gridQrEmailCopyBtn");
+  const passwordCopyBtn = document.getElementById("gridQrPasswordCopyBtn");
+  if (emailCopyBtn) {
+    emailCopyBtn.disabled = false;
+    emailCopyBtn.textContent = "Copy";
+  }
+  if (passwordCopyBtn) {
+    passwordCopyBtn.disabled = false;
+    passwordCopyBtn.textContent = "Copy";
+  }
+
+  if (status) status.textContent = "Setup QR ready. Scan it on the prep device or copy the login fields below.";
+}
+
 function getGridSanitizedNames() {
   return {
     firstName: sanitizeName(getFormValue("#gridFirstName")),
@@ -6254,6 +6474,7 @@ function updateGridOutput({ preserveTypedEmail = false } = {}) {
       : "Enter client details and CRM ID to generate the Grid email.";
   }
 
+  hideGridQrBlock();
 }
 
 async function refreshGridClientData(tabIdOverride = null) {
@@ -7875,6 +8096,13 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     showLandingView();
   });
 
+  document.getElementById("updateNotesBtn")?.addEventListener("click", () => {
+    showUpdateNotesView();
+  });
+
+  document.getElementById("updateNotesReturnBtn")?.addEventListener("click", () => {
+    showSettingsView();
+  });
 
   document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
     showOnboardingView();
@@ -8190,6 +8418,40 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     updateGridOutput({ preserveTypedEmail: true });
   });
 
+  document.getElementById("gridGenerateQrBtn")?.addEventListener("click", () => {
+    const email = getFormValue("#gridEmailField").trim();
+    renderGridQr(email);
+  });
+
+  document.getElementById("gridQrEmailCopyBtn")?.addEventListener("click", async () => {
+    const value = getFormValue("#gridQrEmailField");
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    const btn = document.getElementById("gridQrEmailCopyBtn");
+    const status = document.getElementById("gridStatus");
+    if (btn) {
+      btn.textContent = "Copied!";
+      setTimeout(() => {
+        btn.textContent = "Copy";
+      }, 1200);
+    }
+    if (status) status.textContent = "QR email copied to clipboard.";
+  });
+
+  document.getElementById("gridQrPasswordCopyBtn")?.addEventListener("click", async () => {
+    const value = getFormValue("#gridQrPasswordField");
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    const btn = document.getElementById("gridQrPasswordCopyBtn");
+    const status = document.getElementById("gridStatus");
+    if (btn) {
+      btn.textContent = "Copied!";
+      setTimeout(() => {
+        btn.textContent = "Copy";
+      }, 1200);
+    }
+    if (status) status.textContent = "QR password copied to clipboard.";
+  });
 
 document.getElementById("gridRegisterLicenseBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: GRID_LICENSE_REGISTRATION_URL });
