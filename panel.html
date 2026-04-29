@@ -720,7 +720,6 @@
 
     <div class="mini-row grid-actions-row">
       <button id="gridRefreshBtn" class="toggle-btn" type="button">↻ Refresh from CRM</button>
-      <button id="gridGenerateQrBtn" class="toggle-btn" type="button">Generate QR for VPN Station (Beta)</button>
       <button id="gridRegisterLicenseBtn" class="toggle-btn" type="button">Register Grid License</button>
       <button id="gridLockChangesBtn" class="toggle-btn" type="button">Lock Changes: Off</button>
       <button id="gridReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
@@ -773,23 +772,6 @@
       <div id="gridStatus" class="status-line"></div>
     </div>
 
-    <div class="note-preview grid-qr-block" id="gridQrBlock" style="display:none;">
-      <div class="note-preview__title">Device setup QR</div>
-      <p class="hint-text">Scan this code with the device being prepped so you have the email for the VPN station when you make Dropbox, or you can paste it into the Grid app.</p>
-      <img id="gridQrImage" class="grid-qr-image" alt="Grid setup QR code" />
-
-      <label class="copy-label" for="gridQrEmailField">QR email</label>
-      <div class="copy-row">
-        <input type="text" id="gridQrEmailField" class="copy-field" readonly placeholder="Generated Grid email" />
-        <button id="gridQrEmailCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
-      </div>
-
-      <label class="copy-label" for="gridQrPasswordField">QR password</label>
-      <div class="copy-row">
-        <input type="text" id="gridQrPasswordField" class="copy-field" readonly placeholder="Generated Grid password" />
-        <button id="gridQrPasswordCopyBtn" class="copy-btn" type="button" disabled>Copy</button>
-      </div>
-    </div>
   </div>
 
   <!-- TALKPAD PREP SIDEKICK VIEW -->
