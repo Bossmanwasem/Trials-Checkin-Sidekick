@@ -17,18 +17,18 @@
     "default_path": "panel.html"
   },
   "icons": {
-    "16": "assets/sparknsymoji.png",
-    "32": "assets/sparknsymoji.png",
-    "48": "assets/sparknsymoji.png",
-    "128": "assets/sparknsymoji.png"
+    "16": "assets/SB logo.png",
+    "32": "assets/SB logo.png",
+    "48": "assets/SB logo.png",
+    "128": "assets/SB logo.png"
   },
   "action": {
     "default_title": "Open Check-in Panel",
     "default_icon": {
-      "16": "assets/sparknsymoji.png",
-      "32": "assets/sparknsymoji.png",
-      "48": "assets/sparknsymoji.png",
-      "128": "assets/sparknsymoji.png"
+      "16": "assets/SB logo.png",
+      "32": "assets/SB logo.png",
+      "48": "assets/SB logo.png",
+      "128": "assets/SB logo.png"
     }
   },
   "content_scripts": [
