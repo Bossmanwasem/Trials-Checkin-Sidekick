@@ -55,9 +55,9 @@ function runPrepFlowTask(payload) {
       }
       return { status: "ok", route: "prepServiceLoan", crmId };
     case "PREP_FINISH":
-      return { status: "ok", route: "landing", incrementCounter: "preps", logTask: "Prep" };
+      return { status: "ok", route: "landing", incrementCounter: "preps" };
     case "GRIDPAD_PREP_FINISH":
-      return { status: "ok", route: "landing", incrementCounter: "preps", logTask: "Prep" };
+      return { status: "ok", route: "landing", incrementCounter: "preps" };
     default:
       throw new Error(`Unsupported prep flow task: ${action || "(empty)"}`);
   }
@@ -76,8 +76,7 @@ function runQaFlowTask(payload) {
         route: "landing",
         closeQaForm: true,
         resetQaFields: true,
-        incrementCounter: "qas",
-        logTask: "QA"
+        incrementCounter: "qas"
       };
     case "QA_RETURN":
       return { status: "ok", route: "landing", closeQaForm: true, resetQaFields: true };
