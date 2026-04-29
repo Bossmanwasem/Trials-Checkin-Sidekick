@@ -6301,17 +6301,6 @@ async function runDeviceLookupSearch(rawInput) {
     rollingMounts: mountResult.rolling.map(item => item.serial)
   };
 
-  await logTaskOutcome(
-    "Device Lookup",
-    [
-      `Search: ${extracted}`,
-      `CRM: ${crmId || "N/A"}`,
-      `LTL: ${foundInLtl ? "yes" : "no"}`,
-      `RWL: ${foundInRwl ? "yes" : "no"}`,
-      `Mounts: ${hasMounts ? "yes" : "no"}`,
-      `Status: ${actionColor}`
-    ].join(" | ")
-  );
 }
 
 /* ---------------- Grid sidekick ---------------- */
