@@ -8097,6 +8097,24 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     showAppOverridesView();
   });
 
+  document.getElementById("touchchatOverrideBtn")?.addEventListener("click", () => {
+    const popup = window.open("", "touchchatOverrideCode", "width=700,height=500");
+    if (!popup) {
+      alert("Unable to open the Touchchat code window. Please allow pop-ups and try again.");
+      return;
+    }
+    popup.document.title = "Touchchat Override";
+    popup.document.body.style.margin = "0";
+    popup.document.body.style.display = "flex";
+    popup.document.body.style.alignItems = "center";
+    popup.document.body.style.justifyContent = "center";
+    popup.document.body.style.fontFamily = "Arial, sans-serif";
+    popup.document.body.style.fontSize = "120px";
+    popup.document.body.style.fontWeight = "700";
+    popup.document.body.textContent = "72584556";
+    popup.focus();
+  });
+
   document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
