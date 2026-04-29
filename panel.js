@@ -7451,7 +7451,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     if (!hasValidVocabSelection()) {
       const message = "Select at least one vocab or check \"Vocab NOT returned\" before continuing.";
       alert(message);
-      await logTaskOutcome("Checkin", message);
       return;
     }
 
@@ -7495,7 +7494,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     if (!setNoteRes.ok) {
       const message = "Failed to fill CRM note box.";
       alert(message);
-      await logTaskOutcome("Checkin", message);
       return;
     }
 
@@ -7506,7 +7504,6 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     if (!setCatRes.ok) {
       const message = `Failed to select note category "${noteCategory}".`;
       alert(message);
-      await logTaskOutcome("Checkin", message);
       return;
     }
 
@@ -7515,12 +7512,10 @@ document.getElementById("checkinForm")?.addEventListener("submit", async e => {
     if (!clickRes.ok) {
       const message = "Failed to submit the note.";
       alert(message);
-      await logTaskOutcome("Checkin", message);
       return;
     }
 
     // ✅ SUCCESS
-    await logTaskOutcome("Checkin", "Completed successfully");
     resetAllFieldsAndUI();
     setText("notePreviewText", note);
     if (isMountOnly && !isLtlUpdateFlow()) {
