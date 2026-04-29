@@ -1225,7 +1225,7 @@ const CUSTOM_THEME_DEFAULT_VARS = {
 
 const THEMES = {
   ocean: {
-    label: "Ocean Blue",
+    label: "Smartbox Blue",
     vars: {
       "bg-color": "#121212",
       "text-color": "#e0e0e0",
