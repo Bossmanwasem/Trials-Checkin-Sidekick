@@ -107,11 +107,24 @@
           </div>
         </div>
       </div>
-    </div>
-    <div class="crm-nav-footer">
-      <button id="settingsReturnBtn" class="toggle-btn" type="button">
-        Return to CRM Sidekick
-      </button>
+
+      <button class="toggle-btn" id="beginOutlookSetupBtn" type="button">Begin Outlook setup flow</button>
+      <button class="toggle-btn" type="submit">Save and Continue</button>
+    </form>
+  </div>
+
+  <!-- OUTLOOK SETUP VIEW -->
+  <div class="container" id="outlookSetupView" style="display:none;">
+    <h1>Outlook setup</h1>
+    <p class="complete-intro">Finish the one-time Outlook setup so email drafting works in CRM Sidekick.</p>
+    <ol class="outlook-setup-steps">
+      <li>Sign in to Outlook in the tab that just opened.</li>
+      <li>Allow Outlook web access and keep the tab open while setup completes.</li>
+      <li>When you're done, return here and click the button below.</li>
+    </ol>
+    <div class="outlook-setup-finish">
+      <img class="outlook-setup-thumb" src="assets/sparknsymoji.png" alt="Outlook setup helper mascot" />
+      <button class="toggle-btn outlook-setup-finish-btn" id="finishOutlookSetupBtn" type="button">I finished Outlook setup</button>
     </div>
   </div>
 
