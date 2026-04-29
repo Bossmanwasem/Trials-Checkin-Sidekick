@@ -86,7 +86,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -467,7 +467,6 @@ function showThemeBuilderView() {
   showView("themeBuilderView");
   refreshThemeBuilderFromActiveTheme();
 }
-function showUpdateNotesView() { showView("updateNotesView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
@@ -8017,14 +8016,6 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 
   document.getElementById("settingsReturnBtn")?.addEventListener("click", () => {
     showLandingView();
-  });
-
-  document.getElementById("updateNotesBtn")?.addEventListener("click", () => {
-    showUpdateNotesView();
-  });
-
-  document.getElementById("updateNotesReturnBtn")?.addEventListener("click", () => {
-    showSettingsView();
   });
 
   document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
