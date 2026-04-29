@@ -32,9 +32,6 @@ const CHECKIN_CLEANUP_HANDLE_STORE = "handles";
 const CHECKIN_CLEANUP_HANDLE_KEY = "checkinCleanupFolder";
 const TRIAL_FILES_FOLDER_NAME_STORAGE_KEY = "ttmtTrialFilesFolderName";
 const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
-const LOGS_FOLDER_NAME_STORAGE_KEY = "ttmtLogsFolderName";
-const LOGS_HANDLE_KEY = "logsFolder";
-const LOGS_SHAREPOINT_FOLDER_URL = "https://talktometechnologies2com.sharepoint.com/sites/TrialsSharePoint2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FTrialsSharePoint2%2FShared%20Documents%2FTrials%20Operations%2FCRM%20Sidekick%20%2D%20Browser%20Ext%2FLogs&viewid=c09dd3c3%2Dbe9b%2D48f7%2D9635%2D46c9f9037922";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
@@ -86,7 +83,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "updateNotesView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -467,7 +464,6 @@ function showThemeBuilderView() {
   showView("themeBuilderView");
   refreshThemeBuilderFromActiveTheme();
 }
-function showUpdateNotesView() { showView("updateNotesView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
@@ -4031,8 +4027,6 @@ const trialFilesStatus = document.getElementById("trialFilesStatus");
 const renameWorkflowStatusBar = document.getElementById("renameWorkflowStatusBar");
 const renameWorkflowStatusFill = document.getElementById("renameWorkflowStatusFill");
 const renameWorkflowStatusText = document.getElementById("renameWorkflowStatusText");
-const logFolderPickButtons = document.querySelectorAll("[data-log-folder-pick]");
-const logFolderStatusEls = document.querySelectorAll("[data-log-folder-status]");
 
 function openCleanupHandleDb() {
   return new Promise((resolve, reject) => {
@@ -4184,93 +4178,12 @@ async function initCleanupFolderSetting() {
   });
 }
 
-function updateLogFolderStatus(name, messageOverride = null) {
-  if (!logFolderStatusEls.length) return;
-  const message = messageOverride
-    || (name ? `Saving logs to "${name}".` : "No log folder selected yet.");
-  logFolderStatusEls.forEach(el => {
-    el.textContent = message;
-  });
+async function logTaskOutcome(action, outcome) {
+  return;
 }
 
-async function setLogFolderName(name) {
-  await setStoredValue(LOGS_FOLDER_NAME_STORAGE_KEY, name || "");
-  updateLogFolderStatus(name);
-}
-
-async function getLogFolderName() {
-  return await getStoredValue(LOGS_FOLDER_NAME_STORAGE_KEY);
-}
-
-async function saveLogFolderHandle(handle) {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readwrite");
-    tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).put(handle, LOGS_HANDLE_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function loadLogFolderHandle() {
-  const db = await openCleanupHandleDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(CHECKIN_CLEANUP_HANDLE_STORE, "readonly");
-    const req = tx.objectStore(CHECKIN_CLEANUP_HANDLE_STORE).get(LOGS_HANDLE_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function pickLogFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("Folder picking isn't supported in this browser.");
-    return null;
-  }
-  try {
-    await chrome.tabs.create({ url: LOGS_SHAREPOINT_FOLDER_URL, active: false });
-  } catch {
-    // Non-blocking convenience only.
-  }
-  let handle;
-  try {
-    handle = await window.showDirectoryPicker({ mode: "readwrite" });
-  } catch {
-    return null;
-  }
-  if (!handle) return null;
-  await saveLogFolderHandle(handle);
-  await setLogFolderName(handle.name || "Selected folder");
-  return handle;
-}
-
-async function initLogFolderSetting() {
-  if (!logFolderPickButtons.length) return;
-  const storedName = await getLogFolderName();
-  updateLogFolderStatus(
-    storedName,
-    storedName
-      ? null
-      : "No log folder selected yet. Sidekick will open the SharePoint Logs folder before you choose it."
-  );
-  logFolderPickButtons.forEach(button => {
-    button.addEventListener("click", async () => {
-      await pickLogFolder();
-    });
-  });
-}
-
-function updateTrialFilesFolderStatus(name, messageOverride = null) {
-  if (!trialFilesFolderStatus) return;
-  if (messageOverride) {
-    trialFilesFolderStatus.textContent = messageOverride;
-    return;
-  }
-  if (name) {
-    trialFilesFolderStatus.textContent = `Using "${name}" for saved zips.`;
-    return;
-  }
-  trialFilesFolderStatus.textContent = "No saved zips folder selected yet.";
+async function logLtlUpdateOutcome(outcome) {
+  return;
 }
 
 async function setTrialFilesFolderName(name) {
@@ -4375,7 +4288,6 @@ initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
 initCleanupFolderSetting();
-initLogFolderSetting();
 initTrialFilesFolderSetting();
 
 function setValue(id, val) {
@@ -4431,76 +4343,6 @@ function buildLogUserName(profile) {
   const last = (profile?.lastName || "").trim();
   const combined = `${first} ${last}`.trim();
   return sanitizeLogLabel(combined || first || "User");
-}
-
-async function getLogBaseHandle({ promptIfMissing = false } = {}) {
-  let handle = await loadLogFolderHandle().catch(() => null);
-  if (!handle && promptIfMissing) {
-    handle = await pickLogFolder();
-  }
-  if (!handle) return null;
-  const permitted = await verifyFolderPermission(handle, "readwrite");
-  if (!permitted) {
-    const storedName = await getLogFolderName();
-    updateLogFolderStatus(storedName, "Folder access blocked. Click Choose log folder to re-authorize.");
-    return null;
-  }
-  return handle;
-}
-
-async function writeLogEntry({ action, outcome }) {
-  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
-  if (!baseHandle) return false;
-  const profile = await getUserProfile();
-  const username = buildLogUserName(profile);
-  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
-  const now = new Date();
-  const actionLabel = formatActionLogLabel(action);
-  const filename = `${username} ${actionLabel} logs.txt`;
-  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
-  const outcomeText = outcome && outcome.trim() ? outcome : "Completed successfully";
-  const line = `${username}--${formatLogDate(now)}--${formatLogTime(now)}--${outcomeText}`;
-  const existingFile = await fileHandle.getFile();
-  const writable = await fileHandle.createWritable({ keepExistingData: true });
-  await writable.seek(existingFile.size);
-  await writable.write(`${line}\n`);
-  await writable.close();
-  return true;
-}
-
-async function logTaskOutcome(action, outcome) {
-  try {
-    await writeLogEntry({ action, outcome });
-  } catch {
-    // Logging should never block the user flow.
-  }
-}
-
-async function writeLtlUpdateLogEntry(outcome) {
-  const baseHandle = await getLogBaseHandle({ promptIfMissing: true });
-  if (!baseHandle) return false;
-  const profile = await getUserProfile();
-  const username = buildLogUserName(profile);
-  const userFolder = await baseHandle.getDirectoryHandle(`${username} Logs`, { create: true });
-  const filename = "LTL Update Logs.txt";
-  const fileHandle = await userFolder.getFileHandle(filename, { create: true });
-  const outcomeText = outcome && outcome.trim() ? outcome : "LTL Update Completed successfully";
-  const now = new Date();
-  const line = `${username}--${formatLogDate(now)}--${outcomeText}`;
-  const existingFile = await fileHandle.getFile();
-  const writable = await fileHandle.createWritable({ keepExistingData: true });
-  await writable.seek(existingFile.size);
-  await writable.write(`${line}\n`);
-  await writable.close();
-  return true;
-}
-
-async function logLtlUpdateOutcome(outcome) {
-  try {
-    await writeLtlUpdateLogEntry(outcome);
-  } catch {
-    // Logging should never block the user flow.
-  }
 }
 
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
@@ -8033,13 +7875,6 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     showLandingView();
   });
 
-  document.getElementById("updateNotesBtn")?.addEventListener("click", () => {
-    showUpdateNotesView();
-  });
-
-  document.getElementById("updateNotesReturnBtn")?.addEventListener("click", () => {
-    showSettingsView();
-  });
 
   document.getElementById("editUserProfileBtn")?.addEventListener("click", () => {
     showOnboardingView();
