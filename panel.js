@@ -3932,7 +3932,7 @@ function renderThemeOptions() {
     heading.type = "button";
     heading.className = "toggle-btn theme-options__toggle";
     heading.dataset.collapsible = sectionKey;
-    heading.setAttribute("aria-expanded", category === "single" ? "true" : "false");
+    heading.setAttribute("aria-expanded", "false");
     heading.innerHTML = `
         <span>${THEME_CATEGORY_LABELS[category] || category}</span>
         <span class="theme-options__chevron" aria-hidden="true">▾</span>
@@ -3961,7 +3961,7 @@ function renderThemeOptions() {
     const content = document.createElement("div");
     content.className = "theme-options__content";
     content.dataset.collapsibleContent = sectionKey;
-    content.hidden = category !== "single";
+    content.hidden = true;
     content.appendChild(grid);
     section.appendChild(heading);
     section.appendChild(content);
