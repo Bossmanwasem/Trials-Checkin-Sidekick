@@ -8097,13 +8097,13 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     showAppOverridesView();
   });
 
-  document.getElementById("touchchatOverrideBtn")?.addEventListener("click", () => {
-    const popup = window.open("", "touchchatOverrideCode", "width=700,height=500");
+  function openIpadScannablePopup({ windowName, title, code, appName }) {
+    const popup = window.open("", windowName, "width=700,height=500");
     if (!popup) {
-      alert("Unable to open the Touchchat code window. Please allow pop-ups and try again.");
+      alert(`Unable to open the ${appName} code window. Please allow pop-ups and try again.`);
       return;
     }
-    popup.document.title = "Touchchat Override";
+    popup.document.title = title;
     popup.document.body.style.margin = "0";
     popup.document.body.style.display = "flex";
     popup.document.body.style.alignItems = "center";
@@ -8111,8 +8111,26 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     popup.document.body.style.fontFamily = "Arial, sans-serif";
     popup.document.body.style.fontSize = "120px";
     popup.document.body.style.fontWeight = "700";
-    popup.document.body.textContent = "72584556";
+    popup.document.body.textContent = code;
     popup.focus();
+  }
+
+  document.getElementById("touchchatOverrideBtn")?.addEventListener("click", () => {
+    openIpadScannablePopup({
+      windowName: "touchchatOverrideCode",
+      title: "Touchchat iPad Scannable Text",
+      code: "72584556",
+      appName: "Touchchat"
+    });
+  });
+
+  document.getElementById("p2gOverrideBtn")?.addEventListener("click", () => {
+    openIpadScannablePopup({
+      windowName: "p2gOverrideCode",
+      title: "P2G iPad Scannable Text",
+      code: "vygh-phi-rhy-mo",
+      appName: "P2G"
+    });
   });
 
   document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
