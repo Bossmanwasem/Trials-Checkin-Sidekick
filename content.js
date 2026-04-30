@@ -1062,6 +1062,37 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
   const ttmtAccentHover = palette["accent-strong-hover"] || "#33445e";
   const ttmtError = palette["error-color"] || "#ff9f9f";
 
+
+  const runtimeVars = {
+    "--ttmt-bg": ttmtBg,
+    "--ttmt-text": ttmtText,
+    "--ttmt-muted": ttmtMuted,
+    "--ttmt-surface": ttmtSurface,
+    "--ttmt-border": ttmtBorder,
+    "--ttmt-input-bg": ttmtInputBg,
+    "--ttmt-input-border": ttmtInputBorder,
+    "--ttmt-note-bg": ttmtNoteBg,
+    "--ttmt-note-border": ttmtNoteBorder,
+    "--ttmt-accent": ttmtAccent,
+    "--ttmt-accent-strong": ttmtAccentStrong,
+    "--ttmt-accent-hover": ttmtAccentHover,
+    "--ttmt-error": ttmtError,
+    "--ttmt-primary": ttmtAccent,
+    "--ttmt-primary-bg-subtle": mixHex(ttmtSurface, ttmtAccent, 0.22),
+    "--ttmt-primary-border-subtle": mixHex(ttmtBorder, ttmtAccent, 0.45),
+    "--bs-primary": ttmtAccent,
+    "--bs-secondary": ttmtMuted,
+    "--bs-body-bg": ttmtBg,
+    "--bs-body-color": ttmtText,
+    "--bs-border-color": ttmtBorder,
+    "--bs-link-color": ttmtAccent,
+    "--bs-link-hover-color": ttmtAccentHover
+  };
+  Object.entries(runtimeVars).forEach(([key, value]) => {
+    document.documentElement.style.setProperty(key, value, "important");
+    document.body?.style?.setProperty(key, value, "important");
+  });
+
   const css = `
     :root, [data-bs-theme="light"] {
       --ttmt-bg: ${ttmtBg};
