@@ -1190,6 +1190,43 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
       color: var(--ttmt-error) !important;
       border-color: var(--ttmt-error) !important;
     }
+
+    /* Force legacy CRM chrome (menus/sidebar/tabs) into Smartbox Blue */
+    html, body, form, table, tbody, thead, tfoot, tr, td, th, div, section, article, aside, nav, ul, ol, li {
+      border-color: var(--ttmt-border) !important;
+    }
+
+    body, #aspnetForm, #wrapper, #content, #main, #left, #right, #header, #footer,
+    .menu, .submenu, .sidebar, .left-menu, .navigation, .module, .module-body {
+      background-color: var(--ttmt-bg) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    td, th, span, p, strong, em, small, legend, fieldset, label {
+      color: var(--ttmt-text) !important;
+    }
+
+    .tabs, .tab, .tabstrip, .tabContainer, .ajax__tab_header, .ajax__tab_tab,
+    .ajax__tab_outer, .ajax__tab_inner, .ajax__tab_active {
+      background: var(--ttmt-surface) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-border) !important;
+    }
+
+    .tabs a, .tab a, .navigation a, .menu a, .submenu a, #left a, #leftmenu a {
+      color: var(--ttmt-accent) !important;
+    }
+
+    .tabs a:hover, .tab a:hover, .navigation a:hover, .menu a:hover, .submenu a:hover {
+      color: var(--ttmt-accent-hover) !important;
+      background-color: var(--ttmt-primary-bg-subtle) !important;
+    }
+
+    .ajax__tab_active a, .tab.active a, .selected a {
+      color: var(--ttmt-text) !important;
+      background: var(--ttmt-primary-bg-subtle) !important;
+      border-color: var(--ttmt-primary-border-subtle) !important;
+    }
   `;
 
   styleEl.textContent = css;
