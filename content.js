@@ -1370,7 +1370,13 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
     #ctl00_MainContent_Tabs_tpDevice_upnlDevice > div > div > div:nth-child(2) > div > div.card-body > div.card.mb-4 > div.card-header,
     #ctl00_MainContent_Tabs_tpDevice_upnlDevice > div > div > div:nth-child(1) > div > div.card-body > div.card.mt-4 > div.card-header,
     #ctl00_MainContent_Tabs_tpDevice_btnAddDevice,
-    #ctl00_MainContent .card-header { 
+    #ctl00_MainContent .card-header,
+    #ctl00_MainContent_Tabs_tpDocuments > div.card.mb-4.mt-3 > div.card-header,
+    #ctl00_MainContent_Tabs_tpDocuments > div:nth-child(2) > div.card-header,
+    #ctl00_MainContent_Tabs_tpDocuments_btnUpload,
+    #ctl00_MainContent_Tabs_tpDocuments_btnAddDocument,
+    #ctl00_MainContent_Tabs_tpNotes_UpdatePanel5 > div:nth-child(3) > div.card-header,
+    #ctl00_MainContent_Tabs_tpNotes_btnAddNote { 
       background-color: var(--ttmt-surface) !important;
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-border) !important;
