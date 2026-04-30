@@ -1307,6 +1307,41 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
       background: var(--ttmt-primary-bg-subtle) !important;
       border-color: var(--ttmt-primary-border-subtle) !important;
     }
+
+    /* StyleAdmin.css and ASP.NET Ajax tab specific overrides */
+    body {
+      background-color: var(--ttmt-bg) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    #tableContainer table,
+    #tableContainer table thead,
+    #tableContainer table tbody,
+    #tableContainer table tfoot {
+      background-color: var(--ttmt-surface) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    #tableContainer table tbody tr,
+    #tableContainer table tbody tr:nth-child(2n),
+    #tableContainer table tbody tr:nth-child(2n+1) {
+      background-color: var(--ttmt-surface) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    #tableContainer table tbody tr:hover {
+      background-color: var(--ttmt-primary-bg-subtle) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    .ajax__tab_xp .ajax__tab_body,
+    .ajax__tab_xp .ajax__tab_body_verticalleft,
+    .ajax__tab_xp .ajax__tab_body_verticalright,
+    .ajax__tab_xp .ajax__tab_body_bottom {
+      background-color: var(--ttmt-surface) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-border) !important;
+    }
   `;
 
   styleEl.textContent = css;
