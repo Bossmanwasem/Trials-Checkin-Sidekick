@@ -985,6 +985,40 @@ if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
 }
 
+
+function hexToRgb(hex) {
+  const value = (hex || "").trim().replace("#", "");
+  if (!value) return null;
+  const normalized = value.length === 3 ? value.split("").map(ch => ch + ch).join("") : value;
+  if (normalized.length !== 6) return null;
+  const int = Number.parseInt(normalized, 16);
+  if (Number.isNaN(int)) return null;
+  return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
+}
+
+function rgbToHex({ r, g, b }) {
+  const toHex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function mixHex(baseHex, mixHexColor, mixPercent) {
+  const a = hexToRgb(baseHex);
+  const b = hexToRgb(mixHexColor);
+  if (!a || !b) return baseHex;
+  const t = Math.max(0, Math.min(1, mixPercent));
+  return rgbToHex({
+    r: a.r * (1 - t) + b.r * t,
+    g: a.g * (1 - t) + b.g * t,
+    b: a.b * (1 - t) + b.b * t
+  });
+}
+
+function toRgba(hex, alpha = 1) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return `rgba(0, 0, 0, ${alpha})`;
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${Math.max(0, Math.min(1, alpha))})`;
+}
+
 function applyCrmThemeStyle(themeVars = {}) {
   if (!window.location.href.includes("portal.talktometechnologies.com")) {
     return { ok: false, message: "Not on a CRM page." };
@@ -998,27 +1032,41 @@ function applyCrmThemeStyle(themeVars = {}) {
     document.head.appendChild(styleEl);
   }
 
+  const ttmtBg = themeVars["bg-color"] || "#101317";
+  const ttmtText = themeVars["text-color"] || "#e6ecf2";
+  const ttmtMuted = themeVars["muted-text"] || "#c0cad8";
+  const ttmtSurface = themeVars["container-bg"] || "#18202a";
+  const ttmtBorder = themeVars["container-border"] || "#94a3b8";
+  const ttmtInputBg = themeVars["input-bg"] || "#222b36";
+  const ttmtInputBorder = themeVars["input-border"] || "#4b5a6b";
+  const ttmtNoteBg = themeVars["note-bg"] || "#111821";
+  const ttmtNoteBorder = themeVars["note-border"] || "#2a3646";
+  const ttmtAccent = themeVars["accent"] || "#94a3b8";
+  const ttmtAccentStrong = themeVars["accent-strong"] || "#273449";
+  const ttmtAccentHover = themeVars["accent-strong-hover"] || "#33445e";
+  const ttmtError = themeVars["error-color"] || "#ff9f9f";
+
   const css = `
     :root, [data-bs-theme="light"] {
-      --ttmt-bg: ${themeVars["bg-color"] || "#101317"};
-      --ttmt-text: ${themeVars["text-color"] || "#e6ecf2"};
-      --ttmt-muted: ${themeVars["muted-text"] || "#c0cad8"};
-      --ttmt-surface: ${themeVars["container-bg"] || "#18202a"};
-      --ttmt-border: ${themeVars["container-border"] || "#94a3b8"};
-      --ttmt-input-bg: ${themeVars["input-bg"] || "#222b36"};
-      --ttmt-input-border: ${themeVars["input-border"] || "#4b5a6b"};
-      --ttmt-note-bg: ${themeVars["note-bg"] || "#111821"};
-      --ttmt-note-border: ${themeVars["note-border"] || "#2a3646"};
-      --ttmt-accent: ${themeVars["accent"] || "#94a3b8"};
-      --ttmt-accent-strong: ${themeVars["accent-strong"] || "#273449"};
-      --ttmt-accent-hover: ${themeVars["accent-strong-hover"] || "#33445e"};
-      --ttmt-error: ${themeVars["error-color"] || "#ff9f9f"};
+      --ttmt-bg: ${ttmtBg};
+      --ttmt-text: ${ttmtText};
+      --ttmt-muted: ${ttmtMuted};
+      --ttmt-surface: ${ttmtSurface};
+      --ttmt-border: ${ttmtBorder};
+      --ttmt-input-bg: ${ttmtInputBg};
+      --ttmt-input-border: ${ttmtInputBorder};
+      --ttmt-note-bg: ${ttmtNoteBg};
+      --ttmt-note-border: ${ttmtNoteBorder};
+      --ttmt-accent: ${ttmtAccent};
+      --ttmt-accent-strong: ${ttmtAccentStrong};
+      --ttmt-accent-hover: ${ttmtAccentHover};
+      --ttmt-error: ${ttmtError};
 
       --bs-primary: var(--ttmt-accent);
       --bs-secondary: var(--ttmt-muted);
       --bs-success: var(--ttmt-accent);
       --bs-info: var(--ttmt-accent);
-      --bs-warning: color-mix(in srgb, var(--ttmt-accent) 60%, #ffcc00 40%);
+      --bs-warning: ${mixHex(ttmtAccent, "#ffcc00", 0.4)};
       --bs-danger: var(--ttmt-error);
       --bs-light: var(--ttmt-note-bg);
       --bs-dark: var(--ttmt-text);
@@ -1027,45 +1075,45 @@ function applyCrmThemeStyle(themeVars = {}) {
       --bs-secondary-text-emphasis: var(--ttmt-muted);
       --bs-success-text-emphasis: var(--ttmt-accent-strong);
       --bs-info-text-emphasis: var(--ttmt-accent-strong);
-      --bs-warning-text-emphasis: color-mix(in srgb, var(--ttmt-accent-strong) 70%, #664d03 30%);
+      --bs-warning-text-emphasis: ${mixHex(ttmtAccentStrong, "#664d03", 0.3)};
       --bs-danger-text-emphasis: var(--ttmt-error);
 
-      --bs-primary-bg-subtle: color-mix(in srgb, var(--ttmt-accent) 22%, var(--ttmt-surface) 78%);
-      --bs-secondary-bg-subtle: color-mix(in srgb, var(--ttmt-muted) 16%, var(--ttmt-surface) 84%);
-      --bs-success-bg-subtle: color-mix(in srgb, var(--ttmt-accent) 20%, var(--ttmt-surface) 80%);
-      --bs-info-bg-subtle: color-mix(in srgb, var(--ttmt-accent) 18%, var(--ttmt-surface) 82%);
-      --bs-warning-bg-subtle: color-mix(in srgb, #ffc107 25%, var(--ttmt-surface) 75%);
-      --bs-danger-bg-subtle: color-mix(in srgb, var(--ttmt-error) 20%, var(--ttmt-surface) 80%);
-      --bs-light-bg-subtle: color-mix(in srgb, var(--ttmt-note-bg) 70%, var(--ttmt-surface) 30%);
-      --bs-dark-bg-subtle: color-mix(in srgb, var(--ttmt-bg) 75%, #000 25%);
+      --bs-primary-bg-subtle: ${mixHex(ttmtSurface, ttmtAccent, 0.22)};
+      --bs-secondary-bg-subtle: ${mixHex(ttmtSurface, ttmtMuted, 0.16)};
+      --bs-success-bg-subtle: ${mixHex(ttmtSurface, ttmtAccent, 0.20)};
+      --bs-info-bg-subtle: ${mixHex(ttmtSurface, ttmtAccent, 0.18)};
+      --bs-warning-bg-subtle: ${mixHex(ttmtSurface, "#ffc107", 0.25)};
+      --bs-danger-bg-subtle: ${mixHex(ttmtSurface, ttmtError, 0.20)};
+      --bs-light-bg-subtle: ${mixHex(ttmtSurface, ttmtNoteBg, 0.70)};
+      --bs-dark-bg-subtle: ${mixHex(ttmtBg, "#000000", 0.25)};
 
-      --bs-primary-border-subtle: color-mix(in srgb, var(--ttmt-accent) 45%, var(--ttmt-border) 55%);
-      --bs-secondary-border-subtle: color-mix(in srgb, var(--ttmt-muted) 35%, var(--ttmt-border) 65%);
-      --bs-success-border-subtle: color-mix(in srgb, var(--ttmt-accent) 42%, var(--ttmt-border) 58%);
-      --bs-info-border-subtle: color-mix(in srgb, var(--ttmt-accent) 40%, var(--ttmt-border) 60%);
-      --bs-warning-border-subtle: color-mix(in srgb, #ffc107 45%, var(--ttmt-border) 55%);
-      --bs-danger-border-subtle: color-mix(in srgb, var(--ttmt-error) 45%, var(--ttmt-border) 55%);
-      --bs-light-border-subtle: color-mix(in srgb, var(--ttmt-note-border) 50%, var(--ttmt-border) 50%);
-      --bs-dark-border-subtle: color-mix(in srgb, var(--ttmt-border) 70%, #000 30%);
+      --bs-primary-border-subtle: ${mixHex(ttmtBorder, ttmtAccent, 0.45)};
+      --bs-secondary-border-subtle: ${mixHex(ttmtBorder, ttmtMuted, 0.35)};
+      --bs-success-border-subtle: ${mixHex(ttmtBorder, ttmtAccent, 0.42)};
+      --bs-info-border-subtle: ${mixHex(ttmtBorder, ttmtAccent, 0.40)};
+      --bs-warning-border-subtle: ${mixHex(ttmtBorder, "#ffc107", 0.45)};
+      --bs-danger-border-subtle: ${mixHex(ttmtBorder, ttmtError, 0.45)};
+      --bs-light-border-subtle: ${mixHex(ttmtBorder, ttmtNoteBorder, 0.50)};
+      --bs-dark-border-subtle: ${mixHex(ttmtBorder, "#000000", 0.30)};
 
       --bs-body-color: var(--ttmt-text);
       --bs-body-bg: var(--ttmt-bg);
       --bs-emphasis-color: var(--ttmt-text);
-      --bs-secondary-color: color-mix(in srgb, var(--ttmt-muted) 75%, transparent);
-      --bs-tertiary-color: color-mix(in srgb, var(--ttmt-muted) 55%, transparent);
+      --bs-secondary-color: ${toRgba(ttmtMuted, 0.75)};
+      --bs-tertiary-color: ${toRgba(ttmtMuted, 0.55)};
       --bs-secondary-bg: var(--ttmt-surface);
       --bs-tertiary-bg: var(--ttmt-note-bg);
       --bs-heading-color: var(--ttmt-text);
       --bs-link-color: var(--ttmt-accent);
       --bs-link-hover-color: var(--ttmt-accent-hover);
       --bs-code-color: var(--ttmt-accent);
-      --bs-highlight-bg: color-mix(in srgb, var(--ttmt-accent) 25%, var(--ttmt-note-bg) 75%);
+      --bs-highlight-bg: ${mixHex(ttmtNoteBg, ttmtAccent, 0.25)};
       --bs-border-color: var(--ttmt-border);
-      --bs-border-color-translucent: color-mix(in srgb, var(--ttmt-border) 70%, transparent);
-      --bs-focus-ring-color: color-mix(in srgb, var(--ttmt-accent) 35%, transparent);
-      --bs-box-shadow: 0 0.5rem 1rem color-mix(in srgb, var(--ttmt-bg) 70%, #000 30%);
-      --bs-box-shadow-sm: 0 0.125rem 0.25rem color-mix(in srgb, var(--ttmt-bg) 65%, #000 35%);
-      --bs-box-shadow-lg: 0 1rem 3rem color-mix(in srgb, var(--ttmt-bg) 55%, #000 45%);
+      --bs-border-color-translucent: ${toRgba(ttmtBorder, 0.70)};
+      --bs-focus-ring-color: ${toRgba(ttmtAccent, 0.35)};
+      --bs-box-shadow: 0 0.5rem 1rem ${toRgba(mixHex(ttmtBg, "#000000", 0.30), 1)};
+      --bs-box-shadow-sm: 0 0.125rem 0.25rem ${toRgba(mixHex(ttmtBg, "#000000", 0.35), 1)};
+      --bs-box-shadow-lg: 0 1rem 3rem ${toRgba(mixHex(ttmtBg, "#000000", 0.45), 1)};
       --bs-form-valid-color: var(--ttmt-accent);
       --bs-form-valid-border-color: var(--ttmt-accent);
       --bs-form-invalid-color: var(--ttmt-error);
