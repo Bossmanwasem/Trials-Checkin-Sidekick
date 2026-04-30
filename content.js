@@ -1387,6 +1387,65 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-border) !important;
     }
+
+    /* One-big-swoop fallback: theme entire CRM content tree without one-off selectors */
+    #ctl00_MainContent,
+    #ctl00_MainContent * {
+      border-color: var(--ttmt-border) !important;
+    }
+
+    #ctl00_MainContent [class*="card-header"],
+    #ctl00_MainContent [class*="Header"],
+    #ctl00_MainContent h1,
+    #ctl00_MainContent h2,
+    #ctl00_MainContent h3,
+    #ctl00_MainContent h4,
+    #ctl00_MainContent h5 {
+      background-color: var(--ttmt-note-bg) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    #ctl00_MainContent [id*="btn"],
+    #ctl00_MainContent button,
+    #ctl00_MainContent input[type="button"],
+    #ctl00_MainContent input[type="submit"],
+    #ctl00_MainContent .btn {
+      background-color: var(--ttmt-input-bg) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-border) !important;
+    }
+
+    #ctl00_MainContent table,
+    #ctl00_MainContent tbody,
+    #ctl00_MainContent thead,
+    #ctl00_MainContent tfoot,
+    #ctl00_MainContent tr,
+    #ctl00_MainContent td,
+    #ctl00_MainContent th,
+    #ctl00_MainContent div,
+    #ctl00_MainContent section,
+    #ctl00_MainContent article,
+    #ctl00_MainContent form,
+    #ctl00_MainContent fieldset {
+      background-color: var(--ttmt-surface) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    #ctl00_MainContent input,
+    #ctl00_MainContent select,
+    #ctl00_MainContent textarea {
+      background-color: var(--ttmt-input-bg) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-input-border) !important;
+    }
+
+    #ctl00_MainContent a {
+      color: var(--ttmt-accent) !important;
+    }
+
+    #ctl00_MainContent a:hover {
+      color: var(--ttmt-accent-hover) !important;
+    }
   `;
 
   styleEl.textContent = css;
