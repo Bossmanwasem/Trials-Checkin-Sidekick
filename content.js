@@ -1034,19 +1034,19 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
   }
 
   const palette = mode === "smartboxBlue" ? {
-    "bg-color": "#121212",
-    "text-color": "#e0e0e0",
-    "muted-text": "#d5e9ff",
-    "container-bg": "#1e1e2f",
-    "container-border": "#81cfff",
-    "input-bg": "#2a2a3a",
-    "input-border": "#555555",
-    "note-bg": "#0f1b2b",
-    "note-border": "#2f4b6f",
-    accent: "#81cfff",
-    "accent-strong": "#003366",
-    "accent-strong-hover": "#005599",
-    "error-color": "#ff7b7b"
+    "bg-color": "#003f66",
+    "text-color": "#e8edf2",
+    "muted-text": "#c5d7e8",
+    "container-bg": "#0a4f79",
+    "container-border": "#1ba0e3",
+    "input-bg": "#0c3b5a",
+    "input-border": "#1a88c4",
+    "note-bg": "#06395b",
+    "note-border": "#147fba",
+    accent: "#1ba0e3",
+    "accent-strong": "#19b4ff",
+    "accent-strong-hover": "#51c8ff",
+    "error-color": "#ff9a9a"
   } : themeVars;
 
   const ttmtBg = palette["bg-color"] || "#101317";
@@ -1095,6 +1095,8 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
   });
 
   const css = `
+    @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap");
+
     :root, [data-bs-theme="light"] {
       --ttmt-bg: ${ttmtBg};
       --ttmt-text: ${ttmtText};
@@ -1392,6 +1394,7 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
     #ctl00_MainContent,
     #ctl00_MainContent * {
       border-color: var(--ttmt-border) !important;
+      font-family: "Quicksand", "Segoe UI", Arial, sans-serif !important;
     }
 
     #ctl00_MainContent [class*="card-header"],
