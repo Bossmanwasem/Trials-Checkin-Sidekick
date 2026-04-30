@@ -1376,7 +1376,10 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
     #ctl00_MainContent_Tabs_tpDocuments_btnUpload,
     #ctl00_MainContent_Tabs_tpDocuments_btnAddDocument,
     #ctl00_MainContent_Tabs_tpNotes_UpdatePanel5 > div:nth-child(3) > div.card-header,
-    #ctl00_MainContent_Tabs_tpNotes_btnAddNote { 
+    #ctl00_MainContent_Tabs_tpNotes_btnAddNote,
+    #ctl00_MainContent_Tabs_tpNotes_UpdatePanel5 > div.card.mb-4.mt-3 > div.card-header,
+    #ctl00_MainContent_Tabs_tpFinancials_updtPanFin > div:nth-child(2) > div > div > div > div.card-header.AddressInfo,
+    #ctl00_MainContent_gvwInventory { 
       background-color: var(--ttmt-surface) !important;
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-border) !important;
