@@ -538,6 +538,12 @@ if (runtime?.onMessage?.addListener) {
     return true;
   }
 
+  if (msg.type === "APPLY_CRM_THEME_STYLE") {
+    const result = applyCrmThemeStyle(msg.themeVars || {});
+    sendResponse(result);
+    return true;
+  }
+
     if (msg.type === "RUN_INVENTORY_SCRIPT") {
       const identifiers = msg.identifiers || {};
       const cameraNumbers = splitInventoryIdentifiers(identifiers.cameraNumber || "");
@@ -977,4 +983,47 @@ async function fillDafFormFromStorage() {
 
 if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
+}function applyCrmThemeStyle(themeVars = {}) {
+  if (!window.location.href.includes("portal.talktometechnologies.com")) {
+    return { ok: false, message: "Not on a CRM page." };
+  }
+
+  const styleId = "ttmt-crm-theme-style";
+  let styleEl = document.getElementById(styleId);
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
+  }
+
+  const css = `
+    :root {
+      --ttmt-bg: ${themeVars["bg-color"] || "#101317"};
+      --ttmt-text: ${themeVars["text-color"] || "#e6ecf2"};
+      --ttmt-muted: ${themeVars["muted-text"] || "#c0cad8"};
+      --ttmt-surface: ${themeVars["container-bg"] || "#18202a"};
+      --ttmt-border: ${themeVars["container-border"] || "#94a3b8"};
+      --ttmt-input-bg: ${themeVars["input-bg"] || "#222b36"};
+      --ttmt-input-border: ${themeVars["input-border"] || "#4b5a6b"};
+      --ttmt-accent: ${themeVars["accent"] || "#94a3b8"};
+    }
+
+    body { background: var(--ttmt-bg) !important; color: var(--ttmt-text) !important; }
+    #aspnetForm, .crm-main, .main-content, .content, .tabs, .tab-content, .panel, .card, table, .rgMasterTable, .rgDataDiv {
+      background: var(--ttmt-surface) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-border) !important;
+    }
+    input, select, textarea, button, .rgFilterBox {
+      background: var(--ttmt-input-bg) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-input-border) !important;
+    }
+    a, .link, .rgCommandCell a { color: var(--ttmt-accent) !important; }
+    label, .hint, .muted, .small { color: var(--ttmt-muted) !important; }
+  `;
+  styleEl.textContent = css;
+  return { ok: true };
 }
+
+

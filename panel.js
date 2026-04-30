@@ -8164,7 +8164,47 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     chrome.tabs.create({ url: KG_REQUESTS_URL });
   });
 
-  document.getElementById("landingCrmNavigatorForm")?.addEventListener("submit", (event) => {
+  function getCurrentThemePalette() {
+  const computed = window.getComputedStyle(document.body);
+  const keys = [
+    "bg-color",
+    "text-color",
+    "muted-text",
+    "container-bg",
+    "container-border",
+    "accent",
+    "accent-strong",
+    "accent-strong-hover",
+    "input-bg",
+    "input-border",
+    "note-bg",
+    "note-border",
+    "error-color"
+  ];
+  return keys.reduce((acc, key) => {
+    acc[key] = computed.getPropertyValue(`--${key}`).trim();
+    return acc;
+  }, {});
+}
+
+async function applyThemeStylingToCurrentCrmTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !tab.url || !tab.url.includes("portal.talktometechnologies.com")) {
+    alert("Open a CRM page tab first, then click Theme Match.");
+    return;
+  }
+  const response = await chrome.tabs.sendMessage(tab.id, {
+    type: "APPLY_CRM_THEME_STYLE",
+    themeVars: getCurrentThemePalette()
+  });
+  if (!response?.ok) {
+    alert(response?.message || "Could not apply CRM theme styling.");
+    return;
+  }
+  alert("CRM theme styling applied. Page data and behavior remain unchanged.");
+}
+
+document.getElementById("landingCrmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("landingCrmNavigatorInput");
     const crmId = (crmInput?.value || "").trim();
@@ -8176,7 +8216,11 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     if (crmInput) crmInput.value = "";
   });
 
-  document.getElementById("qaCrmNavigatorForm")?.addEventListener("submit", async (event) => {
+  
+  document.getElementById("applyCrmThemeBtn")?.addEventListener("click", () => {
+    void applyThemeStylingToCurrentCrmTab();
+  });
+document.getElementById("qaCrmNavigatorForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const crmInput = document.getElementById("qaCrmNavigatorInput");
     const result = await runQaFlowAction("QA_NAVIGATE_CRM", {
