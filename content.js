@@ -1353,7 +1353,10 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
     #aspnetForm > div.pageContent > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td:nth-child(1),
     #aspnetForm > div.pageContent > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td:nth-child(2) > table > tbody > tr > td,
     #aspnetForm > div.pageContent > table > tbody > tr:nth-child(2) > td:nth-child(1),
-    #aspnetForm > div.pageContent > table > tbody > tr:nth-child(2) > td:nth-child(2) {
+    #aspnetForm > div.pageContent > table > tbody > tr:nth-child(2) > td:nth-child(2),
+    #ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo > div > div > div:nth-child(1) > div:nth-child(1) > div.card-header,
+    #ctl00_MainContent_btnInsertTop,
+    #ctl00_MainContent_Tabs_tpDocuments_filUpload {
       background-color: var(--ttmt-surface) !important;
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-border) !important;
