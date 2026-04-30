@@ -449,44 +449,40 @@ function splitInventoryIdentifiers(value = "") {
     .filter(Boolean);
 }
 
-function clickEditForDevice(searchValue, { suppressNotFoundAlert = false } = {}) {
-  const target = safeTrimLower(searchValue);
-  const rows = document.querySelectorAll("table tr");
-  let foundRow = null;
+const INVENTORY_SEARCH_INPUT_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[2]/table/tbody/tr/td[1]/input";
+const INVENTORY_SEARCH_BUTTON_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[2]/table/tbody/tr/td[2]/input";
 
-  for (const row of rows) {
-    row.style.outline = "";
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 2) continue;
-
-    const serialCell = cells[1];
-    const cellText = safeTrimLower(serialCell.textContent);
-
-    if (cellText.startsWith(target)) {
-      foundRow = row;
-      break;
-    }
-  }
-
-  if (foundRow) {
-    foundRow.style.outline = "4px solid limegreen";
-    foundRow.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    setTimeout(() => {
-      const editBtn = foundRow.querySelector("input[src*='Edit.gif']");
-      if (editBtn) {
-        editBtn.click();
-      } else {
-        alert("Edit icon not found in matching row!");
+function waitForXPath(xpath, timeoutMs = 12000, pollMs = 200) {
+  return new Promise(resolve => {
+    const start = Date.now();
+    const timer = setInterval(() => {
+      const node = getElementByXPath(xpath);
+      if (node) {
+        clearInterval(timer);
+        resolve(node);
+        return;
       }
-    }, 1200);
-    return true;
-  }
+      if (Date.now() - start >= timeoutMs) {
+        clearInterval(timer);
+        resolve(null);
+      }
+    }, pollMs);
+  });
+}
 
-  if (!suppressNotFoundAlert) {
-    alert("No matching row found for: " + searchValue);
-  }
-  return false;
+async function runInventoryManageFlow(searchValue) {
+  const searchInput = await waitForXPath(INVENTORY_SEARCH_INPUT_XPATH);
+  if (!searchInput) return { ok: false, message: "Inventory search textbox not found." };
+
+  searchInput.focus();
+  searchInput.value = searchValue;
+  searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+  searchInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const searchButton = await waitForXPath(INVENTORY_SEARCH_BUTTON_XPATH);
+  if (!searchButton) return { ok: false, message: "Inventory search button not found." };
+  searchButton.click();
+  return { ok: true, searchValue };
 }
 
 const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
@@ -556,44 +552,13 @@ if (runtime?.onMessage?.addListener) {
         return true;
       }
 
-      try {
-        if (cameraNumbers.length > 1) {
-          for (let index = 0; index < cameraNumbers.length; index += 1) {
-            const cameraValue = cameraNumbers[index];
-            const ok = clickEditForDevice(cameraValue, { suppressNotFoundAlert: true });
-            if (ok) {
-              sendResponse({ ok: true });
-              return true;
-            }
-            const nextCamera = cameraNumbers[index + 1];
-            if (nextCamera) {
-              alert(`No listing found for camera ${cameraValue}. Switching search to ${nextCamera}...`);
-            }
-          }
-
-          if (fallbackSearchValue) {
-            const ok = clickEditForDevice(fallbackSearchValue);
-            sendResponse({ ok });
-            return true;
-          }
-
-          alert(`No matching row found for cameras: ${cameraNumbers.join(", ")}`);
-          sendResponse({ ok: false, message: "No matching row found for the provided cameras." });
-          return true;
-        }
-
-        const searchValue = fallbackSearchValue;
-        if (!searchValue) {
-          sendResponse({ ok: false, message: "No device, camera, or Lumin-I number provided." });
-          return true;
-        }
-
-        const ok = clickEditForDevice(searchValue);
-        sendResponse({ ok });
-      } catch (err) {
-        console.error(err);
-        sendResponse({ ok: false, message: err?.message || "Failed to run inventory script." });
-      }
+      const searchValue = cameraNumbers[0] || fallbackSearchValue;
+      runInventoryManageFlow(searchValue)
+        .then(result => sendResponse(result))
+        .catch(err => {
+          console.error(err);
+          sendResponse({ ok: false, message: err?.message || "Failed to run inventory script." });
+        });
       return true;
     }
 

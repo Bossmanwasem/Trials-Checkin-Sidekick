@@ -1091,26 +1091,11 @@
   <!-- INVENTORY VIEW -->
   <div class="container" id="inventoryView" style="display:none;">
     <h1>Manage Inventory</h1>
-    <p class="complete-intro">
-      Automated inventory search is temporarily unavailable while the CRM inventory page is being updated.
-      Please complete this step manually in the Manage Inventory tab.
-    </p>
 
     <div class="note-preview">
-      <div class="note-preview__title">Search query</div>
+      <div class="note-preview__title">Search Complete for:</div>
       <pre id="inventorySearchValue" class="note-preview__body"></pre>
-      <div class="copy-row" style="margin-top:10px;">
-        <input type="text" id="inventorySearchCopyField" class="copy-field" readonly placeholder="Search query will appear here" />
-        <button id="inventorySearchCopyBtn" class="copy-btn" type="button" disabled>Copy query</button>
-      </div>
       <div id="inventoryStatus" class="status-line"></div>
-    </div>
-
-    <div class="qa-rule-card" style="margin-top:16px;">
-      <p>
-        Complete a search for the device number or camera number shown above, mark the correct item as
-        <strong>Returned</strong>, and update the record in CRM. Only click <strong>Next Step</strong> after the return is fully saved.
-      </p>
     </div>
 
     <button id="inventoryNextStepBtn" class="toggle-btn" type="button" style="margin-top:16px;">

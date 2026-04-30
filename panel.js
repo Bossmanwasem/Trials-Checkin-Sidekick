@@ -7090,23 +7090,14 @@ async function updateInventorySearchDisplay() {
   const identifiers = await getLastIdentifiers();
   const searchValue = buildInventorySearchValue(identifiers);
   const display = document.getElementById("inventorySearchValue");
-  const copyField = document.getElementById("inventorySearchCopyField");
-  const copyBtn = document.getElementById("inventorySearchCopyBtn");
   const status = document.getElementById("inventoryStatus");
 
   if (display) {
-    display.textContent = searchValue || "No stored identifiers. Fill out the first page first.";
-  }
-  if (copyField) {
-    copyField.value = searchValue || "";
-  }
-  if (copyBtn) {
-    copyBtn.disabled = !searchValue;
-    copyBtn.textContent = "Copy query";
+    display.textContent = searchValue ? `(${searchValue})` : "No stored identifiers. Fill out the first page first.";
   }
   if (status) {
     status.textContent = searchValue
-      ? "Manual step: use Ctrl + F in the Manage Inventory tab, mark the device returned, then click Next Step."
+      ? "Mark device as returned and Click Next step to continue your check- in"
       : "No stored identifiers. Fill out the first page first.";
   }
 
@@ -7162,7 +7153,21 @@ async function syncViewForTab(tab) {
   if (isManageInventoryUrl(tab.url)) {
     if (!isCheckinFlowActive() || isLtlUpdateFlow()) return;
     showInventoryView();
-    await updateInventorySearchDisplay();
+    const identifiers = await updateInventorySearchDisplay();
+    const status = document.getElementById("inventoryStatus");
+    if (tab.id && inventoryAutomationLastRunTabId !== tab.id) {
+      inventoryAutomationLastRunTabId = tab.id;
+      if (status) status.textContent = "Running inventory automation...";
+      const runRes = await chrome.tabs.sendMessage(tab.id, {
+        type: "RUN_INVENTORY_SCRIPT",
+        identifiers
+      }).catch(() => ({ ok: false, message: "Unable to connect to the Manage Inventory tab." }));
+      if (status) {
+        status.textContent = runRes?.ok
+          ? "Mark device as returned and Click Next step to continue your check- in"
+          : `Inventory automation failed: ${runRes?.message || "Unknown error."}`;
+      }
+    }
     return;
   }
 
@@ -7192,6 +7197,7 @@ async function syncViewForTab(tab) {
 const WORKERS_BASE_PATH = "workers";
 const CHECKIN_WORKER_PATH = `${WORKERS_BASE_PATH}/checkin-workflow-worker.js`;
 let checkinWorkflowWorkerPromise = null;
+let inventoryAutomationLastRunTabId = null;
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
@@ -7463,11 +7469,6 @@ function resetAllFieldsAndUI() {
   updateTrialFilesStatus("Waiting to rename saved zip files.");
   setRenameWorkflowProgress();
   setText("inventoryStatus", "");
-  const inventoryCopyBtn = document.getElementById("inventorySearchCopyBtn");
-  if (inventoryCopyBtn) {
-    inventoryCopyBtn.disabled = true;
-    inventoryCopyBtn.textContent = "Copy query";
-  }
 }
 
 async function finishCheckinAndReset({ returnToLanding = false } = {}) {
@@ -7642,19 +7643,6 @@ chrome.runtime.onMessage.addListener(msg => {
 });
 
 /* ---------------- Inventory page ---------------- */
-
-document.getElementById("inventorySearchCopyBtn")?.addEventListener("click", async () => {
-  const value = getFormValue("#inventorySearchCopyField");
-  if (!value) return;
-  await navigator.clipboard.writeText(value);
-  const btn = document.getElementById("inventorySearchCopyBtn");
-  if (btn) {
-    btn.textContent = "Copied!";
-    setTimeout(() => {
-      btn.textContent = "Copy query";
-    }, 1200);
-  }
-});
 
 document.getElementById("inventoryNextStepBtn")?.addEventListener("click", async () => {
   await renderDafRecap();
