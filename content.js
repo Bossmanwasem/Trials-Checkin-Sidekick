@@ -539,7 +539,7 @@ if (runtime?.onMessage?.addListener) {
   }
 
   if (msg.type === "APPLY_CRM_THEME_STYLE") {
-    const result = applyCrmThemeStyle(msg.themeVars || {});
+    const result = applyCrmThemeStyle(msg.themeVars || {}, msg.mode || "");
     sendResponse(result);
     return true;
   }
@@ -1019,7 +1019,7 @@ function toRgba(hex, alpha = 1) {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${Math.max(0, Math.min(1, alpha))})`;
 }
 
-function applyCrmThemeStyle(themeVars = {}) {
+function applyCrmThemeStyle(themeVars = {}, mode = "") {
   if (!window.location.href.includes("portal.talktometechnologies.com")) {
     return { ok: false, message: "Not on a CRM page." };
   }
@@ -1032,19 +1032,35 @@ function applyCrmThemeStyle(themeVars = {}) {
     document.head.appendChild(styleEl);
   }
 
-  const ttmtBg = themeVars["bg-color"] || "#101317";
-  const ttmtText = themeVars["text-color"] || "#e6ecf2";
-  const ttmtMuted = themeVars["muted-text"] || "#c0cad8";
-  const ttmtSurface = themeVars["container-bg"] || "#18202a";
-  const ttmtBorder = themeVars["container-border"] || "#94a3b8";
-  const ttmtInputBg = themeVars["input-bg"] || "#222b36";
-  const ttmtInputBorder = themeVars["input-border"] || "#4b5a6b";
-  const ttmtNoteBg = themeVars["note-bg"] || "#111821";
-  const ttmtNoteBorder = themeVars["note-border"] || "#2a3646";
-  const ttmtAccent = themeVars["accent"] || "#94a3b8";
-  const ttmtAccentStrong = themeVars["accent-strong"] || "#273449";
-  const ttmtAccentHover = themeVars["accent-strong-hover"] || "#33445e";
-  const ttmtError = themeVars["error-color"] || "#ff9f9f";
+  const palette = mode === "smartboxBlue" ? {
+    "bg-color": "#121212",
+    "text-color": "#e0e0e0",
+    "muted-text": "#d5e9ff",
+    "container-bg": "#1e1e2f",
+    "container-border": "#81cfff",
+    "input-bg": "#2a2a3a",
+    "input-border": "#555555",
+    "note-bg": "#0f1b2b",
+    "note-border": "#2f4b6f",
+    accent: "#81cfff",
+    "accent-strong": "#003366",
+    "accent-strong-hover": "#005599",
+    "error-color": "#ff7b7b"
+  } : themeVars;
+
+  const ttmtBg = palette["bg-color"] || "#101317";
+  const ttmtText = palette["text-color"] || "#e6ecf2";
+  const ttmtMuted = palette["muted-text"] || "#c0cad8";
+  const ttmtSurface = palette["container-bg"] || "#18202a";
+  const ttmtBorder = palette["container-border"] || "#94a3b8";
+  const ttmtInputBg = palette["input-bg"] || "#222b36";
+  const ttmtInputBorder = palette["input-border"] || "#4b5a6b";
+  const ttmtNoteBg = palette["note-bg"] || "#111821";
+  const ttmtNoteBorder = palette["note-border"] || "#2a3646";
+  const ttmtAccent = palette["accent"] || "#94a3b8";
+  const ttmtAccentStrong = palette["accent-strong"] || "#273449";
+  const ttmtAccentHover = palette["accent-strong-hover"] || "#33445e";
+  const ttmtError = palette["error-color"] || "#ff9f9f";
 
   const css = `
     :root, [data-bs-theme="light"] {

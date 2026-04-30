@@ -8190,18 +8190,19 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 async function applyThemeStylingToCurrentCrmTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !tab.url || !tab.url.includes("portal.talktometechnologies.com")) {
-    alert("Open a CRM page tab first, then click Theme Match.");
+    alert("Open a CRM page tab first, then click Smartbox Blue.");
     return;
   }
   const response = await chrome.tabs.sendMessage(tab.id, {
     type: "APPLY_CRM_THEME_STYLE",
+    mode: "smartboxBlue",
     themeVars: getCurrentThemePalette()
   });
   if (!response?.ok) {
     alert(response?.message || "Could not apply CRM theme styling.");
     return;
   }
-  alert("CRM theme styling applied. Page data and behavior remain unchanged.");
+  alert("Smartbox Blue CRM styling applied. Page data and behavior remain unchanged.");
 }
 
 document.getElementById("landingCrmNavigatorForm")?.addEventListener("submit", (event) => {
