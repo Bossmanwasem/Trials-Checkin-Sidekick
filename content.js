@@ -983,7 +983,9 @@ async function fillDafFormFromStorage() {
 
 if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
-}function applyCrmThemeStyle(themeVars = {}) {
+}
+
+function applyCrmThemeStyle(themeVars = {}) {
   if (!window.location.href.includes("portal.talktometechnologies.com")) {
     return { ok: false, message: "Not on a CRM page." };
   }
@@ -997,7 +999,7 @@ if (isDafFormPage()) {
   }
 
   const css = `
-    :root {
+    :root, [data-bs-theme="light"] {
       --ttmt-bg: ${themeVars["bg-color"] || "#101317"};
       --ttmt-text: ${themeVars["text-color"] || "#e6ecf2"};
       --ttmt-muted: ${themeVars["muted-text"] || "#c0cad8"};
@@ -1005,25 +1007,88 @@ if (isDafFormPage()) {
       --ttmt-border: ${themeVars["container-border"] || "#94a3b8"};
       --ttmt-input-bg: ${themeVars["input-bg"] || "#222b36"};
       --ttmt-input-border: ${themeVars["input-border"] || "#4b5a6b"};
+      --ttmt-note-bg: ${themeVars["note-bg"] || "#111821"};
+      --ttmt-note-border: ${themeVars["note-border"] || "#2a3646"};
       --ttmt-accent: ${themeVars["accent"] || "#94a3b8"};
+      --ttmt-accent-strong: ${themeVars["accent-strong"] || "#273449"};
+      --ttmt-error: ${themeVars["error-color"] || "#ff9f9f"};
+
+      --bs-body-color: var(--ttmt-text);
+      --bs-body-color-rgb: 230, 236, 242;
+      --bs-body-bg: var(--ttmt-bg);
+      --bs-body-bg-rgb: 16, 19, 23;
+      --bs-emphasis-color: var(--ttmt-text);
+      --bs-secondary-color: color-mix(in srgb, var(--ttmt-muted) 75%, transparent);
+      --bs-secondary-bg: var(--ttmt-surface);
+      --bs-tertiary-bg: var(--ttmt-note-bg);
+      --bs-border-color: var(--ttmt-border);
+      --bs-border-color-translucent: color-mix(in srgb, var(--ttmt-border) 70%, transparent);
+      --bs-primary: var(--ttmt-accent);
+      --bs-link-color: var(--ttmt-accent);
+      --bs-link-hover-color: var(--ttmt-accent-strong);
+      --bs-danger: var(--ttmt-error);
+      --bs-form-invalid-color: var(--ttmt-error);
+      --bs-form-invalid-border-color: var(--ttmt-error);
+      --bs-form-valid-color: var(--ttmt-accent);
+      --bs-form-valid-border-color: var(--ttmt-accent);
     }
 
-    body { background: var(--ttmt-bg) !important; color: var(--ttmt-text) !important; }
-    #aspnetForm, .crm-main, .main-content, .content, .tabs, .tab-content, .panel, .card, table, .rgMasterTable, .rgDataDiv {
-      background: var(--ttmt-surface) !important;
+    body, #aspnetForm {
+      background: var(--ttmt-bg) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    .container, .container-fluid, .content, .main-content, .tab-content,
+    .card, .panel, .modal-content, .dropdown-menu, .list-group-item,
+    .table, .table > :not(caption) > * > *, .rgMasterTable, .rgDataDiv, .rgRow, .rgAltRow {
+      background-color: var(--ttmt-surface) !important;
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-border) !important;
     }
-    input, select, textarea, button, .rgFilterBox {
+
+    .table thead th, .table tfoot th, .rgHeader, .rgPager {
+      background-color: var(--ttmt-note-bg) !important;
+      color: var(--ttmt-text) !important;
+      border-color: var(--ttmt-note-border) !important;
+    }
+
+    input, select, textarea, button,
+    .form-control, .form-select, .btn,
+    .rgFilterBox, .rgInEdit, .k-input {
       background: var(--ttmt-input-bg) !important;
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-input-border) !important;
     }
-    a, .link, .rgCommandCell a { color: var(--ttmt-accent) !important; }
-    label, .hint, .muted, .small { color: var(--ttmt-muted) !important; }
+
+    .btn-primary, .btn-success, .btn-info {
+      background: var(--ttmt-accent) !important;
+      border-color: var(--ttmt-accent) !important;
+      color: var(--ttmt-text) !important;
+    }
+
+    .btn-outline-primary, .btn-outline-secondary {
+      color: var(--ttmt-accent) !important;
+      border-color: var(--ttmt-accent) !important;
+    }
+
+    a, .link, .nav-link, .rgCommandCell a {
+      color: var(--ttmt-accent) !important;
+    }
+
+    a:hover, .nav-link:hover {
+      color: var(--ttmt-accent-strong) !important;
+    }
+
+    label, .form-label, .small, .text-muted, .muted, .hint {
+      color: var(--ttmt-muted) !important;
+    }
+
+    .alert-danger, .text-danger, .validation-summary-errors {
+      color: var(--ttmt-error) !important;
+      border-color: var(--ttmt-error) !important;
+    }
   `;
+
   styleEl.textContent = css;
   return { ok: true };
 }
-
-
