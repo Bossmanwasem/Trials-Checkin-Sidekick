@@ -44,6 +44,7 @@ const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
+const CRM_AUTO_THEME_ENABLED_STORAGE_KEY = "ttmtCrmAutoThemeEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
 const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
@@ -4406,6 +4407,7 @@ void initThemeSystem();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
+initCrmAutoThemeSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -5022,6 +5024,30 @@ async function initLandingTooltipsSetting() {
     await setLandingTooltipsEnabled(enabled);
     applyLandingTooltipsEnabled(enabled);
     updateLandingTooltipsToggleState(enabled);
+  });
+}
+
+
+async function getCrmAutoThemeEnabled() {
+  const stored = await getStoredValue(CRM_AUTO_THEME_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setCrmAutoThemeEnabled(enabled) {
+  await setStoredValue(CRM_AUTO_THEME_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function initCrmAutoThemeSetting() {
+  const toggle = document.getElementById("settingsAutoCrmThemeToggle");
+  if (!toggle) return;
+  toggle.checked = await getCrmAutoThemeEnabled();
+  toggle.addEventListener("change", async () => {
+    const enabled = Boolean(toggle.checked);
+    await setCrmAutoThemeEnabled(enabled);
+    if (enabled) {
+      void applyThemeStylingToCurrentCrmTab();
+    }
   });
 }
 

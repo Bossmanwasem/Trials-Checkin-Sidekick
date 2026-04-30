@@ -83,6 +83,7 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
+const CRM_AUTO_THEME_ENABLED_STORAGE_KEY = "ttmtCrmAutoThemeEnabled";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div',
@@ -1366,3 +1367,18 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
   styleEl.textContent = css;
   return { ok: true };
 }
+
+
+async function initAutoCrmTheme() {
+  if (!window.location.href.includes("portal.talktometechnologies.com")) return;
+  try {
+    const enabled = await getStoredValue(CRM_AUTO_THEME_ENABLED_STORAGE_KEY);
+    if (enabled) {
+      applyCrmThemeStyle({}, "smartboxBlue");
+    }
+  } catch (err) {
+    console.warn("Auto CRM theme init failed", err);
+  }
+}
+
+void initAutoCrmTheme();
