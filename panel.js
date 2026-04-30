@@ -7106,7 +7106,7 @@ async function updateInventorySearchDisplay() {
   }
   if (status) {
     status.textContent = searchValue
-      ? "Manual step: use Ctrl + F in the Manage Inventory tab, mark the device returned, then click Next Step."
+      ? "Preparing inventory search automation..."
       : "No stored identifiers. Fill out the first page first.";
   }
 
@@ -7173,7 +7173,7 @@ async function syncViewForTab(tab) {
       }).catch(() => ({ ok: false, message: "Unable to connect to the Manage Inventory tab." }));
       if (status) {
         status.textContent = runRes?.ok
-          ? "Inventory automation complete. Verify the update, then click Next Step."
+          ? `Search completed for (${runRes?.searchValue || buildInventorySearchValue(identifiers)}) please mark the device as returned and click Next Step.`
           : `Inventory automation failed: ${runRes?.message || "Unknown error."}`;
       }
     }

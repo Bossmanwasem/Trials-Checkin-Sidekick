@@ -451,9 +451,6 @@ function splitInventoryIdentifiers(value = "") {
 
 const INVENTORY_SEARCH_INPUT_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[2]/table/tbody/tr/td[1]/input";
 const INVENTORY_SEARCH_BUTTON_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[2]/table/tbody/tr/td[2]/input";
-const INVENTORY_EDIT_BUTTON_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[3]/table/tbody/tr[2]/td[9]/input[1]";
-const INVENTORY_YES_DROPDOWN_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[1]/table/tbody/tr[8]/td[2]/select";
-const INVENTORY_SAVE_BUTTON_XPATH = "/html/body/form/div[3]/table/tbody/tr[2]/td[2]/div/div[2]/div[1]/table/tbody/tr[10]/td/a[1]";
 
 function waitForXPath(xpath, timeoutMs = 12000, pollMs = 200) {
   return new Promise(resolve => {
@@ -485,21 +482,7 @@ async function runInventoryManageFlow(searchValue) {
   const searchButton = await waitForXPath(INVENTORY_SEARCH_BUTTON_XPATH);
   if (!searchButton) return { ok: false, message: "Inventory search button not found." };
   searchButton.click();
-
-  const editButton = await waitForXPath(INVENTORY_EDIT_BUTTON_XPATH);
-  if (!editButton) return { ok: false, message: "Inventory edit button not found after search." };
-  editButton.click();
-
-  const yesDropdown = await waitForXPath(INVENTORY_YES_DROPDOWN_XPATH);
-  if (!yesDropdown) return { ok: false, message: "Inventory yes/no dropdown not found." };
-  yesDropdown.value = "Yes";
-  yesDropdown.dispatchEvent(new Event("change", { bubbles: true }));
-
-  const saveButton = await waitForXPath(INVENTORY_SAVE_BUTTON_XPATH);
-  if (!saveButton) return { ok: false, message: "Inventory save link not found." };
-  saveButton.click();
-
-  return { ok: true };
+  return { ok: true, searchValue };
 }
 
 const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
