@@ -1011,26 +1011,65 @@ function applyCrmThemeStyle(themeVars = {}) {
       --ttmt-note-border: ${themeVars["note-border"] || "#2a3646"};
       --ttmt-accent: ${themeVars["accent"] || "#94a3b8"};
       --ttmt-accent-strong: ${themeVars["accent-strong"] || "#273449"};
+      --ttmt-accent-hover: ${themeVars["accent-strong-hover"] || "#33445e"};
       --ttmt-error: ${themeVars["error-color"] || "#ff9f9f"};
 
+      --bs-primary: var(--ttmt-accent);
+      --bs-secondary: var(--ttmt-muted);
+      --bs-success: var(--ttmt-accent);
+      --bs-info: var(--ttmt-accent);
+      --bs-warning: color-mix(in srgb, var(--ttmt-accent) 60%, #ffcc00 40%);
+      --bs-danger: var(--ttmt-error);
+      --bs-light: var(--ttmt-note-bg);
+      --bs-dark: var(--ttmt-text);
+
+      --bs-primary-text-emphasis: var(--ttmt-accent-strong);
+      --bs-secondary-text-emphasis: var(--ttmt-muted);
+      --bs-success-text-emphasis: var(--ttmt-accent-strong);
+      --bs-info-text-emphasis: var(--ttmt-accent-strong);
+      --bs-warning-text-emphasis: color-mix(in srgb, var(--ttmt-accent-strong) 70%, #664d03 30%);
+      --bs-danger-text-emphasis: var(--ttmt-error);
+
+      --bs-primary-bg-subtle: color-mix(in srgb, var(--ttmt-accent) 22%, var(--ttmt-surface) 78%);
+      --bs-secondary-bg-subtle: color-mix(in srgb, var(--ttmt-muted) 16%, var(--ttmt-surface) 84%);
+      --bs-success-bg-subtle: color-mix(in srgb, var(--ttmt-accent) 20%, var(--ttmt-surface) 80%);
+      --bs-info-bg-subtle: color-mix(in srgb, var(--ttmt-accent) 18%, var(--ttmt-surface) 82%);
+      --bs-warning-bg-subtle: color-mix(in srgb, #ffc107 25%, var(--ttmt-surface) 75%);
+      --bs-danger-bg-subtle: color-mix(in srgb, var(--ttmt-error) 20%, var(--ttmt-surface) 80%);
+      --bs-light-bg-subtle: color-mix(in srgb, var(--ttmt-note-bg) 70%, var(--ttmt-surface) 30%);
+      --bs-dark-bg-subtle: color-mix(in srgb, var(--ttmt-bg) 75%, #000 25%);
+
+      --bs-primary-border-subtle: color-mix(in srgb, var(--ttmt-accent) 45%, var(--ttmt-border) 55%);
+      --bs-secondary-border-subtle: color-mix(in srgb, var(--ttmt-muted) 35%, var(--ttmt-border) 65%);
+      --bs-success-border-subtle: color-mix(in srgb, var(--ttmt-accent) 42%, var(--ttmt-border) 58%);
+      --bs-info-border-subtle: color-mix(in srgb, var(--ttmt-accent) 40%, var(--ttmt-border) 60%);
+      --bs-warning-border-subtle: color-mix(in srgb, #ffc107 45%, var(--ttmt-border) 55%);
+      --bs-danger-border-subtle: color-mix(in srgb, var(--ttmt-error) 45%, var(--ttmt-border) 55%);
+      --bs-light-border-subtle: color-mix(in srgb, var(--ttmt-note-border) 50%, var(--ttmt-border) 50%);
+      --bs-dark-border-subtle: color-mix(in srgb, var(--ttmt-border) 70%, #000 30%);
+
       --bs-body-color: var(--ttmt-text);
-      --bs-body-color-rgb: 230, 236, 242;
       --bs-body-bg: var(--ttmt-bg);
-      --bs-body-bg-rgb: 16, 19, 23;
       --bs-emphasis-color: var(--ttmt-text);
       --bs-secondary-color: color-mix(in srgb, var(--ttmt-muted) 75%, transparent);
+      --bs-tertiary-color: color-mix(in srgb, var(--ttmt-muted) 55%, transparent);
       --bs-secondary-bg: var(--ttmt-surface);
       --bs-tertiary-bg: var(--ttmt-note-bg);
+      --bs-heading-color: var(--ttmt-text);
+      --bs-link-color: var(--ttmt-accent);
+      --bs-link-hover-color: var(--ttmt-accent-hover);
+      --bs-code-color: var(--ttmt-accent);
+      --bs-highlight-bg: color-mix(in srgb, var(--ttmt-accent) 25%, var(--ttmt-note-bg) 75%);
       --bs-border-color: var(--ttmt-border);
       --bs-border-color-translucent: color-mix(in srgb, var(--ttmt-border) 70%, transparent);
-      --bs-primary: var(--ttmt-accent);
-      --bs-link-color: var(--ttmt-accent);
-      --bs-link-hover-color: var(--ttmt-accent-strong);
-      --bs-danger: var(--ttmt-error);
-      --bs-form-invalid-color: var(--ttmt-error);
-      --bs-form-invalid-border-color: var(--ttmt-error);
+      --bs-focus-ring-color: color-mix(in srgb, var(--ttmt-accent) 35%, transparent);
+      --bs-box-shadow: 0 0.5rem 1rem color-mix(in srgb, var(--ttmt-bg) 70%, #000 30%);
+      --bs-box-shadow-sm: 0 0.125rem 0.25rem color-mix(in srgb, var(--ttmt-bg) 65%, #000 35%);
+      --bs-box-shadow-lg: 0 1rem 3rem color-mix(in srgb, var(--ttmt-bg) 55%, #000 45%);
       --bs-form-valid-color: var(--ttmt-accent);
       --bs-form-valid-border-color: var(--ttmt-accent);
+      --bs-form-invalid-color: var(--ttmt-error);
+      --bs-form-invalid-border-color: var(--ttmt-error);
     }
 
     body, #aspnetForm {
