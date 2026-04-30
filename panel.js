@@ -7162,7 +7162,21 @@ async function syncViewForTab(tab) {
   if (isManageInventoryUrl(tab.url)) {
     if (!isCheckinFlowActive() || isLtlUpdateFlow()) return;
     showInventoryView();
-    await updateInventorySearchDisplay();
+    const identifiers = await updateInventorySearchDisplay();
+    const status = document.getElementById("inventoryStatus");
+    if (tab.id && inventoryAutomationLastRunTabId !== tab.id) {
+      inventoryAutomationLastRunTabId = tab.id;
+      if (status) status.textContent = "Running inventory automation...";
+      const runRes = await chrome.tabs.sendMessage(tab.id, {
+        type: "RUN_INVENTORY_SCRIPT",
+        identifiers
+      }).catch(() => ({ ok: false, message: "Unable to connect to the Manage Inventory tab." }));
+      if (status) {
+        status.textContent = runRes?.ok
+          ? "Inventory automation complete. Verify the update, then click Next Step."
+          : `Inventory automation failed: ${runRes?.message || "Unknown error."}`;
+      }
+    }
     return;
   }
 
@@ -7192,6 +7206,7 @@ async function syncViewForTab(tab) {
 const WORKERS_BASE_PATH = "workers";
 const CHECKIN_WORKER_PATH = `${WORKERS_BASE_PATH}/checkin-workflow-worker.js`;
 let checkinWorkflowWorkerPromise = null;
+let inventoryAutomationLastRunTabId = null;
 
 function updateTrialFilesStatus(message, isError = false) {
   if (!trialFilesStatus) return;
