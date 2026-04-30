@@ -1134,6 +1134,55 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
       --ttmt-form-valid-border-color: var(--ttmt-accent);
       --ttmt-form-invalid-color: var(--ttmt-error);
       --ttmt-form-invalid-border-color: var(--ttmt-error);
+
+      --bs-primary: var(--ttmt-primary);
+      --bs-secondary: var(--ttmt-secondary);
+      --bs-success: var(--ttmt-success);
+      --bs-info: var(--ttmt-info);
+      --bs-warning: var(--ttmt-warning);
+      --bs-danger: var(--ttmt-danger);
+      --bs-light: var(--ttmt-light);
+      --bs-dark: var(--ttmt-dark);
+      --bs-primary-text-emphasis: var(--ttmt-primary-text-emphasis);
+      --bs-secondary-text-emphasis: var(--ttmt-secondary-text-emphasis);
+      --bs-success-text-emphasis: var(--ttmt-success-text-emphasis);
+      --bs-info-text-emphasis: var(--ttmt-info-text-emphasis);
+      --bs-warning-text-emphasis: var(--ttmt-warning-text-emphasis);
+      --bs-danger-text-emphasis: var(--ttmt-danger-text-emphasis);
+      --bs-primary-bg-subtle: var(--ttmt-primary-bg-subtle);
+      --bs-secondary-bg-subtle: var(--ttmt-secondary-bg-subtle);
+      --bs-success-bg-subtle: var(--ttmt-success-bg-subtle);
+      --bs-info-bg-subtle: var(--ttmt-info-bg-subtle);
+      --bs-warning-bg-subtle: var(--ttmt-warning-bg-subtle);
+      --bs-danger-bg-subtle: var(--ttmt-danger-bg-subtle);
+      --bs-primary-border-subtle: var(--ttmt-primary-border-subtle);
+      --bs-secondary-border-subtle: var(--ttmt-secondary-border-subtle);
+      --bs-success-border-subtle: var(--ttmt-success-border-subtle);
+      --bs-info-border-subtle: var(--ttmt-info-border-subtle);
+      --bs-warning-border-subtle: var(--ttmt-warning-border-subtle);
+      --bs-danger-border-subtle: var(--ttmt-danger-border-subtle);
+      --bs-body-color: var(--ttmt-body-color);
+      --bs-body-bg: var(--ttmt-body-bg);
+      --bs-emphasis-color: var(--ttmt-emphasis-color);
+      --bs-secondary-color: var(--ttmt-secondary-color);
+      --bs-tertiary-color: var(--ttmt-tertiary-color);
+      --bs-secondary-bg: var(--ttmt-secondary-bg);
+      --bs-tertiary-bg: var(--ttmt-tertiary-bg);
+      --bs-heading-color: var(--ttmt-heading-color);
+      --bs-link-color: var(--ttmt-link-color);
+      --bs-link-hover-color: var(--ttmt-link-hover-color);
+      --bs-code-color: var(--ttmt-code-color);
+      --bs-highlight-bg: var(--ttmt-highlight-bg);
+      --bs-border-color: var(--ttmt-border-color);
+      --bs-border-color-translucent: var(--ttmt-border-color-translucent);
+      --bs-focus-ring-color: var(--ttmt-focus-ring-color);
+      --bs-box-shadow: var(--ttmt-box-shadow);
+      --bs-box-shadow-sm: var(--ttmt-box-shadow-sm);
+      --bs-box-shadow-lg: var(--ttmt-box-shadow-lg);
+      --bs-form-valid-color: var(--ttmt-form-valid-color);
+      --bs-form-valid-border-color: var(--ttmt-form-valid-border-color);
+      --bs-form-invalid-color: var(--ttmt-form-invalid-color);
+      --bs-form-invalid-border-color: var(--ttmt-form-invalid-border-color);
     }
 
     body, #aspnetForm {
