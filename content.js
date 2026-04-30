@@ -1345,9 +1345,15 @@ function applyCrmThemeStyle(themeVars = {}, mode = "") {
 
     /* User-reported remaining light selectors */
     #ContentAdmin > div:nth-child(7),
+    #ContentAdmin,
+    #ContentAdmin > div:nth-child(7),
     #ContentAdmin > div:nth-child(10),
+    #divAlphabet,
+    #aspnetForm > div.pageContent,
+    #aspnetForm > div.pageContent > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td:nth-child(1),
     #aspnetForm > div.pageContent > table > tbody > tr:nth-child(1) > td > table > tbody > tr > td:nth-child(2) > table > tbody > tr > td,
-    #aspnetForm > div.pageContent > table > tbody > tr:nth-child(2) > td:nth-child(1) {
+    #aspnetForm > div.pageContent > table > tbody > tr:nth-child(2) > td:nth-child(1),
+    #aspnetForm > div.pageContent > table > tbody > tr:nth-child(2) > td:nth-child(2) {
       background-color: var(--ttmt-surface) !important;
       color: var(--ttmt-text) !important;
       border-color: var(--ttmt-border) !important;
