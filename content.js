@@ -133,6 +133,39 @@ td > div > div > div > div > table {
  background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
  color: #ecf0f1;
 }
+.ajax__tab_panel > div > .card .col-12 > div .table-striped > tbody > tr > td {
+ background-image: linear-gradient(to top, #000046 0%, #1cb5e0 100%);
+ color: #ffffff;
+}
+.ajax__tab_panel > div > .card .card-header {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #ecf0f1;
+}
+.ajax__tab_panel > .card .card-header {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #f7f7f7;
+}
+.ajax__tab_panel > .card .card-body {
+ background-image: linear-gradient(30deg, #0fb8ad 0%, #2cb5e8 100%);
+}
+#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-header {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #ffffff;
+}
+.col-md-6 .card .card-body div .card .card-header {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #ecf0f1;
+}
+.col-md-6 .card .card-body .card .card-header {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #ecf0f1;
+}
+#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body {
+ background-image: linear-gradient(55deg, #0fb8ad 0%, #2cb5e8 100%);
+}
+#ContentAdmin > div > .ajax__tab_body {
+ background-image: linear-gradient(171deg, #000046 0%, #1cb5e0 100%);
+}
 `;
 
 function isCrmClientPage() {
