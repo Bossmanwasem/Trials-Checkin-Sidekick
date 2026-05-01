@@ -481,6 +481,8 @@ async function runInventoryManageFlow(searchValue) {
 
   const searchButton = await waitForXPath(INVENTORY_SEARCH_BUTTON_XPATH);
   if (!searchButton) return { ok: false, message: "Inventory search button not found." };
+
+  await delay(1000);
   searchButton.click();
   return { ok: true, searchValue };
 }
