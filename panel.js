@@ -44,6 +44,7 @@ const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
+const CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY = "ttmtCrmClientCustomCssEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
 const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
@@ -4406,6 +4407,7 @@ void initThemeSystem();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
+initCrmClientCustomCssSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -5022,6 +5024,26 @@ async function initLandingTooltipsSetting() {
     await setLandingTooltipsEnabled(enabled);
     applyLandingTooltipsEnabled(enabled);
     updateLandingTooltipsToggleState(enabled);
+  });
+}
+
+
+async function getCrmClientCustomCssEnabled() {
+  const stored = await getStoredValue(CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setCrmClientCustomCssEnabled(enabled) {
+  await setStoredValue(CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+async function initCrmClientCustomCssSetting() {
+  const toggle = document.getElementById("settingsCrmCustomCssToggle");
+  if (!toggle) return;
+  toggle.checked = await getCrmClientCustomCssEnabled();
+  toggle.addEventListener("change", async () => {
+    await setCrmClientCustomCssEnabled(Boolean(toggle.checked));
   });
 }
 

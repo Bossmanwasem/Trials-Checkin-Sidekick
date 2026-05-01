@@ -83,12 +83,81 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
+const CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY = "ttmtCrmClientCustomCssEnabled";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div',
   '//*[@id="CommonEditorCalloutId"]'
 ];
 const DAF_AAC_FIELD_XPATH = "/html/body/div/div/div/form/div/div/div/div[6]/div/span/div/div/div/input";
+
+
+const CRM_CUSTOM_CSS_STYLE_ID = "ttmt-crm-custom-css";
+const CRM_CUSTOM_CSS = `
+#ContentAdmin > div {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #ffffff;
+}
+#divAlphabet a,
+#ContentAdmin h1 span,
+#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(4) a,
+#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(3) a,
+#aspnetForm table:nth-child(4) .ctl00_TreeView1_2:nth-child(4) a,
+#aspnetForm div:nth-child(5) table:nth-child(1) a,
+#aspnetForm div:nth-child(5) table:nth-child(2) a,
+#aspnetForm table:nth-child(3) a,
+#aspnetForm table:nth-child(5) a,
+#aspnetForm table:nth-child(6) .ctl00_TreeView1_2:nth-child(4) a,
+div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(4) a,
+div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(3) a,
+td > div > table .ctl00_TreeView1_2 a,
+td div div div div:nth-child(3) table:nth-child(1) tbody tr .ctl00_TreeView1_2 a,
+td div div div div:nth-child(3) table:nth-child(2) tbody tr .ctl00_TreeView1_2 a,
+td div div div div table:nth-child(4) tbody tr .ctl00_TreeView1_2 a,
+td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a {
+ color: #ecf0f1;
+}
+#ContentAdmin > div > .btn-primary {
+ position: relative;
+ left: 4px;
+ right: 53px;
+ z-index: 147;
+}
+.pageContent > table > tbody > tr > td {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+}
+td > div > div > div > div > table {
+ color: #f5f7f9;
+}
+.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-header {
+ background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ color: #ecf0f1;
+}
+`;
+
+function isCrmClientPage() {
+  const href = window.location.href || "";
+  return href.includes('/Admin/EditClient.aspx');
+}
+
+function applyCrmCustomCss(enabled) {
+  const existing = document.getElementById(CRM_CUSTOM_CSS_STYLE_ID);
+  if (!enabled) {
+    if (existing) existing.remove();
+    return;
+  }
+  if (existing) return;
+  const style = document.createElement('style');
+  style.id = CRM_CUSTOM_CSS_STYLE_ID;
+  style.textContent = CRM_CUSTOM_CSS;
+  document.documentElement.appendChild(style);
+}
+
+async function syncCrmCustomCssFromSettings() {
+  if (!isCrmClientPage()) return;
+  const enabled = await getStoredValue(CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY);
+  applyCrmCustomCss(Boolean(enabled));
+}
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -977,4 +1046,14 @@ async function fillDafFormFromStorage() {
 
 if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
+}
+
+
+void syncCrmCustomCssFromSettings();
+if (chrome?.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (!Object.prototype.hasOwnProperty.call(changes, CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY)) return;
+    applyCrmCustomCss(Boolean(changes[CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY]?.newValue));
+  });
 }
