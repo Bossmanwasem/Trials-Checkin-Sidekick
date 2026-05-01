@@ -123,8 +123,17 @@ td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a {
  right: 53px;
  z-index: 147;
 }
+td > div > a img {
+ position: relative;
+ top: -45px;
+ background-color: #ecf0f1;
+}
+.pageContent > table > tbody > tr > td > table > tbody > tr > td {
+ background-image: linear-gradient(-180deg, #000046 0%, #1cb5e0 100%);
+}
 .pageContent > table > tbody > tr > td {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
+ background-image: linear-gradient(4deg, #000046 0%, #1cb5e0 100%);
+ transform: translatex(0px) translatey(0px);
 }
 td > div > div > div > div > table {
  color: #f5f7f9;
