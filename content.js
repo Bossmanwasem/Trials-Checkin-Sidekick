@@ -95,7 +95,7 @@ const DAF_AAC_FIELD_XPATH = "/html/body/div/div/div/form/div/div/div/div[6]/div/
 const CRM_CUSTOM_CSS_STYLE_ID = "ttmt-crm-custom-css";
 const CRM_CUSTOM_CSS = `
 #ContentAdmin > div {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 #divAlphabet a,
@@ -129,51 +129,51 @@ td > div > a img {
  background-color: #e0e0e0;
 }
 .pageContent > table > tbody > tr > td > table > tbody > tr > td {
- background-image: linear-gradient(-180deg, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
 }
 .pageContent > table > tbody > tr > td {
- background-image: linear-gradient(4deg, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  transform: translatex(0px) translatey(0px);
 }
 td > div > div > div > div > table {
  color: #e0e0e0;
 }
 .ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-header {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 .ajax__tab_panel > div > .card .col-12 > div .table-striped > tbody > tr > td {
- background-image: linear-gradient(to top, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 .ajax__tab_panel > div > .card .card-header {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 .ajax__tab_panel > .card .card-header {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 .ajax__tab_panel > .card .card-body {
- background-image: linear-gradient(30deg, #2a2a3a 0%, #81cfff 100%);
+ background-color: #1e1e2f;
 }
 #ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-header {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 .col-md-6 .card .card-body div .card .card-header {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 .col-md-6 .card .card-body .card .card-header {
- background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
  color: #e0e0e0;
 }
 #ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body {
- background-image: linear-gradient(55deg, #2a2a3a 0%, #81cfff 100%);
+ background-color: #1e1e2f;
 }
 #ContentAdmin > div > .ajax__tab_body {
- background-image: linear-gradient(171deg, #003366 0%, #81cfff 100%);
+ background-color: #1e1e2f;
 }
 `;
 
