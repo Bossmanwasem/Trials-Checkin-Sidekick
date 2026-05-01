@@ -176,6 +176,8 @@ td > div > div > div > div > table {
  background-color: #1e1e2f;
 }
 `;
+let crmCustomCssEnabled = false;
+let crmCustomCssObserver = null;
 
 function isCrmClientPage() {
   const href = window.location.href || "";
@@ -183,6 +185,7 @@ function isCrmClientPage() {
 }
 
 function applyCrmCustomCss(enabled) {
+  crmCustomCssEnabled = Boolean(enabled);
   const existing = document.getElementById(CRM_CUSTOM_CSS_STYLE_ID);
   if (!enabled) {
     if (existing) existing.remove();
@@ -195,10 +198,32 @@ function applyCrmCustomCss(enabled) {
   document.documentElement.appendChild(style);
 }
 
+function ensureCrmCustomCssPresence() {
+  if (!isCrmClientPage() || !crmCustomCssEnabled) return;
+  if (!document.getElementById(CRM_CUSTOM_CSS_STYLE_ID)) {
+    applyCrmCustomCss(true);
+  }
+}
+
+function initCrmCustomCssPersistence() {
+  if (!isCrmClientPage()) return;
+  if (crmCustomCssObserver) return;
+  crmCustomCssObserver = new MutationObserver(() => {
+    ensureCrmCustomCssPresence();
+  });
+  crmCustomCssObserver.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+  window.addEventListener("pageshow", ensureCrmCustomCssPresence);
+  window.addEventListener("load", ensureCrmCustomCssPresence);
+}
+
 async function syncCrmCustomCssFromSettings() {
   if (!isCrmClientPage()) return;
   const enabled = await getStoredValue(CRM_CLIENT_CUSTOM_CSS_ENABLED_STORAGE_KEY);
   applyCrmCustomCss(Boolean(enabled));
+  initCrmCustomCssPersistence();
 }
 
 function sanitizeName(name) {
