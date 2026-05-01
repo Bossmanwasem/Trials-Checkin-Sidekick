@@ -44,6 +44,7 @@ const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
+const CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY = "ttmtCrmSmartboxBlueThemeEnabled";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
 const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
@@ -4406,6 +4407,7 @@ void initThemeSystem();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
+initCrmSmartboxBlueThemeSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -4991,6 +4993,16 @@ async function setLandingTooltipsEnabled(enabled) {
   await setStoredValue(LANDING_TOOLTIPS_ENABLED_STORAGE_KEY, Boolean(enabled));
 }
 
+async function getCrmSmartboxBlueThemeEnabled() {
+  const stored = await getStoredValue(CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setCrmSmartboxBlueThemeEnabled(enabled) {
+  await setStoredValue(CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
 function applyLandingTooltipsEnabled(enabled) {
   const landingView = document.getElementById("landingView");
   if (landingView) {
@@ -5022,6 +5034,15 @@ async function initLandingTooltipsSetting() {
     await setLandingTooltipsEnabled(enabled);
     applyLandingTooltipsEnabled(enabled);
     updateLandingTooltipsToggleState(enabled);
+  });
+}
+
+async function initCrmSmartboxBlueThemeSetting() {
+  const toggle = document.getElementById("settingsCrmSmartboxBlueToggle");
+  if (!toggle) return;
+  toggle.checked = await getCrmSmartboxBlueThemeEnabled();
+  toggle.addEventListener("change", async () => {
+    await setCrmSmartboxBlueThemeEnabled(Boolean(toggle.checked));
   });
 }
 
