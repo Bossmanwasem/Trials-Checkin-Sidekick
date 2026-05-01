@@ -95,8 +95,8 @@ const DAF_AAC_FIELD_XPATH = "/html/body/div/div/div/form/div/div/div/div[6]/div/
 const CRM_CUSTOM_CSS_STYLE_ID = "ttmt-crm-custom-css";
 const CRM_CUSTOM_CSS = `
 #ContentAdmin > div {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #ffffff;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 #divAlphabet a,
 #ContentAdmin h1 span,
@@ -115,7 +115,7 @@ td div div div div:nth-child(3) table:nth-child(1) tbody tr .ctl00_TreeView1_2 a
 td div div div div:nth-child(3) table:nth-child(2) tbody tr .ctl00_TreeView1_2 a,
 td div div div div table:nth-child(4) tbody tr .ctl00_TreeView1_2 a,
 td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a {
- color: #ecf0f1;
+ color: #e0e0e0;
 }
 #ContentAdmin > div > .btn-primary {
  position: relative;
@@ -126,54 +126,54 @@ td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a {
 td > div > a img {
  position: relative;
  top: -45px;
- background-color: #ecf0f1;
+ background-color: #e0e0e0;
 }
 .pageContent > table > tbody > tr > td > table > tbody > tr > td {
- background-image: linear-gradient(-180deg, #000046 0%, #1cb5e0 100%);
+ background-image: linear-gradient(-180deg, #003366 0%, #81cfff 100%);
 }
 .pageContent > table > tbody > tr > td {
- background-image: linear-gradient(4deg, #000046 0%, #1cb5e0 100%);
+ background-image: linear-gradient(4deg, #003366 0%, #81cfff 100%);
  transform: translatex(0px) translatey(0px);
 }
 td > div > div > div > div > table {
- color: #f5f7f9;
+ color: #e0e0e0;
 }
 .ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-header {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #ecf0f1;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 .ajax__tab_panel > div > .card .col-12 > div .table-striped > tbody > tr > td {
- background-image: linear-gradient(to top, #000046 0%, #1cb5e0 100%);
- color: #ffffff;
+ background-image: linear-gradient(to top, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 .ajax__tab_panel > div > .card .card-header {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #ecf0f1;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 .ajax__tab_panel > .card .card-header {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #f7f7f7;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 .ajax__tab_panel > .card .card-body {
- background-image: linear-gradient(30deg, #0fb8ad 0%, #2cb5e8 100%);
+ background-image: linear-gradient(30deg, #2a2a3a 0%, #81cfff 100%);
 }
 #ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-header {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #ffffff;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 .col-md-6 .card .card-body div .card .card-header {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #ecf0f1;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 .col-md-6 .card .card-body .card .card-header {
- background-image: linear-gradient(to right, #000046 0%, #1cb5e0 100%);
- color: #ecf0f1;
+ background-image: linear-gradient(to right, #003366 0%, #81cfff 100%);
+ color: #e0e0e0;
 }
 #ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body {
- background-image: linear-gradient(55deg, #0fb8ad 0%, #2cb5e8 100%);
+ background-image: linear-gradient(55deg, #2a2a3a 0%, #81cfff 100%);
 }
 #ContentAdmin > div > .ajax__tab_body {
- background-image: linear-gradient(171deg, #000046 0%, #1cb5e0 100%);
+ background-image: linear-gradient(171deg, #003366 0%, #81cfff 100%);
 }
 `;
 
