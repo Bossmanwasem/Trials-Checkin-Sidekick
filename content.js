@@ -108,6 +108,7 @@ const CRM_SMARTBOX_BLUE_THEME_CSS = `
  border-width:3px;
 }
 #ContentAdmin h1 span{ color:#ffffff; }
+div[id='ContentAdmin'] h1{ color:#ffffff; }
 .ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body{
  background-color:#1e1e2f; color:#ffffff; border-color:#83c7f1; border-width:4px;
 }
