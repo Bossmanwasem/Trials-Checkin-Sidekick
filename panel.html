@@ -268,6 +268,19 @@
           <button id="ageCalculatorBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Calculates age from a birthdate by comparing it against today's date.">
             Age Calculator
           </button>
+          <div class="prep-ready-scan-card" id="prepReadyScanCard" aria-live="polite">
+            <div class="prep-ready-scan-card__header">
+              <span>Prep Ready Scan</span>
+              <span class="prep-ready-scan-card__state" id="prepReadyScanState">Off</span>
+            </div>
+            <p class="prep-ready-scan-card__text">
+              Watches Trials Dashboard rows where Column H is X and Column I is blank. Read-only; no workbook edits are made.
+            </p>
+            <button id="prepReadyScanToggleBtn" class="toggle-btn prep-ready-scan-card__btn" type="button" data-tooltip="Opt in or out of the read-only Trials Dashboard prep-ready scan.">
+              Start active scan
+            </button>
+            <div class="status-line prep-ready-scan-card__status" id="prepReadyScanStatus">Scan is off.</div>
+          </div>
           <button id="talkPadPrepBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Basic TalkPad prep checklist (more features coming soon).">
             TalkPad Prep Sidekick
           </button>
@@ -304,6 +317,13 @@
     <button class="landing-corner-symojo-btn" id="landingCornerSymojiBtn" type="button" aria-label="Change corner Symoji">
       <img class="landing-corner-symojo" id="landingCornerSymoji" src="assets/symoji.png" alt="Symoji mascot" />
     </button>
+  </div>
+
+  <div class="prep-ready-toast" id="prepReadyToast" role="status" aria-live="polite" hidden>
+    <button class="prep-ready-toast__close" id="prepReadyToastCloseBtn" type="button" aria-label="Close prep ready notification">×</button>
+    <div class="prep-ready-toast__eyebrow">Prep is ready</div>
+    <div class="prep-ready-toast__title" id="prepReadyToastTitle"></div>
+    <div class="prep-ready-toast__body" id="prepReadyToastBody"></div>
   </div>
 
   <!-- SETTINGS VIEW -->

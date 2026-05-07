@@ -522,6 +522,121 @@ body[data-theme^="customTheme-"] .container > * {
   margin-top: 0;
 }
 
+
+.prep-ready-scan-card {
+  margin-top: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  text-align: left;
+}
+
+.prep-ready-scan-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--header-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.prep-ready-scan-card__state {
+  padding: 2px 8px;
+  border: 1px solid var(--button-border);
+  border-radius: 999px;
+  color: var(--button-text-color);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.prep-ready-scan-card__text {
+  margin: 8px 0 0;
+  color: var(--muted-text);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.prep-ready-scan-card__btn {
+  margin-top: 10px;
+}
+
+.prep-ready-scan-card__status {
+  min-height: 18px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.prep-ready-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  padding: 14px 42px 14px 14px;
+  border: 2px solid var(--container-border);
+  border-radius: 14px;
+  background: var(--container-bg);
+  color: var(--text-color);
+  box-shadow: var(--container-shadow), 0 10px 28px rgba(0, 0, 0, 0.32);
+  animation: prepReadyToastIn 0.22s ease-out;
+}
+
+.prep-ready-toast[hidden] {
+  display: none;
+}
+
+.prep-ready-toast__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--button-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--button-text-color);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.prep-ready-toast__eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.prep-ready-toast__title {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.prep-ready-toast__body {
+  margin-top: 8px;
+  color: var(--muted-text);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+@keyframes prepReadyToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .landing-settings-btn {
   display: inline-flex;
   align-items: center;

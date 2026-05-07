@@ -63,6 +63,9 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
 };
 const MOUNT_LOG_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
 const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
+const PREP_READY_DASHBOARD_DOWNLOAD_URL = "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B57CF1000-1100-4FF0-84EC-7425CDBDEB95%7D";
+const PREP_READY_SCAN_ENABLED_STORAGE_KEY = "ttmtPrepReadyScanEnabled";
+const PREP_READY_SCAN_INTERVAL_MS = 60 * 1000;
 const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
   ltl: DEVICE_LOOKUP_EXCEL_WEB_URL,
   mount: MOUNT_LOG_EXCEL_WEB_URL,
@@ -84,6 +87,9 @@ const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
+let prepReadyScanTimer = null;
+let prepReadyScanInFlight = false;
+let prepReadyScanSeenKeys = new Set();
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
@@ -5587,6 +5593,148 @@ async function loadWorkbookFromFile(file) {
   return { sheets };
 }
 
+async function loadPrepReadyDashboardWorkbook() {
+  const response = await fetch(PREP_READY_DASHBOARD_DOWNLOAD_URL, {
+    method: "GET",
+    cache: "no-store",
+    credentials: "include"
+  });
+  if (!response.ok) {
+    throw new Error(`Trials Dashboard download failed (${response.status})`);
+  }
+  const blob = await response.blob();
+  const workbookFile = new File([blob], "Trials Dashboard 2024.xlsm", {
+    type: blob.type || "application/vnd.ms-excel.sheet.macroEnabled.12",
+    lastModified: Date.now()
+  });
+  return await loadWorkbookFromFile(workbookFile);
+}
+
+function isPrepReadyRow(row) {
+  const columnH = String(row?.[7] ?? "").trim().toUpperCase();
+  const columnI = String(row?.[8] ?? "").trim();
+  return columnH === "X" && columnI === "";
+}
+
+function summarizePrepReadyRow(rows, rowIndex) {
+  const headerRow = rows[0] || [];
+  const dataRow = rows[rowIndex] || [];
+  const lines = [];
+  headerRow.forEach((header, idx) => {
+    const headerText = String(header || "").trim();
+    const valueText = String(dataRow[idx] ?? "").trim();
+    if (!headerText || !valueText) return;
+    lines.push(`${headerText}: ${valueText}`);
+  });
+  if (!lines.length) {
+    dataRow.forEach((value, idx) => {
+      const valueText = String(value ?? "").trim();
+      if (!valueText) return;
+      lines.push(`Column ${idx + 1}: ${valueText}`);
+    });
+  }
+  return lines.slice(0, 12).join("\n") || "No row details were available.";
+}
+
+function findPrepReadyRows(workbook) {
+  const matches = [];
+  Object.entries(workbook?.sheets || {}).forEach(([sheetName, rows]) => {
+    rows.forEach((row, rowIndex) => {
+      if (rowIndex === 0 || !isPrepReadyRow(row)) return;
+      matches.push({
+        key: `${sheetName}:${rowIndex + 1}`,
+        sheetName,
+        rowNumber: rowIndex + 1,
+        summary: summarizePrepReadyRow(rows, rowIndex)
+      });
+    });
+  });
+  return matches;
+}
+
+function setPrepReadyScanStatus(message) {
+  const status = document.getElementById("prepReadyScanStatus");
+  if (status) status.textContent = message;
+}
+
+async function updatePrepReadyScanControls() {
+  const enabled = Boolean(await getStoredValue(PREP_READY_SCAN_ENABLED_STORAGE_KEY));
+  const toggle = document.getElementById("prepReadyScanToggleBtn");
+  const state = document.getElementById("prepReadyScanState");
+  if (toggle) toggle.textContent = enabled ? "Stop active scan" : "Start active scan";
+  if (state) state.textContent = enabled ? "On" : "Off";
+  if (!enabled) setPrepReadyScanStatus("Scan is off.");
+}
+
+function showPrepReadyToast(match, totalNew) {
+  const toast = document.getElementById("prepReadyToast");
+  const title = document.getElementById("prepReadyToastTitle");
+  const body = document.getElementById("prepReadyToastBody");
+  if (!toast || !title || !body) return;
+  title.textContent = `${match.sheetName} • Row ${match.rowNumber}`;
+  const extra = totalNew > 1 ? `\n\n${totalNew - 1} more prep-ready row${totalNew === 2 ? "" : "s"} found on this scan.` : "";
+  body.textContent = `${match.summary}${extra}`;
+  toast.hidden = false;
+}
+
+function hidePrepReadyToast() {
+  const toast = document.getElementById("prepReadyToast");
+  if (toast) toast.hidden = true;
+}
+
+async function runPrepReadyScan({ notifyExisting = false } = {}) {
+  if (prepReadyScanInFlight) return;
+  prepReadyScanInFlight = true;
+  setPrepReadyScanStatus("Refreshing Trials Dashboard read-only scan...");
+  try {
+    const workbook = await loadPrepReadyDashboardWorkbook();
+    const matches = findPrepReadyRows(workbook);
+    const newMatches = matches.filter(match => notifyExisting || !prepReadyScanSeenKeys.has(match.key));
+    prepReadyScanSeenKeys = new Set(matches.map(match => match.key));
+    const timestamp = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    if (newMatches.length) {
+      showPrepReadyToast(newMatches[0], newMatches.length);
+      setPrepReadyScanStatus(`Last scan ${timestamp}: ${matches.length} prep-ready row${matches.length === 1 ? "" : "s"}; ${newMatches.length} new notification${newMatches.length === 1 ? "" : "s"}.`);
+    } else {
+      setPrepReadyScanStatus(`Last scan ${timestamp}: ${matches.length} prep-ready row${matches.length === 1 ? "" : "s"}; no new notifications.`);
+    }
+  } catch (error) {
+    console.error(error);
+    setPrepReadyScanStatus("Unable to refresh Trials Dashboard. Open the workbook to verify SharePoint access.");
+  } finally {
+    prepReadyScanInFlight = false;
+  }
+}
+
+async function startPrepReadyScan() {
+  await setStoredValue(PREP_READY_SCAN_ENABLED_STORAGE_KEY, true);
+  await updatePrepReadyScanControls();
+  if (prepReadyScanTimer) clearInterval(prepReadyScanTimer);
+  prepReadyScanTimer = setInterval(() => {
+    void runPrepReadyScan();
+  }, PREP_READY_SCAN_INTERVAL_MS);
+  await runPrepReadyScan({ notifyExisting: true });
+}
+
+async function stopPrepReadyScan() {
+  await setStoredValue(PREP_READY_SCAN_ENABLED_STORAGE_KEY, false);
+  if (prepReadyScanTimer) {
+    clearInterval(prepReadyScanTimer);
+    prepReadyScanTimer = null;
+  }
+  prepReadyScanInFlight = false;
+  prepReadyScanSeenKeys = new Set();
+  hidePrepReadyToast();
+  await updatePrepReadyScanControls();
+}
+
+async function restorePrepReadyScanState() {
+  await updatePrepReadyScanControls();
+  if (await getStoredValue(PREP_READY_SCAN_ENABLED_STORAGE_KEY)) {
+    await startPrepReadyScan();
+  }
+}
+
 async function pickDeviceLookupWorkbook(targetKey) {
   if (typeof window.showOpenFilePicker !== "function") {
     alert("File picking isn't supported in this browser.");
@@ -7876,6 +8024,7 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   watchIdentifierInputs();
   initSymojiPicker();
   await loadDeviceLookupWorkbooksFromStorage();
+  await restorePrepReadyScanState();
   isGridChangesLocked = Boolean(await getStoredValue(GRID_LOCK_CHANGES_STORAGE_KEY));
   updateGridLockButtonLabel();
   const profile = await getUserProfile();
@@ -8000,6 +8149,18 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 
   document.getElementById("ageCalculatorBtn")?.addEventListener("click", () => {
     showAgeCalculatorView();
+  });
+
+  document.getElementById("prepReadyScanToggleBtn")?.addEventListener("click", async () => {
+    if (await getStoredValue(PREP_READY_SCAN_ENABLED_STORAGE_KEY)) {
+      await stopPrepReadyScan();
+      return;
+    }
+    await startPrepReadyScan();
+  });
+
+  document.getElementById("prepReadyToastCloseBtn")?.addEventListener("click", () => {
+    hidePrepReadyToast();
   });
 
   document.getElementById("talkPadPrepBtn")?.addEventListener("click", async () => {
