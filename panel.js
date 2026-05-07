@@ -65,7 +65,7 @@ const MOUNT_LOG_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x
 const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
 const PREP_READY_DASHBOARD_DOWNLOAD_URL = "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B57CF1000-1100-4FF0-84EC-7425CDBDEB95%7D";
 const PREP_READY_SCAN_ENABLED_STORAGE_KEY = "ttmtPrepReadyScanEnabled";
-const PREP_READY_SCAN_INTERVAL_MS = 60 * 1000;
+const PREP_READY_SCAN_INTERVAL_MS = 30 * 1000;
 const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
   ltl: DEVICE_LOOKUP_EXCEL_WEB_URL,
   mount: MOUNT_LOG_EXCEL_WEB_URL,
@@ -5685,7 +5685,7 @@ function hidePrepReadyToast() {
 async function runPrepReadyScan({ notifyExisting = false } = {}) {
   if (prepReadyScanInFlight) return;
   prepReadyScanInFlight = true;
-  setPrepReadyScanStatus("Refreshing Trials Dashboard read-only scan...");
+  setPrepReadyScanStatus("Refreshing Trials Dashboard read-only scan for live updates...");
   try {
     const workbook = await loadPrepReadyDashboardWorkbook();
     const matches = findPrepReadyRows(workbook);
@@ -5694,9 +5694,9 @@ async function runPrepReadyScan({ notifyExisting = false } = {}) {
     const timestamp = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     if (newMatches.length) {
       showPrepReadyToast(newMatches[0], newMatches.length);
-      setPrepReadyScanStatus(`Last scan ${timestamp}: ${matches.length} prep-ready row${matches.length === 1 ? "" : "s"}; ${newMatches.length} new notification${newMatches.length === 1 ? "" : "s"}.`);
+      setPrepReadyScanStatus(`Last scan ${timestamp}: ${matches.length} prep-ready row${matches.length === 1 ? "" : "s"}; ${newMatches.length} new notification${newMatches.length === 1 ? "" : "s"}. Watching again in about 30 seconds.`);
     } else {
-      setPrepReadyScanStatus(`Last scan ${timestamp}: ${matches.length} prep-ready row${matches.length === 1 ? "" : "s"}; no new notifications.`);
+      setPrepReadyScanStatus(`Last scan ${timestamp}: ${matches.length} prep-ready row${matches.length === 1 ? "" : "s"}; no new notifications. Watching again in about 30 seconds.`);
     }
   } catch (error) {
     console.error(error);
