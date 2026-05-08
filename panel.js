@@ -63,7 +63,10 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
 };
 const MOUNT_LOG_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
 const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
+const PREP_READY_DASHBOARD_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B57CF1000-1100-4FF0-84EC-7425CDBDEB95%7D&file=Trials%20Dashboard%202024.xlsm&action=default&mobileredirect=true";
 const PREP_READY_DASHBOARD_DOWNLOAD_URL = "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B57CF1000-1100-4FF0-84EC-7425CDBDEB95%7D";
+const PREP_READY_DASHBOARD_SOURCE_DOC_ID = "57cf1000-1100-4ff0-84ec-7425cdbdeb95";
+const PREP_READY_DASHBOARD_RELOAD_TIMEOUT_MS = 8 * 1000;
 const PREP_READY_SCAN_ENABLED_STORAGE_KEY = "ttmtPrepReadyScanEnabled";
 const PREP_READY_SCAN_INTERVAL_MS = 30 * 1000;
 const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
@@ -5593,6 +5596,61 @@ async function loadWorkbookFromFile(file) {
   return { sheets };
 }
 
+function normalizePrepReadyDashboardUrlText(url) {
+  return decodeURIComponent(String(url || "")).toLowerCase();
+}
+
+function isPrepReadyDashboardUrl(url) {
+  const normalized = normalizePrepReadyDashboardUrlText(url);
+  return normalized.includes("smartboxassistivetnam.sharepoint.com")
+    && normalized.includes("/doc.aspx")
+    && normalized.includes(PREP_READY_DASHBOARD_SOURCE_DOC_ID)
+    && normalized.includes("trials dashboard 2024.xlsm");
+}
+
+async function findPrepReadyDashboardTab() {
+  const tabs = await chrome.tabs.query({
+    url: "https://smartboxassistivetnam.sharepoint.com/*"
+  });
+  const matchingTabs = (tabs || []).filter(tab => isPrepReadyDashboardUrl(tab.url || tab.pendingUrl));
+  return matchingTabs.find(tab => !tab.active) || matchingTabs[0] || null;
+}
+
+async function refreshPrepReadyDashboardTabBeforeScan() {
+  let tab = null;
+  try {
+    tab = await findPrepReadyDashboardTab();
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+  if (!tab?.id) return false;
+
+  return await new Promise(resolve => {
+    let settled = false;
+    let timeoutId = null;
+    const finish = result => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+      resolve(result);
+    };
+    const onUpdated = (tabId, changeInfo) => {
+      if (tabId === tab.id && changeInfo?.status === "complete") {
+        finish(true);
+      }
+    };
+    timeoutId = setTimeout(() => finish(false), PREP_READY_DASHBOARD_RELOAD_TIMEOUT_MS);
+    chrome.tabs.onUpdated.addListener(onUpdated);
+    chrome.tabs.reload(tab.id, { bypassCache: true }, () => {
+      if (chrome.runtime.lastError) {
+        finish(false);
+      }
+    });
+  });
+}
+
 async function loadPrepReadyDashboardWorkbook() {
   const response = await fetch(PREP_READY_DASHBOARD_DOWNLOAD_URL, {
     method: "GET",
@@ -5687,6 +5745,7 @@ async function runPrepReadyScan({ notifyExisting = false } = {}) {
   prepReadyScanInFlight = true;
   setPrepReadyScanStatus("Refreshing Trials Dashboard read-only scan for live updates...");
   try {
+    await refreshPrepReadyDashboardTabBeforeScan();
     const workbook = await loadPrepReadyDashboardWorkbook();
     const matches = findPrepReadyRows(workbook);
     const newMatches = matches.filter(match => notifyExisting || !prepReadyScanSeenKeys.has(match.key));
