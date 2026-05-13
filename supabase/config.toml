@@ -1,0 +1,2 @@
+[functions.sidekick-audit-log]
+verify_jwt = false
