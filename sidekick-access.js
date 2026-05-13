@@ -289,6 +289,7 @@
     targets.forEach(target => {
       target.dataset.sidekickPermissionManaged = "true";
       if (disabled) {
+        target.dataset.sidekickPermissionDenied = "true";
         target.setAttribute("aria-disabled", "true");
         target.classList.add("sidekick-permission-denied");
         if ("disabled" in target) target.disabled = true;
@@ -296,9 +297,10 @@
       }
       target.removeAttribute("aria-disabled");
       target.classList.remove("sidekick-permission-denied");
-      if (target.dataset.sidekickPermissionManaged === "true" && "disabled" in target) {
+      if (target.dataset.sidekickPermissionDenied === "true" && "disabled" in target) {
         target.disabled = false;
       }
+      delete target.dataset.sidekickPermissionDenied;
     });
   }
 
