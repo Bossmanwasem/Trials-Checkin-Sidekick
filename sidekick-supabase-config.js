@@ -3,5 +3,6 @@
 self.SidekickSupabaseConfig = {
   projectUrl: "https://YOUR-PROJECT-REF.supabase.co",
   anonKey: "YOUR_SUPABASE_ANON_KEY",
-  auditFunctionName: "sidekick-audit-log"
+  auditFunctionName: "sidekick-audit-log",
+  adminFunctionName: "sidekick-admin-tools"
 };
