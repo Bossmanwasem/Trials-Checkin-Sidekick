@@ -1,2 +1,5 @@
 [functions.sidekick-audit-log]
 verify_jwt = false
+
+[functions.sidekick-admin-tools]
+verify_jwt = true
