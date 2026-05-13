@@ -1,22 +1,40 @@
-# Sidekick Permissions And Audit Logging
+# Sidekick Permissions And Supabase Audit Logging
 
-CRM Sidekick now has a small role and audit layer loaded by `panel-shell.html`.
+CRM Sidekick has a role and audit layer loaded by `panel-shell.html`.
 
 ## Roles
 
 - `Device Coordinator`: default for every user. This role has `["*"]`, which means every current Sidekick tool is allowed.
 - `Trials Preprep`: reserved for the future Trials Preprep workflow. Its tool list is intentionally empty until that separate tool set is designed.
 
-The current role is stored in Chrome local storage at `ttmtSidekickUserRole`. If no role is saved, Sidekick automatically writes `deviceCoordinator`.
+The current Sidekick role is stored in Chrome local storage at `ttmtSidekickUserRole`. Audit logs are not stored locally.
 
 ## Tool Permissions
 
 Tool permissions live in `sidekick-access.js` in the `SIDEKICK_TOOLS` registry and `SIDEKICK_ROLES` catalog. To add future Trials Preprep permissions, add the new tool id to `SIDEKICK_TOOLS`, then list that id in the `trialsPreprep.tools` array.
 
-## Audit Logs
+## Supabase Audit Logs
 
-Sidekick records user clicks, form submits, field changes, Chrome API actions, permission denials, console warnings, console errors, unhandled errors, and unhandled promise rejections.
+Sidekick records user clicks, form submits, field changes, Chrome API actions, permission denials, warnings, errors, and unhandled promise rejections. The background worker sends each record to the Supabase Edge Function `sidekick-audit-log`.
 
-Logs are saved to Chrome local storage at `ttmtSidekickAuditLog`. If the user already connected the Sidekick Logs folder, the audit layer also appends JSON lines to `sidekick-audit-YYYY-MM-DD.jsonl` in that folder when write permission is already granted.
+No audit records are written to Chrome local storage, IndexedDB, or a connected Logs folder. If Supabase delivery fails, the event is not persisted locally.
 
-Each entry includes timestamp, source, severity, event type, active view, current role, optional tool id, and safe metadata. Text field values are not stored; logs only record whether a field had a value.
+Configure `sidekick-supabase-config.js` with the project URL and anon key. Do not put service role or secret keys in the extension.
+
+Deploy the migration in `supabase/migrations/20260513224000_create_sidekick_audit_logs.sql`, then deploy `supabase/functions/sidekick-audit-log`. The function uses `SUPABASE_SERVICE_ROLE_KEY` server-side to insert into `public.sidekick_audit_logs`.
+
+`supabase/config.toml` sets `verify_jwt = false` for the audit ingestion function so the extension can reach the handler and the handler can manage CORS, payload validation, and origin checks. Store the live extension id as the `SIDEKICK_EXTENSION_ID` Edge Function secret before production deployment.
+
+Admins can query logs when their Supabase Auth `app_metadata` includes either:
+
+- `"sidekick_role": "admin"`
+- `"role": "admin"` or `"role": "sidekick_admin"`
+
+Example audit query:
+
+```sql
+select created_at, severity, event_type, action, profile_label, tool_label, metadata, error
+from public.sidekick_audit_logs
+where created_at >= now() - interval '7 days'
+order by created_at desc;
+```
