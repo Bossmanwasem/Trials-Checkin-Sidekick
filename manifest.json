@@ -8,7 +8,8 @@
     "https://portal.talktometechnologies.com/*",
     "https://talktometechnologies2com.sharepoint.com/*",
     "https://smartboxassistivetnam.sharepoint.com/*",
-    "https://forms.office.com/*"
+    "https://forms.office.com/*",
+    "https://*.supabase.co/*"
   ],
   "background": {
     "service_worker": "background.js"
