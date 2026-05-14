@@ -2192,3 +2192,9 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   content: none;
 }
 
+
+/* Task counters now live in the in-page Sidekick mini dashboard. */
+#landingView #dailyCounterSection,
+#landingView #weeklyCounterSection {
+  display: none !important;
+}

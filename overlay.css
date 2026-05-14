@@ -1,21 +1,149 @@
-#sidekick-launch-button {
+#sidekick-mini-dashboard,
+#sidekick-mini-dashboard * {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+#sidekick-mini-dashboard {
   position: fixed;
   top: 18px;
   right: 18px;
   z-index: 2147483646;
+  width: 260px;
+  border: 1px solid rgba(129, 207, 255, 0.5);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(7, 23, 39, 0.96), rgba(8, 32, 56, 0.94));
+  color: #eaf8ff;
+  box-shadow: 0 16px 44px rgba(2, 12, 27, 0.42), 0 0 0 3px rgba(129, 207, 255, 0.1);
+  overflow: hidden;
+}
+
+.sidekick-dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  cursor: grab;
+  user-select: none;
+  background: rgba(4, 17, 31, 0.84);
+  border-bottom: 1px solid rgba(129, 207, 255, 0.22);
+}
+
+.sidekick-dashboard-header:active {
+  cursor: grabbing;
+}
+
+#sidekick-launch-button {
+  flex: 1;
   border: 1px solid rgba(129, 207, 255, 0.85);
   border-radius: 999px;
   padding: 10px 16px;
   background: linear-gradient(135deg, #0b2a44, #102f5f 55%, #1e88c7);
   color: #ffffff;
   font: 700 14px/1 Arial, sans-serif;
-  box-shadow: 0 10px 28px rgba(2, 12, 27, 0.36), 0 0 0 3px rgba(129, 207, 255, 0.12);
+  box-shadow: 0 8px 22px rgba(2, 12, 27, 0.32), 0 0 0 3px rgba(129, 207, 255, 0.1);
   cursor: pointer;
 }
 
 #sidekick-launch-button:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
+}
+
+.sidekick-dashboard-drag-hint {
+  color: #81cfff;
+  font-size: 18px;
+  letter-spacing: -5px;
+  padding-right: 4px;
+}
+
+.sidekick-dashboard-counters {
+  padding: 10px;
+}
+
+.sidekick-dashboard-counter-section + .sidekick-dashboard-counter-section {
+  margin-top: 10px;
+}
+
+.sidekick-dashboard-counter-section[hidden],
+.sidekick-dashboard-counter-item[hidden],
+.sidekick-dashboard-counter-content[hidden] {
+  display: none !important;
+}
+
+.sidekick-dashboard-counter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #cceeff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidekick-dashboard-counter-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.sidekick-dashboard-counter-actions button,
+.sidekick-dashboard-counter-controls button {
+  border: 1px solid rgba(129, 207, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(13, 43, 70, 0.88);
+  color: #f6fbff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 7px;
+  cursor: pointer;
+}
+
+.sidekick-dashboard-counter-actions button:hover,
+.sidekick-dashboard-counter-controls button:hover {
+  border-color: rgba(167, 228, 255, 0.85);
+  filter: brightness(1.08);
+}
+
+.sidekick-dashboard-counter-content {
+  display: grid;
+  gap: 6px;
+}
+
+.sidekick-dashboard-counter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  padding: 5px 7px;
+  border: 1px solid rgba(129, 207, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.sidekick-dashboard-counter-label {
+  min-width: 72px;
+  color: #e9f7ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidekick-dashboard-counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidekick-dashboard-counter-value {
+  min-width: 26px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
 }
 
 #sidekick-panel-frame-wrap {
@@ -60,16 +188,17 @@
 }
 
 @media (max-width: 560px) {
+  #sidekick-mini-dashboard {
+    top: 10px;
+    right: 10px;
+    width: min(260px, calc(100vw - 20px));
+  }
+
   #sidekick-panel-frame-wrap {
     left: 8px;
     right: 8px;
     top: 58px;
     width: auto;
     height: calc(100vh - 70px);
-  }
-
-  #sidekick-launch-button {
-    top: 10px;
-    right: 10px;
   }
 }

@@ -1055,29 +1055,295 @@ if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
 }
 
-/* ---------------- In-page Sidekick Panel Launcher ---------------- */
+/* ---------------- In-page Sidekick Mini Dashboard Launcher ---------------- */
 
 (() => {
+  const DASHBOARD_ID = "sidekick-mini-dashboard";
+  const DASHBOARD_HEADER_ID = "sidekick-mini-dashboard-header";
   const LAUNCH_BUTTON_ID = "sidekick-launch-button";
   const FRAME_WRAP_ID = "sidekick-panel-frame-wrap";
   const FRAME_ID = "sidekick-panel-frame";
   const CLOSE_BUTTON_ID = "sidekick-panel-close";
+  const POSITION_STORAGE_KEY = "ttmtSidekickDashboardPosition";
+  const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
+  const DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyCustomCounterEnabled";
+  const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyCounterTotal";
+  const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyCounterEnabled";
+  const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
+  const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyCounterCollapsed";
 
   function getPanelUrl() {
     return chrome.runtime.getURL("panel.html");
   }
 
+  function normalizeCustomCounterLabel(label) {
+    const normalized = String(label || "").trim();
+    return normalized || "Custom";
+  }
+
+  async function getDashboardPosition() {
+    const stored = await getStoredValue(POSITION_STORAGE_KEY);
+    if (!stored || typeof stored !== "object") return null;
+    const left = Number(stored.left);
+    const top = Number(stored.top);
+    if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+    return { left, top };
+  }
+
+  async function setDashboardPosition(position) {
+    await setStoredValue(POSITION_STORAGE_KEY, position);
+  }
+
+  async function getWeeklyCounterEnabled() {
+    const stored = await getStoredValue(WEEKLY_COUNTER_ENABLED_STORAGE_KEY);
+    if (stored === null || typeof stored === "undefined") return true;
+    return Boolean(stored);
+  }
+
+  async function getDailyCustomCounterEnabled() {
+    const stored = await getStoredValue(DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY);
+    if (stored === null || typeof stored === "undefined") return false;
+    return Boolean(stored);
+  }
+
+  async function getDailyCustomCounterLabel() {
+    const stored = await getStoredValue(DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY);
+    return normalizeCustomCounterLabel(stored);
+  }
+
+  async function getCounterCollapsed(key) {
+    return Boolean(await getStoredValue(key));
+  }
+
+  async function setCounterCollapsed(key, collapsed) {
+    await setStoredValue(key, Boolean(collapsed));
+  }
+
+  async function getDashboardDailyCounters() {
+    const stored = await getStoredValue(DAILY_COUNTER_STORAGE_KEY);
+    return {
+      ...getDefaultDailyCounters(),
+      ...(stored || {})
+    };
+  }
+
+  async function setDashboardDailyCounters(counters) {
+    await setStoredValue(DAILY_COUNTER_STORAGE_KEY, counters);
+  }
+
+  async function getWeeklyCounterTotal() {
+    const stored = await getStoredValue(WEEKLY_COUNTER_STORAGE_KEY);
+    return Number(stored) || 0;
+  }
+
+  async function setWeeklyCounterTotal(total) {
+    await setStoredValue(WEEKLY_COUNTER_STORAGE_KEY, Math.max(0, Number(total) || 0));
+  }
+
+  function getDailyCountersTotal(counters) {
+    return Object.values(counters || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+  }
+
+  function setDashboardText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function setSectionCollapsed(sectionName, collapsed) {
+    const section = document.querySelector(`[data-sidekick-counter-section="${sectionName}"]`);
+    const content = section?.querySelector(".sidekick-dashboard-counter-content");
+    const toggle = section?.querySelector("[data-sidekick-counter-toggle]");
+    if (!section || !content || !toggle) return;
+    content.hidden = collapsed;
+    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    toggle.textContent = collapsed ? "Show" : "Hide";
+  }
+
+  async function adjustWeeklyCounterByDelta(delta) {
+    if (!delta) return await getWeeklyCounterTotal();
+    const current = await getWeeklyCounterTotal();
+    const nextTotal = Math.max(0, current + delta);
+    await setWeeklyCounterTotal(nextTotal);
+    setDashboardText("sidekick-dashboard-weekly-total", String(nextTotal));
+    return nextTotal;
+  }
+
+  async function adjustDailyCounter(counterKey, delta) {
+    const counters = await getDashboardDailyCounters();
+    const previousTotal = getDailyCountersTotal(counters);
+    const nextValue = Math.max(0, (Number(counters[counterKey]) || 0) + delta);
+    const updated = { ...counters, [counterKey]: nextValue };
+    await setDashboardDailyCounters(updated);
+    updateDashboardDailyDisplay(updated);
+    await adjustWeeklyCounterByDelta(getDailyCountersTotal(updated) - previousTotal);
+  }
+
+  async function clearDashboardDailyCounters() {
+    const reset = getDefaultDailyCounters();
+    await setDashboardDailyCounters(reset);
+    updateDashboardDailyDisplay(reset);
+  }
+
+  async function clearDashboardWeeklyCounter() {
+    await setWeeklyCounterTotal(0);
+    setDashboardText("sidekick-dashboard-weekly-total", "0");
+  }
+
+  function updateDashboardDailyDisplay(counters) {
+    setDashboardText("sidekick-dashboard-checkins", String(counters.checkins ?? 0));
+    setDashboardText("sidekick-dashboard-qas", String(counters.qas ?? 0));
+    setDashboardText("sidekick-dashboard-preps", String(counters.preps ?? 0));
+    setDashboardText("sidekick-dashboard-custom", String(counters.custom ?? 0));
+  }
+
+  async function refreshDashboardCounters() {
+    const dashboard = document.getElementById(DASHBOARD_ID);
+    if (!dashboard) return;
+
+    const [dailyEnabled, weeklyEnabled, customEnabled, customLabel, dailyCounters, weeklyTotal, dailyCollapsed, weeklyCollapsed] = await Promise.all([
+      getDailyCounterEnabled(),
+      getWeeklyCounterEnabled(),
+      getDailyCustomCounterEnabled(),
+      getDailyCustomCounterLabel(),
+      getDashboardDailyCounters(),
+      getWeeklyCounterTotal(),
+      getCounterCollapsed(DAILY_COUNTER_COLLAPSED_STORAGE_KEY),
+      getCounterCollapsed(WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY)
+    ]);
+
+    const dailySection = dashboard.querySelector('[data-sidekick-counter-section="daily"]');
+    const weeklySection = dashboard.querySelector('[data-sidekick-counter-section="weekly"]');
+    const customItem = dashboard.querySelector('[data-sidekick-counter-item="custom"]');
+    if (dailySection) dailySection.hidden = !dailyEnabled;
+    if (weeklySection) weeklySection.hidden = !weeklyEnabled;
+    if (customItem) customItem.hidden = !customEnabled;
+    setDashboardText("sidekick-dashboard-custom-label", customLabel);
+    updateDashboardDailyDisplay(dailyCounters);
+    setDashboardText("sidekick-dashboard-weekly-total", String(weeklyTotal));
+    setSectionCollapsed("daily", dailyCollapsed);
+    setSectionCollapsed("weekly", weeklyCollapsed);
+  }
+
+  function createCounterRow({ label, valueId, counterKey = "", weekly = false }) {
+    const deltaAttr = weekly ? "data-sidekick-weekly-delta" : "data-sidekick-counter-delta";
+    const keyAttr = counterKey ? `data-sidekick-counter-key="${counterKey}"` : "";
+    return `
+      <div class="sidekick-dashboard-counter-item" ${counterKey ? `data-sidekick-counter-item="${counterKey}"` : ""}>
+        <span class="sidekick-dashboard-counter-label" ${counterKey === "custom" ? 'id="sidekick-dashboard-custom-label"' : ""}>${label}</span>
+        <div class="sidekick-dashboard-counter-controls">
+          <button type="button" ${keyAttr} ${deltaAttr}="-1" aria-label="Decrease ${label}">-</button>
+          <span class="sidekick-dashboard-counter-value" id="${valueId}">0</span>
+          <button type="button" ${keyAttr} ${deltaAttr}="1" aria-label="Increase ${label}">+</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function createDashboardMarkup() {
+    return `
+      <div id="${DASHBOARD_HEADER_ID}" class="sidekick-dashboard-header" title="Drag Sidekick dashboard">
+        <button id="${LAUNCH_BUTTON_ID}" type="button">Sidekick</button>
+        <span class="sidekick-dashboard-drag-hint">⋮⋮</span>
+      </div>
+      <div class="sidekick-dashboard-counters">
+        <section class="sidekick-dashboard-counter-section" data-sidekick-counter-section="daily" aria-label="Daily task counter">
+          <div class="sidekick-dashboard-counter-heading">
+            <span>Daily</span>
+            <div class="sidekick-dashboard-counter-actions">
+              <button type="button" data-sidekick-clear-daily>Clear</button>
+              <button type="button" data-sidekick-counter-toggle="daily" aria-expanded="true">Hide</button>
+            </div>
+          </div>
+          <div class="sidekick-dashboard-counter-content">
+            ${createCounterRow({ label: "Checkins", valueId: "sidekick-dashboard-checkins", counterKey: "checkins" })}
+            ${createCounterRow({ label: "QA's", valueId: "sidekick-dashboard-qas", counterKey: "qas" })}
+            ${createCounterRow({ label: "Preps", valueId: "sidekick-dashboard-preps", counterKey: "preps" })}
+            ${createCounterRow({ label: "Custom", valueId: "sidekick-dashboard-custom", counterKey: "custom" })}
+          </div>
+        </section>
+        <section class="sidekick-dashboard-counter-section" data-sidekick-counter-section="weekly" aria-label="Weekly task counter">
+          <div class="sidekick-dashboard-counter-heading">
+            <span>Weekly</span>
+            <div class="sidekick-dashboard-counter-actions">
+              <button type="button" data-sidekick-clear-weekly>Clear</button>
+              <button type="button" data-sidekick-counter-toggle="weekly" aria-expanded="true">Hide</button>
+            </div>
+          </div>
+          <div class="sidekick-dashboard-counter-content">
+            ${createCounterRow({ label: "Total", valueId: "sidekick-dashboard-weekly-total", weekly: true })}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  async function applySavedDashboardPosition() {
+    const dashboard = document.getElementById(DASHBOARD_ID);
+    if (!dashboard) return;
+    const position = await getDashboardPosition();
+    if (!position) return;
+    const safeLeft = Math.max(8, Math.min(window.innerWidth - dashboard.offsetWidth - 8, position.left));
+    const safeTop = Math.max(8, Math.min(window.innerHeight - dashboard.offsetHeight - 8, position.top));
+    dashboard.style.left = `${safeLeft}px`;
+    dashboard.style.top = `${safeTop}px`;
+    dashboard.style.right = "auto";
+  }
+
+  function makeDashboardDraggable(dashboard) {
+    const handle = document.getElementById(DASHBOARD_HEADER_ID);
+    if (!handle || dashboard.dataset.sidekickDragReady === "true") return;
+    dashboard.dataset.sidekickDragReady = "true";
+    let drag = null;
+
+    handle.addEventListener("pointerdown", event => {
+      if (event.target.closest("button")) return;
+      const rect = dashboard.getBoundingClientRect();
+      drag = {
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top
+      };
+      handle.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    });
+
+    handle.addEventListener("pointermove", event => {
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const left = Math.max(8, Math.min(window.innerWidth - dashboard.offsetWidth - 8, event.clientX - drag.offsetX));
+      const top = Math.max(8, Math.min(window.innerHeight - dashboard.offsetHeight - 8, event.clientY - drag.offsetY));
+      dashboard.style.left = `${left}px`;
+      dashboard.style.top = `${top}px`;
+      dashboard.style.right = "auto";
+    });
+
+    handle.addEventListener("pointerup", async event => {
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      drag = null;
+      handle.releasePointerCapture?.(event.pointerId);
+      const rect = dashboard.getBoundingClientRect();
+      await setDashboardPosition({ left: rect.left, top: rect.top });
+    });
+  }
+
   function ensureSidekickLauncher() {
     if (!document.body) return;
 
-    if (!document.getElementById(LAUNCH_BUTTON_ID)) {
-      const button = document.createElement("button");
-      button.id = LAUNCH_BUTTON_ID;
-      button.type = "button";
-      button.textContent = "Sidekick";
-      button.addEventListener("click", toggleSidekickPanel);
-      document.body.appendChild(button);
+    let dashboard = document.getElementById(DASHBOARD_ID);
+    if (!dashboard) {
+      dashboard = document.createElement("div");
+      dashboard.id = DASHBOARD_ID;
+      dashboard.innerHTML = createDashboardMarkup();
+      document.body.appendChild(dashboard);
+      void applySavedDashboardPosition();
     }
+
+    const launchButton = dashboard.querySelector(`#${LAUNCH_BUTTON_ID}`);
+    if (launchButton && launchButton.dataset.sidekickLaunchReady !== "true") {
+      launchButton.dataset.sidekickLaunchReady = "true";
+      launchButton.addEventListener("click", toggleSidekickPanel);
+    }
+    makeDashboardDraggable(dashboard);
+    void refreshDashboardCounters();
 
     if (!document.getElementById(FRAME_WRAP_ID)) {
       const wrap = document.createElement("div");
@@ -1121,6 +1387,47 @@ if (isDafFormPage()) {
     wrap.hidden = !wrap.hidden;
   }
 
+  function wireDashboardEvents() {
+    document.addEventListener("click", async event => {
+      const dashboard = event.target.closest(`#${DASHBOARD_ID}`);
+      if (!dashboard) return;
+
+      const dailyDeltaButton = event.target.closest("[data-sidekick-counter-delta]");
+      if (dailyDeltaButton) {
+        const counterKey = dailyDeltaButton.dataset.sidekickCounterKey;
+        const delta = Number.parseInt(dailyDeltaButton.dataset.sidekickCounterDelta || "0", 10);
+        if (counterKey && !Number.isNaN(delta)) await adjustDailyCounter(counterKey, delta);
+        return;
+      }
+
+      const weeklyDeltaButton = event.target.closest("[data-sidekick-weekly-delta]");
+      if (weeklyDeltaButton) {
+        const delta = Number.parseInt(weeklyDeltaButton.dataset.sidekickWeeklyDelta || "0", 10);
+        if (!Number.isNaN(delta)) await adjustWeeklyCounterByDelta(delta);
+        return;
+      }
+
+      if (event.target.closest("[data-sidekick-clear-daily]")) {
+        await clearDashboardDailyCounters();
+        return;
+      }
+
+      if (event.target.closest("[data-sidekick-clear-weekly]")) {
+        await clearDashboardWeeklyCounter();
+        return;
+      }
+
+      const toggle = event.target.closest("[data-sidekick-counter-toggle]");
+      if (toggle) {
+        const sectionName = toggle.dataset.sidekickCounterToggle;
+        const storageKey = sectionName === "weekly" ? WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY : DAILY_COUNTER_COLLAPSED_STORAGE_KEY;
+        const nextCollapsed = !(await getCounterCollapsed(storageKey));
+        await setCounterCollapsed(storageKey, nextCollapsed);
+        setSectionCollapsed(sectionName, nextCollapsed);
+      }
+    });
+  }
+
   let reinjectTimer = null;
   function scheduleLauncherReinject() {
     clearTimeout(reinjectTimer);
@@ -1136,6 +1443,26 @@ if (isDafFormPage()) {
     });
   }
 
+  if (chrome?.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== "local") return;
+      const watchedKeys = [
+        DAILY_COUNTER_STORAGE_KEY,
+        DAILY_COUNTER_ENABLED_STORAGE_KEY,
+        DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY,
+        DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY,
+        WEEKLY_COUNTER_STORAGE_KEY,
+        WEEKLY_COUNTER_ENABLED_STORAGE_KEY,
+        DAILY_COUNTER_COLLAPSED_STORAGE_KEY,
+        WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY
+      ];
+      if (watchedKeys.some(key => changes[key])) {
+        void refreshDashboardCounters();
+      }
+    });
+  }
+
+  wireDashboardEvents();
   ensureSidekickLauncher();
   const observer = new MutationObserver(scheduleLauncherReinject);
   observer.observe(document.documentElement, { childList: true, subtree: true });
