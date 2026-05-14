@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Smartbox CRM Sidekick",
   "version": "1.1.6",
-  "description": "Injected Sidekick overlay for any web page with CRM check-in tools unlocked on TTMT CRM pages.",
+  "description": "Sidekick runs as the existing interface in an in-page launcher instead of the browser side panel.",
   "permissions": [
     "sidePanel",
     "activeTab",
@@ -49,12 +49,30 @@
         "https://*/*"
       ],
       "js": [
-        "libs/jszip.min.js",
         "content.js"
       ],
       "run_at": "document_idle",
       "css": [
         "overlay.css"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "panel.html",
+        "panel.css",
+        "themes.css",
+        "panel.js",
+        "libs/jszip.min.js",
+        "workers/checkin-workflow-worker.js",
+        "workers/zip-worker.js",
+        "assets/*",
+        "assets/Symojis/*"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
       ]
     }
   ]
