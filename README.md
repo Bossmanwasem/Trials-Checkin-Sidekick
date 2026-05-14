@@ -59,3 +59,7 @@ New signups default to `coordinator`. Coordinators currently see the existing Si
 - `extension_logs`: click, view, auth, and workflow troubleshooting events for the extension.
 
 Row Level Security is enabled so users can select their own profile/logs, admins can see all profiles/logs, users can insert their own logs, and only admins can delete records.
+
+### Troubleshooting profile schema cache errors
+
+If login shows an error like `Could not find the 'full_name' column of 'profiles' in the schema cache`, run `supabase/migrations/20260514001000_repair_profiles_full_name.sql` in the Supabase SQL editor. The extension no longer requires `full_name` to complete login, but the repair migration adds the optional display-name column for existing projects and asks PostgREST to reload its schema cache.

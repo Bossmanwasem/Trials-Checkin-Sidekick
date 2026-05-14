@@ -224,24 +224,47 @@ async function upsertSupabaseProfile(localProfile = null) {
   const session = await ensureSupabaseSession();
   if (!session?.user?.id) return null;
   const email = session.user.email || "";
-  const fallbackName = email ? email.split("@")[0] : "Sidekick user";
-  const firstName = (localProfile?.firstName || "").trim();
-  const lastName = (localProfile?.lastName || "").trim();
-  const fullName = [firstName, lastName].filter(Boolean).join(" ") || fallbackName;
   const role = normalizeSupabaseRole(supabaseAuthState.profile?.role);
+  const payload = {
+    id: session.user.id,
+    email,
+    role
+  };
   const rows = await supabaseRestRequest("profiles?on_conflict=id&select=*", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-    body: JSON.stringify([{
-      id: session.user.id,
-      email,
-      full_name: fullName,
-      role
-    }])
+    body: JSON.stringify([payload])
   });
   const profile = Array.isArray(rows) ? rows[0] || null : null;
   supabaseAuthState.profile = profile;
+
+  if (localProfile) {
+    void syncOptionalSupabaseProfileName(localProfile);
+  }
+
   return profile;
+}
+
+async function syncOptionalSupabaseProfileName(localProfile = null) {
+  const session = await ensureSupabaseSession();
+  if (!session?.user?.id || !localProfile) return;
+  const firstName = (localProfile.firstName || "").trim();
+  const lastName = (localProfile.lastName || "").trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  if (!fullName) return;
+
+  try {
+    const rows = await supabaseRestRequest(`profiles?id=eq.${encodeURIComponent(session.user.id)}&select=*`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ full_name: fullName })
+    });
+    const profile = Array.isArray(rows) ? rows[0] || null : null;
+    if (profile) supabaseAuthState.profile = profile;
+  } catch {
+    // Some existing Supabase projects may not have the optional full_name column yet.
+    // Login should still work; the repair migration can add the column later.
+  }
 }
 
 function setAuthStatus(message, type = "") {
