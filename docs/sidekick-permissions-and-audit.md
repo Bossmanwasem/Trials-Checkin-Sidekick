@@ -26,6 +26,16 @@ Required Edge Function secrets:
 
 `sidekick-supabase-config.js` needs the public Supabase project URL, anon key, `sidekick-audit-log`, and `sidekick-admin-tools` function names.
 
+### Registering The First Admin
+
+1. Create a strong value for the `SIDEKICK_ADMIN_ONBOARDING_KEY` Edge Function secret.
+2. Deploy the `sidekick-admin-tools` function after the secret is set.
+3. Open Sidekick onboarding, enter your Supabase email and password, and paste the admin onboarding key into the optional admin key field.
+4. Click `Connect Supabase`. The Edge Function signs the account profile as `Sidekick Admin` in Supabase Auth `app_metadata`.
+5. After the first admin exists, that admin can open the Admin suite in Sidekick and promote or demote other users.
+
+The admin onboarding key should only be used for bootstrap or break-glass recovery. Routine role changes should happen from the Admin suite.
+
 ## Supabase Audit Logs
 
 Sidekick records user clicks, form submits, field changes, Chrome API actions, permission denials, warnings, errors, and unhandled promise rejections. The background worker sends each record to the Supabase Edge Function `sidekick-audit-log`.
