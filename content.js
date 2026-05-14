@@ -1065,12 +1065,31 @@ if (isDafFormPage()) {
   const FRAME_ID = "sidekick-panel-frame";
   const CLOSE_BUTTON_ID = "sidekick-panel-close";
   const POSITION_STORAGE_KEY = "ttmtSidekickDashboardPosition";
+  const THEME_STORAGE_KEY = "ttmtSidekickTheme";
+  const CUSTOM_THEMES_STORAGE_KEY = "ttmtSidekickCustomThemes";
   const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
   const DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyCustomCounterEnabled";
   const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyCounterTotal";
   const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyCounterEnabled";
   const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
   const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyCounterCollapsed";
+  const DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY = "ttmtSidekickDashboardCountersCollapsed";
+  const DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY = "ttmtSidekickDashboardCrmNavCollapsed";
+  const CRM_LINK_BASE = "https://portal.talktometechnologies.com/admin/EditClient.aspx?ID=";
+  const DEFAULT_DASHBOARD_THEME_VARS = {
+    "bg-color": "#121212",
+    "text-color": "#e0e0e0",
+    "muted-text": "#d5e9ff",
+    "container-bg": "#1e1e2f",
+    "container-border": "#81cfff",
+    "accent": "#81cfff",
+    "accent-strong": "#003366",
+    "accent-strong-hover": "#005599",
+    "input-bg": "#2a2a3a",
+    "input-border": "#555",
+    "container-shadow": "0 0 20px rgba(0, 128, 255, 0.25)"
+  };
+  let themeVarsCache = null;
 
   function getPanelUrl() {
     return chrome.runtime.getURL("panel.html");
@@ -1079,6 +1098,10 @@ if (isDafFormPage()) {
   function normalizeCustomCounterLabel(label) {
     const normalized = String(label || "").trim();
     return normalized || "Custom";
+  }
+
+  function isCustomThemeId(themeId) {
+    return typeof themeId === "string" && themeId.startsWith("customTheme-");
   }
 
   async function getDashboardPosition() {
@@ -1111,11 +1134,11 @@ if (isDafFormPage()) {
     return normalizeCustomCounterLabel(stored);
   }
 
-  async function getCounterCollapsed(key) {
+  async function getCollapsedState(key) {
     return Boolean(await getStoredValue(key));
   }
 
-  async function setCounterCollapsed(key, collapsed) {
+  async function setCollapsedState(key, collapsed) {
     await setStoredValue(key, Boolean(collapsed));
   }
 
@@ -1149,7 +1172,17 @@ if (isDafFormPage()) {
     if (el) el.textContent = text;
   }
 
-  function setSectionCollapsed(sectionName, collapsed) {
+  function setPanelCollapsed(sectionName, collapsed) {
+    const section = document.querySelector(`[data-sidekick-dashboard-panel="${sectionName}"]`);
+    const content = section?.querySelector(".sidekick-dashboard-panel-content");
+    const toggle = section?.querySelector("[data-sidekick-panel-toggle]");
+    if (!section || !content || !toggle) return;
+    content.hidden = collapsed;
+    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    toggle.textContent = collapsed ? "Show" : "Hide";
+  }
+
+  function setCounterSectionCollapsed(sectionName, collapsed) {
     const section = document.querySelector(`[data-sidekick-counter-section="${sectionName}"]`);
     const content = section?.querySelector(".sidekick-dashboard-counter-content");
     const toggle = section?.querySelector("[data-sidekick-counter-toggle]");
@@ -1196,19 +1229,76 @@ if (isDafFormPage()) {
     setDashboardText("sidekick-dashboard-custom", String(counters.custom ?? 0));
   }
 
+  async function getThemeVarsFromStylesheet() {
+    if (themeVarsCache) return themeVarsCache;
+    themeVarsCache = {};
+    try {
+      const response = await fetch(chrome.runtime.getURL("themes.css"));
+      const css = await response.text();
+      const blockRegex = /body\[data-theme="([^"]+)"\]\s*\{([^}]+)\}/g;
+      let match;
+      while ((match = blockRegex.exec(css)) !== null) {
+        const vars = {};
+        const varRegex = /--([\w-]+)\s*:\s*([^;]+);/g;
+        let varMatch;
+        while ((varMatch = varRegex.exec(match[2])) !== null) {
+          vars[varMatch[1]] = varMatch[2].trim();
+        }
+        themeVarsCache[match[1]] = vars;
+      }
+    } catch (err) {
+      console.warn("Sidekick could not load theme variables for dashboard", err);
+    }
+    return themeVarsCache;
+  }
+
+  async function getActiveDashboardThemeVars(themeId) {
+    if (isCustomThemeId(themeId)) {
+      const customThemes = await getStoredValue(CUSTOM_THEMES_STORAGE_KEY);
+      const customTheme = Array.isArray(customThemes) ? customThemes.find(theme => theme.id === themeId) : null;
+      return {
+        ...DEFAULT_DASHBOARD_THEME_VARS,
+        ...(customTheme?.vars || {})
+      };
+    }
+    const themes = await getThemeVarsFromStylesheet();
+    return {
+      ...DEFAULT_DASHBOARD_THEME_VARS,
+      ...(themes[themeId] || themes.ocean || {})
+    };
+  }
+
+  async function applyDashboardTheme() {
+    const dashboard = document.getElementById(DASHBOARD_ID);
+    if (!dashboard) return;
+    const themeId = await getStoredValue(THEME_STORAGE_KEY) || "ocean";
+    const vars = await getActiveDashboardThemeVars(themeId);
+    const themedElements = [dashboard, document.getElementById(FRAME_WRAP_ID)].filter(Boolean);
+    dashboard.dataset.sidekickTheme = themeId;
+    themedElements.forEach(element => {
+      Object.entries(vars).forEach(([key, value]) => {
+        element.style.setProperty(`--${key}`, value);
+      });
+      element.style.setProperty("--button-border", vars["container-border"] || vars.accent || DEFAULT_DASHBOARD_THEME_VARS.accent);
+      element.style.setProperty("--button-text-color", vars.accent || DEFAULT_DASHBOARD_THEME_VARS.accent);
+    });
+  }
+
   async function refreshDashboardCounters() {
     const dashboard = document.getElementById(DASHBOARD_ID);
     if (!dashboard) return;
 
-    const [dailyEnabled, weeklyEnabled, customEnabled, customLabel, dailyCounters, weeklyTotal, dailyCollapsed, weeklyCollapsed] = await Promise.all([
+    const [dailyEnabled, weeklyEnabled, customEnabled, customLabel, dailyCounters, weeklyTotal, dailyCollapsed, weeklyCollapsed, countersCollapsed, crmNavCollapsed] = await Promise.all([
       getDailyCounterEnabled(),
       getWeeklyCounterEnabled(),
       getDailyCustomCounterEnabled(),
       getDailyCustomCounterLabel(),
       getDashboardDailyCounters(),
       getWeeklyCounterTotal(),
-      getCounterCollapsed(DAILY_COUNTER_COLLAPSED_STORAGE_KEY),
-      getCounterCollapsed(WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY)
+      getCollapsedState(DAILY_COUNTER_COLLAPSED_STORAGE_KEY),
+      getCollapsedState(WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY),
+      getCollapsedState(DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY),
+      getCollapsedState(DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY)
     ]);
 
     const dailySection = dashboard.querySelector('[data-sidekick-counter-section="daily"]');
@@ -1220,8 +1310,10 @@ if (isDafFormPage()) {
     setDashboardText("sidekick-dashboard-custom-label", customLabel);
     updateDashboardDailyDisplay(dailyCounters);
     setDashboardText("sidekick-dashboard-weekly-total", String(weeklyTotal));
-    setSectionCollapsed("daily", dailyCollapsed);
-    setSectionCollapsed("weekly", weeklyCollapsed);
+    setCounterSectionCollapsed("daily", dailyCollapsed);
+    setCounterSectionCollapsed("weekly", weeklyCollapsed);
+    setPanelCollapsed("counters", countersCollapsed);
+    setPanelCollapsed("crmNav", crmNavCollapsed);
   }
 
   function createCounterRow({ label, valueId, counterKey = "", weekly = false }) {
@@ -1239,40 +1331,67 @@ if (isDafFormPage()) {
     `;
   }
 
+  function createDashboardPanel({ id, title, storageKey, content }) {
+    return `
+      <section class="sidekick-dashboard-panel" data-sidekick-dashboard-panel="${id}">
+        <div class="sidekick-dashboard-panel-heading">
+          <span>${title}</span>
+          <button type="button" data-sidekick-panel-toggle="${id}" data-sidekick-panel-storage="${storageKey}" aria-expanded="true">Hide</button>
+        </div>
+        <div class="sidekick-dashboard-panel-content">
+          ${content}
+        </div>
+      </section>
+    `;
+  }
+
   function createDashboardMarkup() {
+    const countersContent = `
+      <section class="sidekick-dashboard-counter-section" data-sidekick-counter-section="daily" aria-label="Daily task counter">
+        <div class="sidekick-dashboard-counter-heading">
+          <span>Daily</span>
+          <div class="sidekick-dashboard-counter-actions">
+            <button type="button" data-sidekick-clear-daily>Clear</button>
+            <button type="button" data-sidekick-counter-toggle="daily" aria-expanded="true">Hide</button>
+          </div>
+        </div>
+        <div class="sidekick-dashboard-counter-content">
+          ${createCounterRow({ label: "Checkins", valueId: "sidekick-dashboard-checkins", counterKey: "checkins" })}
+          ${createCounterRow({ label: "QA's", valueId: "sidekick-dashboard-qas", counterKey: "qas" })}
+          ${createCounterRow({ label: "Preps", valueId: "sidekick-dashboard-preps", counterKey: "preps" })}
+          ${createCounterRow({ label: "Custom", valueId: "sidekick-dashboard-custom", counterKey: "custom" })}
+        </div>
+      </section>
+      <section class="sidekick-dashboard-counter-section" data-sidekick-counter-section="weekly" aria-label="Weekly task counter">
+        <div class="sidekick-dashboard-counter-heading">
+          <span>Weekly</span>
+          <div class="sidekick-dashboard-counter-actions">
+            <button type="button" data-sidekick-clear-weekly>Clear</button>
+            <button type="button" data-sidekick-counter-toggle="weekly" aria-expanded="true">Hide</button>
+          </div>
+        </div>
+        <div class="sidekick-dashboard-counter-content">
+          ${createCounterRow({ label: "Total", valueId: "sidekick-dashboard-weekly-total", weekly: true })}
+        </div>
+      </section>
+    `;
+    const crmNavContent = `
+      <form id="sidekick-dashboard-crm-nav-form" class="sidekick-dashboard-crm-nav-form">
+        <label for="sidekick-dashboard-crm-nav-input">CRM ID</label>
+        <div class="sidekick-dashboard-crm-nav-row">
+          <input id="sidekick-dashboard-crm-nav-input" type="text" placeholder="Enter CRM ID" autocomplete="off" />
+          <button type="submit">Go</button>
+        </div>
+      </form>
+    `;
     return `
       <div id="${DASHBOARD_HEADER_ID}" class="sidekick-dashboard-header" title="Drag Sidekick dashboard">
         <button id="${LAUNCH_BUTTON_ID}" type="button">Sidekick</button>
         <span class="sidekick-dashboard-drag-hint">⋮⋮</span>
       </div>
-      <div class="sidekick-dashboard-counters">
-        <section class="sidekick-dashboard-counter-section" data-sidekick-counter-section="daily" aria-label="Daily task counter">
-          <div class="sidekick-dashboard-counter-heading">
-            <span>Daily</span>
-            <div class="sidekick-dashboard-counter-actions">
-              <button type="button" data-sidekick-clear-daily>Clear</button>
-              <button type="button" data-sidekick-counter-toggle="daily" aria-expanded="true">Hide</button>
-            </div>
-          </div>
-          <div class="sidekick-dashboard-counter-content">
-            ${createCounterRow({ label: "Checkins", valueId: "sidekick-dashboard-checkins", counterKey: "checkins" })}
-            ${createCounterRow({ label: "QA's", valueId: "sidekick-dashboard-qas", counterKey: "qas" })}
-            ${createCounterRow({ label: "Preps", valueId: "sidekick-dashboard-preps", counterKey: "preps" })}
-            ${createCounterRow({ label: "Custom", valueId: "sidekick-dashboard-custom", counterKey: "custom" })}
-          </div>
-        </section>
-        <section class="sidekick-dashboard-counter-section" data-sidekick-counter-section="weekly" aria-label="Weekly task counter">
-          <div class="sidekick-dashboard-counter-heading">
-            <span>Weekly</span>
-            <div class="sidekick-dashboard-counter-actions">
-              <button type="button" data-sidekick-clear-weekly>Clear</button>
-              <button type="button" data-sidekick-counter-toggle="weekly" aria-expanded="true">Hide</button>
-            </div>
-          </div>
-          <div class="sidekick-dashboard-counter-content">
-            ${createCounterRow({ label: "Total", valueId: "sidekick-dashboard-weekly-total", weekly: true })}
-          </div>
-        </section>
+      <div class="sidekick-dashboard-body">
+        ${createDashboardPanel({ id: "counters", title: "Task Counters", storageKey: DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY, content: countersContent })}
+        ${createDashboardPanel({ id: "crmNav", title: "CRM Navigator", storageKey: DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY, content: crmNavContent })}
       </div>
     `;
   }
@@ -1325,6 +1444,15 @@ if (isDafFormPage()) {
     });
   }
 
+  function openCrmNavigatorRecord(crmId) {
+    const trimmedId = String(crmId || "").trim();
+    if (!trimmedId) {
+      alert("Enter a CRM ID to continue.");
+      return;
+    }
+    window.open(`${CRM_LINK_BASE}${encodeURIComponent(trimmedId)}`, "_blank", "noopener");
+  }
+
   function ensureSidekickLauncher() {
     if (!document.body) return;
 
@@ -1343,6 +1471,7 @@ if (isDafFormPage()) {
       launchButton.addEventListener("click", toggleSidekickPanel);
     }
     makeDashboardDraggable(dashboard);
+    void applyDashboardTheme();
     void refreshDashboardCounters();
 
     if (!document.getElementById(FRAME_WRAP_ID)) {
@@ -1366,6 +1495,7 @@ if (isDafFormPage()) {
       wrap.appendChild(closeButton);
       wrap.appendChild(frame);
       document.body.appendChild(wrap);
+      void applyDashboardTheme();
     }
   }
 
@@ -1417,14 +1547,32 @@ if (isDafFormPage()) {
         return;
       }
 
-      const toggle = event.target.closest("[data-sidekick-counter-toggle]");
-      if (toggle) {
-        const sectionName = toggle.dataset.sidekickCounterToggle;
+      const counterToggle = event.target.closest("[data-sidekick-counter-toggle]");
+      if (counterToggle) {
+        const sectionName = counterToggle.dataset.sidekickCounterToggle;
         const storageKey = sectionName === "weekly" ? WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY : DAILY_COUNTER_COLLAPSED_STORAGE_KEY;
-        const nextCollapsed = !(await getCounterCollapsed(storageKey));
-        await setCounterCollapsed(storageKey, nextCollapsed);
-        setSectionCollapsed(sectionName, nextCollapsed);
+        const nextCollapsed = !(await getCollapsedState(storageKey));
+        await setCollapsedState(storageKey, nextCollapsed);
+        setCounterSectionCollapsed(sectionName, nextCollapsed);
+        return;
       }
+
+      const panelToggle = event.target.closest("[data-sidekick-panel-toggle]");
+      if (panelToggle) {
+        const sectionName = panelToggle.dataset.sidekickPanelToggle;
+        const storageKey = panelToggle.dataset.sidekickPanelStorage;
+        const nextCollapsed = !(await getCollapsedState(storageKey));
+        await setCollapsedState(storageKey, nextCollapsed);
+        setPanelCollapsed(sectionName, nextCollapsed);
+      }
+    });
+
+    document.addEventListener("submit", event => {
+      if (!event.target.matches("#sidekick-dashboard-crm-nav-form")) return;
+      event.preventDefault();
+      const input = event.target.querySelector("#sidekick-dashboard-crm-nav-input");
+      openCrmNavigatorRecord(input?.value || "");
+      if (input) input.value = "";
     });
   }
 
@@ -1446,7 +1594,7 @@ if (isDafFormPage()) {
   if (chrome?.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName !== "local") return;
-      const watchedKeys = [
+      const counterKeys = [
         DAILY_COUNTER_STORAGE_KEY,
         DAILY_COUNTER_ENABLED_STORAGE_KEY,
         DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY,
@@ -1454,10 +1602,16 @@ if (isDafFormPage()) {
         WEEKLY_COUNTER_STORAGE_KEY,
         WEEKLY_COUNTER_ENABLED_STORAGE_KEY,
         DAILY_COUNTER_COLLAPSED_STORAGE_KEY,
-        WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY
+        WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY,
+        DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY,
+        DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY
       ];
-      if (watchedKeys.some(key => changes[key])) {
+      if (counterKeys.some(key => changes[key])) {
         void refreshDashboardCounters();
+      }
+      if (changes[THEME_STORAGE_KEY] || changes[CUSTOM_THEMES_STORAGE_KEY]) {
+        themeVarsCache = null;
+        void applyDashboardTheme();
       }
     });
   }
