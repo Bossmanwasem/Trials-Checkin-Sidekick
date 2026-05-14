@@ -87,7 +87,322 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["authView", "welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+
+const SUPABASE_URL = "https://drkzeyxechabszuqqdkf.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_DFzdPbLI56S2HtYvgsybog_6SIo4IWy";
+const SUPABASE_AUTH_SESSION_STORAGE_KEY = "ttmtSupabaseAuthSession";
+const SUPABASE_AUTH_LAST_SEEN_DATE_STORAGE_KEY = "ttmtSupabaseAuthLastSeenDate";
+const SUPABASE_DEFAULT_ROLE = "coordinator";
+const SUPABASE_ALLOWED_ROLES = new Set(["admin", "coordinator", "preprep"]);
+let supabaseAuthState = { session: null, user: null, profile: null };
+let lastLoggedViewId = null;
+
+function getTodayDateKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeSupabaseRole(role) {
+  const value = String(role || "").trim().toLowerCase();
+  return SUPABASE_ALLOWED_ROLES.has(value) ? value : SUPABASE_DEFAULT_ROLE;
+}
+
+function getSupabaseAuthHeaders(session = supabaseAuthState.session) {
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    "Content-Type": "application/json"
+  };
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return headers;
+}
+
+function parseJwtPayload(token) {
+  if (!token) return null;
+  const payload = token.split(".")[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function isSupabaseSessionExpired(session) {
+  const expiresAt = Number(session?.expires_at || 0);
+  if (expiresAt) return expiresAt <= Math.floor(Date.now() / 1000) + 60;
+  const payload = parseJwtPayload(session?.access_token);
+  return payload?.exp ? payload.exp <= Math.floor(Date.now() / 1000) + 60 : true;
+}
+
+async function supabaseAuthRequest(path, body, session = null) {
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+    method: "POST",
+    headers: getSupabaseAuthHeaders(session),
+    body: JSON.stringify(body)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.msg || data?.message || data?.error_description || "Supabase auth request failed.");
+  }
+  return data;
+}
+
+async function supabaseRestRequest(path, options = {}) {
+  const session = await ensureSupabaseSession();
+  if (!session) throw new Error("Sign in is required.");
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      ...getSupabaseAuthHeaders(session),
+      ...(options.headers || {})
+    }
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    throw new Error(data?.message || data?.hint || "Supabase data request failed.");
+  }
+  return data;
+}
+
+async function saveSupabaseSession(session) {
+  supabaseAuthState.session = session || null;
+  supabaseAuthState.user = session?.user || supabaseAuthState.user || null;
+  if (session) {
+    await setStoredValue(SUPABASE_AUTH_SESSION_STORAGE_KEY, session);
+    await setStoredValue(SUPABASE_AUTH_LAST_SEEN_DATE_STORAGE_KEY, getTodayDateKey());
+  } else {
+    await removeStoredValue(SUPABASE_AUTH_SESSION_STORAGE_KEY);
+  }
+}
+
+async function refreshSupabaseSession(session) {
+  if (!session?.refresh_token) return null;
+  const refreshed = await supabaseAuthRequest("token?grant_type=refresh_token", {
+    refresh_token: session.refresh_token
+  }, session);
+  await saveSupabaseSession(refreshed);
+  return refreshed;
+}
+
+async function ensureSupabaseSession() {
+  let session = supabaseAuthState.session || await getStoredValue(SUPABASE_AUTH_SESSION_STORAGE_KEY);
+  if (!session) return null;
+  try {
+    if (isSupabaseSessionExpired(session)) {
+      session = await refreshSupabaseSession(session);
+    } else {
+      supabaseAuthState.session = session;
+      supabaseAuthState.user = session.user || supabaseAuthState.user || null;
+      await setStoredValue(SUPABASE_AUTH_LAST_SEEN_DATE_STORAGE_KEY, getTodayDateKey());
+    }
+    return session;
+  } catch {
+    await saveSupabaseSession(null);
+    supabaseAuthState.user = null;
+    supabaseAuthState.profile = null;
+    return null;
+  }
+}
+
+async function fetchSupabaseProfile() {
+  const session = await ensureSupabaseSession();
+  if (!session?.user?.id) return null;
+  const rows = await supabaseRestRequest(`profiles?id=eq.${encodeURIComponent(session.user.id)}&select=*`, {
+    method: "GET"
+  });
+  const profile = Array.isArray(rows) ? rows[0] || null : null;
+  supabaseAuthState.profile = profile;
+  return profile;
+}
+
+async function upsertSupabaseProfile(localProfile = null) {
+  const session = await ensureSupabaseSession();
+  if (!session?.user?.id) return null;
+  const email = session.user.email || "";
+  const fallbackName = email ? email.split("@")[0] : "Sidekick user";
+  const firstName = (localProfile?.firstName || "").trim();
+  const lastName = (localProfile?.lastName || "").trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || fallbackName;
+  const role = normalizeSupabaseRole(supabaseAuthState.profile?.role);
+  const rows = await supabaseRestRequest("profiles?on_conflict=id&select=*", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify([{
+      id: session.user.id,
+      email,
+      full_name: fullName,
+      role
+    }])
+  });
+  const profile = Array.isArray(rows) ? rows[0] || null : null;
+  supabaseAuthState.profile = profile;
+  return profile;
+}
+
+function setAuthStatus(message, type = "") {
+  const status = document.getElementById("authStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.classList.toggle("is-error", type === "error");
+  status.classList.toggle("is-success", type === "success");
+}
+
+function setSettingsAuthStatus(message, type = "") {
+  const status = document.getElementById("settingsAuthStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.classList.toggle("is-error", type === "error");
+  status.classList.toggle("is-success", type === "success");
+}
+
+function showAuthView() {
+  showView("authView");
+}
+
+async function continueAfterSupabaseAuth() {
+  const localProfile = await getUserProfile();
+  let remoteProfile = null;
+  try {
+    remoteProfile = await fetchSupabaseProfile();
+  } catch {
+    // Existing users may not have a profile row until the first sync.
+  }
+  if (!remoteProfile) {
+    remoteProfile = await upsertSupabaseProfile(localProfile);
+  }
+  if (!localProfile && remoteProfile?.full_name) {
+    const [firstName, ...rest] = remoteProfile.full_name.split(" ");
+    await saveUserProfile({ firstName: firstName || remoteProfile.email?.split("@")[0] || "", lastName: rest.join(" ") });
+  }
+  await logSupabaseEvent("auth", "session_started", { role: normalizeSupabaseRole(remoteProfile?.role) });
+  const profile = await getUserProfile();
+  if (profile) {
+    showLandingView();
+  } else {
+    showWelcomeView();
+  }
+}
+
+async function signInWithSupabase(email, password) {
+  const session = await supabaseAuthRequest("token?grant_type=password", { email, password });
+  await saveSupabaseSession(session);
+  return session;
+}
+
+async function signUpWithSupabase(email, password) {
+  const session = await supabaseAuthRequest("signup", { email, password });
+  await saveSupabaseSession(session?.access_token ? session : null);
+  supabaseAuthState.user = session?.user || null;
+  return session;
+}
+
+function initSupabaseAuthForm() {
+  const form = document.getElementById("authForm");
+  const emailInput = document.getElementById("authEmailInput");
+  const passwordInput = document.getElementById("authPasswordInput");
+  const signUpBtn = document.getElementById("authSignUpBtn");
+  const logoutBtn = document.getElementById("authLogoutBtn");
+
+  form?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const email = (emailInput?.value || "").trim();
+    const password = passwordInput?.value || "";
+    if (!email || !password) return;
+    setAuthStatus("Signing in…");
+    try {
+      await signInWithSupabase(email, password);
+      setAuthStatus("Signed in.", "success");
+      if (passwordInput) passwordInput.value = "";
+      await continueAfterSupabaseAuth();
+    } catch (error) {
+      setAuthStatus(error.message || "Unable to sign in.", "error");
+    }
+  });
+
+  signUpBtn?.addEventListener("click", async () => {
+    const email = (emailInput?.value || "").trim();
+    const password = passwordInput?.value || "";
+    if (!email || !password) {
+      setAuthStatus("Enter an email and password to create an account.", "error");
+      return;
+    }
+    setAuthStatus("Creating account…");
+    try {
+      const result = await signUpWithSupabase(email, password);
+      if (!result?.access_token) {
+        setAuthStatus("Account created. Check your email if confirmation is required, then sign in.", "success");
+        return;
+      }
+      setAuthStatus("Account created and signed in.", "success");
+      if (passwordInput) passwordInput.value = "";
+      await continueAfterSupabaseAuth();
+    } catch (error) {
+      setAuthStatus(error.message || "Unable to create account.", "error");
+    }
+  });
+
+  logoutBtn?.addEventListener("click", async () => {
+    await logSupabaseEvent("auth", "logout_clicked");
+    await saveSupabaseSession(null);
+    supabaseAuthState.user = null;
+    supabaseAuthState.profile = null;
+    setSettingsAuthStatus("Logged out.", "success");
+    showAuthView();
+  });
+}
+
+function getElementLabel(element) {
+  if (!element) return "";
+  const aria = element.getAttribute?.("aria-label");
+  if (aria) return aria.trim();
+  return (element.textContent || element.value || element.id || element.name || "").trim().replace(/\s+/g, " ").slice(0, 120);
+}
+
+function getClickMetadata(event) {
+  const target = event.target?.closest?.("button, a, input, select, textarea, [role='button'], [data-collapsible]");
+  if (!target) return null;
+  if (target.closest?.("#authView") && target.id === "authPasswordInput") return null;
+  return {
+    element_id: target.id || null,
+    element_tag: target.tagName?.toLowerCase?.() || null,
+    element_label: getElementLabel(target),
+    view_id: target.closest?.(".container")?.id || null,
+    action_type: event.type
+  };
+}
+
+async function logSupabaseEvent(eventType, eventName, metadata = {}) {
+  const session = await ensureSupabaseSession();
+  if (!session?.user?.id) return;
+  try {
+    await supabaseRestRequest("extension_logs", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([{
+        user_id: session.user.id,
+        event_type: eventType,
+        event_name: eventName,
+        metadata
+      }])
+    });
+  } catch {
+    // Troubleshooting logs should never block the user workflow.
+  }
+}
+
+function initSupabaseActivityLogging() {
+  document.addEventListener("click", event => {
+    const metadata = getClickMetadata(event);
+    if (!metadata) return;
+    void logSupabaseEvent("click", metadata.element_id || metadata.element_label || "unknown_click", metadata);
+  }, true);
+}
+
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -454,6 +769,10 @@ function showView(targetId) {
     if (!el) return;
     el.style.display = id === targetId ? "block" : "none";
   });
+  if (targetId !== "authView" && lastLoggedViewId !== targetId) {
+    lastLoggedViewId = targetId;
+    void logSupabaseEvent("view", "view_changed", { view_id: targetId });
+  }
 }
 
 function showWelcomeView() { showView("welcomeView"); }
@@ -4503,6 +4822,7 @@ async function writeLogEntry({ action, outcome }) {
 }
 
 async function logTaskOutcome(action, outcome) {
+  void logSupabaseEvent("workflow", action || "task_outcome", { outcome: outcome || "Completed successfully" });
   try {
     await writeLogEntry({ action, outcome });
   } catch {
@@ -4530,6 +4850,7 @@ async function writeLtlUpdateLogEntry(outcome) {
 }
 
 async function logLtlUpdateOutcome(outcome) {
+  void logSupabaseEvent("workflow", "LTL Update", { outcome: outcome || "LTL Update Completed successfully" });
   try {
     await writeLtlUpdateLogEntry(outcome);
   } catch {
@@ -4590,6 +4911,9 @@ async function getUserProfile() {
 
 async function saveUserProfile(profile) {
   await setStoredValue(USER_PROFILE_STORAGE_KEY, profile);
+  if (supabaseAuthState.session) {
+    void upsertSupabaseProfile(profile);
+  }
 }
 
 async function getUserMascot() {
@@ -7873,16 +8197,18 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 /* ---------------- Init ---------------- */
 
 (async function init() {
+  initSupabaseAuthForm();
+  initSupabaseActivityLogging();
   watchIdentifierInputs();
   initSymojiPicker();
   await loadDeviceLookupWorkbooksFromStorage();
   isGridChangesLocked = Boolean(await getStoredValue(GRID_LOCK_CHANGES_STORAGE_KEY));
   updateGridLockButtonLabel();
-  const profile = await getUserProfile();
-  if (profile) {
-    showLandingView();
+  const session = await ensureSupabaseSession();
+  if (session) {
+    await continueAfterSupabaseAuth();
   } else {
-    showWelcomeView();
+    showAuthView();
   }
 
   document.addEventListener("click", event => {

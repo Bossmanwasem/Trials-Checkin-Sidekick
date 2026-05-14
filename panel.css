@@ -108,6 +108,45 @@ body[data-theme^="customTheme-"] .container > * {
   position: relative;
 }
 
+
+.auth-view h1 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.auth-secondary-btn {
+  opacity: 0.92;
+}
+
+.auth-logout-btn {
+  margin-top: 10px;
+}
+
+.auth-status {
+  min-height: 20px;
+}
+
+.auth-status.is-error {
+  color: var(--error-color);
+}
+
+.auth-status.is-success {
+  color: var(--accent);
+}
+
 .welcome-view h1 {
   text-align: center;
   margin-bottom: 12px;

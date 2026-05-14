@@ -12,6 +12,26 @@
 </head>
 <body>
 
+
+  <!-- AUTH VIEW -->
+  <div class="container auth-view" id="authView" style="display:none;">
+    <h1>CRM Sidekick Login</h1>
+    <p class="complete-intro">Sign in with your Supabase account to open the Sidekick tools.</p>
+    <form id="authForm" class="auth-form">
+      <label for="authEmailInput">Email</label>
+      <input type="email" id="authEmailInput" autocomplete="email" required />
+
+      <label for="authPasswordInput">Password</label>
+      <input type="password" id="authPasswordInput" autocomplete="current-password" required />
+
+      <div class="auth-actions">
+        <button class="toggle-btn" id="authSignInBtn" type="submit" data-auth-mode="signin">Sign in</button>
+        <button class="toggle-btn auth-secondary-btn" id="authSignUpBtn" type="button">Create account</button>
+      </div>
+      <div id="authStatus" class="status-line auth-status" aria-live="polite"></div>
+    </form>
+  </div>
+
   <!-- WELCOME VIEW -->
   <div class="container welcome-view" id="welcomeView" style="display:none;">
     <h1>Welcome to the CRM Sidekick!</h1>
@@ -325,6 +345,10 @@
         <button id="editUserProfileBtn" class="toggle-btn settings-card__action" type="button">
           Edit user profile
         </button>
+        <button id="authLogoutBtn" class="toggle-btn settings-card__action auth-logout-btn" type="button">
+          Log out of Supabase
+        </button>
+        <div id="settingsAuthStatus" class="status-line auth-status"></div>
       </div>
       <div class="settings-card">
         <div class="settings-card__title">Theme picker</div>
