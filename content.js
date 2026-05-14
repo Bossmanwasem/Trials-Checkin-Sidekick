@@ -1054,3 +1054,766 @@ async function fillDafFormFromStorage() {
 if (isDafFormPage()) {
   fillDafFormFromStorage().catch(err => console.error("DAF autofill failed", err));
 }
+
+/* ---------------- Injected CRM Overlay Workflow ---------------- */
+
+(() => {
+  const CRM_HOSTS = new Set([
+    "crm.talktometechnologies.com",
+    "portal.talktometechnologies.com"
+  ]);
+  if (!CRM_HOSTS.has(window.location.hostname)) return;
+
+  const ids = {
+    button: "sidekick-launch-button",
+    root: "sidekick-overlay-root",
+    panel: "sidekick-overlay-panel",
+    header: "sidekick-overlay-header",
+    body: "sidekick-overlay-body",
+    status: "sidekick-status",
+    notePreview: "sidekick-note-preview",
+    folderStatus: "sidekick-trial-files-folder-status",
+    zipStatus: "sidekick-trial-files-status",
+    progress: "sidekick-progress",
+    progressFill: "sidekick-progress-fill"
+  };
+
+  const NOTE_XPATHS = {
+    noteBox: '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]',
+    category: '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]',
+    submit: '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]',
+    documentsTab: '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]/span'
+  };
+
+  const DB_NAME = "ttmtSidekickHandles";
+  const DB_STORE = "handles";
+  const TRIAL_FILES_HANDLE_KEY = "trialFilesFolder";
+  const TRIAL_FILES_FOLDER_NAME_KEY = "ttmtTrialFilesFolderName";
+
+  const q = selector => document.getElementById(ids.root)?.querySelector(selector) || null;
+  const qa = selector => Array.from(document.getElementById(ids.root)?.querySelectorAll(selector) || []);
+  const field = name => q(`[data-sidekick-field="${name}"]`);
+  const value = name => (field(name)?.value || "").trim();
+  const setValue = (name, nextValue) => {
+    const el = field(name);
+    if (!el) return;
+    el.value = nextValue || "";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  function setStatus(message, isError = false) {
+    const el = document.getElementById(ids.status);
+    if (!el) return;
+    el.textContent = message || "";
+    el.classList.toggle("sidekick-error", Boolean(isError));
+  }
+
+  function setZipStatus(message, isError = false) {
+    const el = document.getElementById(ids.zipStatus);
+    if (!el) return;
+    el.textContent = message || "";
+    el.classList.toggle("sidekick-error", Boolean(isError));
+  }
+
+  function setProgress(percent = 0, message = "") {
+    const bar = document.getElementById(ids.progress);
+    const fill = document.getElementById(ids.progressFill);
+    if (!bar || !fill) return;
+    bar.hidden = percent <= 0;
+    fill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+    if (message) setZipStatus(message);
+  }
+
+  function sanitizeClientName(raw = "") {
+    return String(raw || "")
+      .replace(UNSAFE_NAME_REGEX, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function formatDateForFilename(date = new Date()) {
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${mm}-${dd}-${yyyy}`;
+  }
+
+  function getSelectedValues(name) {
+    return qa(`input[name="${name}"]:checked`).map(input => input.value).filter(Boolean);
+  }
+
+  function detectDeviceModel(deviceNumberRaw) {
+    const s = (deviceNumberRaw || "").trim().toUpperCase();
+    if (s === "X") return "Mount Only";
+    const rules = [
+      { prefix: "DTP10", model: "Talk Pad 10" },
+      { prefix: "DTP8", model: "Talk Pad 8" },
+      { prefix: "Z16", model: "Zuvo 16" },
+      { prefix: "Z12", model: "Zuvo 12" },
+      { prefix: "Z10", model: "Zuvo 10" },
+      { prefix: "DW5", model: "Wego 5A" },
+      { prefix: "DWM", model: "Wego 7A" },
+      { prefix: "DW13", model: "Wego 13A" },
+      { prefix: "DW", model: "Wego 10A" },
+      { prefix: "DGPG", model: "Grid Pad Go" },
+      { prefix: "DTT", model: "Grid Pad 13" },
+      { prefix: "DTZ", model: "Grid Pad 16" }
+    ];
+    return rules.find(rule => s.startsWith(rule.prefix))?.model || "Device";
+  }
+
+  function buildVocabLine() {
+    if (field("vocabNotReturned")?.checked) return "No vocab returned.";
+    const selected = getSelectedValues("sidekick-vocabTypes");
+    const vocabLabel = selected.length ? selected.join(", ") : "selected";
+    return `I saved ${vocabLabel} vocabs to the CRM.`;
+  }
+
+  function hasValidVocabSelection() {
+    return Boolean(field("vocabNotReturned")?.checked || getSelectedValues("sidekick-vocabTypes").length);
+  }
+
+  function buildAccessoriesLineIfAny() {
+    const accessories = value("accessories");
+    return accessories ? ` Also returned with the device: ${accessories}.` : "";
+  }
+
+  function buildDeviceIdentifier(deviceNum) {
+    const parts = [value("luminNumber"), value("cameraNumber")].filter(Boolean);
+    return parts.length ? `(${deviceNum} | ${parts.join(", ")})` : `(${deviceNum})`;
+  }
+
+  function buildMountsBlockIfAny() {
+    const clamp = value("clampMount");
+    const rolling = value("rollingMount");
+    const table = value("tableMount");
+    if (!(clamp || rolling || table)) return "";
+    const lines = ["", "", "Mount(s) Returned with the device:"];
+    if (clamp) lines.push(`Clamp Mount (${clamp})`);
+    if (rolling) lines.push(`Rolling Mount (${rolling})`);
+    if (table) lines.push(`Table Mount (${table})`);
+    return lines.join("\n");
+  }
+
+  function buildMountsReturnedOnlyNote() {
+    const lines = ["Mounts Returned:"];
+    const mounts = [
+      ["Clamp Mount", value("clampMount")],
+      ["Rolling Mount", value("rollingMount")],
+      ["Table Mount", value("tableMount")]
+    ];
+    mounts.forEach(([label, mountValue]) => {
+      if (mountValue) lines.push(`${label} (${mountValue})`);
+    });
+    if (lines.length === 1) lines.push("No mount numbers entered.");
+    return lines.join("\n");
+  }
+
+  function getFormattedLtlUpdates() {
+    const updates = getSelectedValues("sidekick-ltlUpdates");
+    if (!updates.length) return "No updates selected";
+    return updates.map(item => item === "Other" ? (value("ltlOther") ? `Other: ${value("ltlOther")}` : "Other") : item).join(", ");
+  }
+
+  function buildLtlUpdatesLine() {
+    if (!field("ltlFlow")?.checked) return "";
+    return `Updates completed: ${getFormattedLtlUpdates()}.`;
+  }
+
+  function buildLtlUpdateNote({ fullName, modelName, deviceNum }) {
+    const selectedVocabs = getSelectedValues("sidekick-vocabTypes");
+    const vocabLabel = field("vocabNotReturned")?.checked ? "no" : (selectedVocabs.length ? selectedVocabs.join(", ") : "selected");
+    let note = `${fullName} ${modelName} (${deviceNum}) was returned for a yearly update. I was able to save/transfer ${vocabLabel} Vocab(s) to the CRM. Device was wiped and unsupported apps were removed. I also performed the following updates: ${getFormattedLtlUpdates()}. Returning updated device to clinic.`;
+    const needsNewSerial = getSelectedValues("sidekick-ltlUpdates").some(item => ["Replaced Device", "Replaced Case"].includes(item));
+    if (needsNewSerial) note += `\n\nNew Device: ${value("newSerial") || "Serial number not provided"}`;
+    return note;
+  }
+
+  function buildCannedNote() {
+    const first = sanitizeClientName(value("firstName"));
+    const last = sanitizeClientName(value("lastName"));
+    const deviceNum = value("deviceNumber");
+    const fullName = [first, last].filter(Boolean).join(" ") || "Client";
+    const isMountOnly = deviceNum.toLowerCase() === "x";
+    const modelName = detectDeviceModel(deviceNum);
+
+    if (field("ltlFlow")?.checked) return buildLtlUpdateNote({ fullName, modelName, deviceNum });
+
+    if (isMountOnly) {
+      const cameraIdentifiers = [value("cameraNumber"), value("luminNumber")].filter(Boolean);
+      const hasMounts = Boolean(value("clampMount") || value("rollingMount") || value("tableMount"));
+      if (field("vocabNotReturned")?.checked && !hasMounts && cameraIdentifiers.length) {
+        return `Camera returned.\n\nCamera number: ${cameraIdentifiers.join(", ")}`;
+      }
+      return buildMountsReturnedOnlyNote();
+    }
+
+    const condition = value("condition");
+    const repairs = value("repairs");
+    const updatesLine = buildLtlUpdatesLine();
+    const updatesSuffix = updatesLine ? ` ${updatesLine}` : "";
+    const base = `${fullName}'s ${modelName} ${buildDeviceIdentifier(deviceNum)} was returned`;
+    if (condition === "Needs Repair") {
+      return `${base} and needs repair (${repairs || "repairs needed not specified"}). ${buildVocabLine()}${buildAccessoriesLineIfAny()}${updatesSuffix}${buildMountsBlockIfAny()}`;
+    }
+    const conditionPhrase = condition === "Working" ? "working condition" : condition || "an unspecified condition";
+    return `${base} in ${conditionPhrase}. ${buildVocabLine()}${buildAccessoriesLineIfAny()}${updatesSuffix}${buildMountsBlockIfAny()}`;
+  }
+
+  function buildZipFilenameFromVocabTypes(vocabTypes = []) {
+    const first = sanitizeClientName(value("firstName"));
+    const last = sanitizeClientName(value("lastName"));
+    const fullName = [first, last].filter(Boolean).join(" ") || "Client";
+    const normalizedTypes = [];
+    let hasSaltillo = false;
+    vocabTypes.filter(Boolean).forEach(type => {
+      if (["TC", "LAMP", "Dialogue"].includes(type)) hasSaltillo = true;
+      else normalizedTypes.push(type);
+    });
+    if (hasSaltillo) normalizedTypes.push("Saltillo");
+    return `${fullName} ${normalizedTypes.length ? normalizedTypes.join(", ") : "Vocab"} Vocab from Trial ${formatDateForFilename()}.zip`;
+  }
+
+  function stripZipExtension(filename = "") {
+    return String(filename || "").replace(/\.zip$/i, "");
+  }
+
+  function findEntryNameIgnoreCase(entries, expectedName) {
+    const target = (expectedName || "").toLowerCase();
+    return entries.find(name => name.toLowerCase() === target) || null;
+  }
+
+  async function openHandleDb() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function saveFolderHandle(handle) {
+    const db = await openHandleDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(DB_STORE, "readwrite");
+      tx.objectStore(DB_STORE).put(handle, TRIAL_FILES_HANDLE_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function loadFolderHandle() {
+    const db = await openHandleDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(DB_STORE, "readonly");
+      const req = tx.objectStore(DB_STORE).get(TRIAL_FILES_HANDLE_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function verifyFolderPermission(handle, mode = "readwrite") {
+    if (!handle) return false;
+    const options = { mode };
+    if ((await handle.queryPermission(options)) === "granted") return true;
+    return (await handle.requestPermission(options)) === "granted";
+  }
+
+  async function setStoredValue(key, nextValue) {
+    if (typeof chrome !== "undefined" && chrome.storage?.local) await chrome.storage.local.set({ [key]: nextValue });
+    else localStorage.setItem(key, nextValue);
+  }
+
+  async function getStoredValue(key) {
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      const data = await chrome.storage.local.get(key);
+      return data?.[key] || "";
+    }
+    return localStorage.getItem(key) || "";
+  }
+
+  async function updateFolderStatus(messageOverride = "") {
+    const status = document.getElementById(ids.folderStatus);
+    if (!status) return;
+    if (messageOverride) {
+      status.textContent = messageOverride;
+      return;
+    }
+    const name = await getStoredValue(TRIAL_FILES_FOLDER_NAME_KEY);
+    status.textContent = name ? `Using "${name}" for saved zips.` : "No saved zips folder selected yet.";
+  }
+
+  async function pickTrialFilesFolder() {
+    if (typeof window.showDirectoryPicker !== "function") {
+      setZipStatus("Folder picking is not supported in this browser context.", true);
+      return null;
+    }
+    try {
+      const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+      if (!handle) return null;
+      await saveFolderHandle(handle);
+      await setStoredValue(TRIAL_FILES_FOLDER_NAME_KEY, handle.name || "Selected folder");
+      await updateFolderStatus();
+      await refreshTrialFilesFromFolder(handle);
+      return handle;
+    } catch (err) {
+      setZipStatus(err?.message || "Folder selection canceled.", true);
+      return null;
+    }
+  }
+
+  async function getFilesFromFolder(handle) {
+    const files = [];
+    for await (const entry of handle.values()) {
+      if (entry.kind === "file") files.push(await entry.getFile());
+    }
+    return files.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async function refreshTrialFilesFromFolder(handleOverride = null) {
+    const handle = handleOverride || await loadFolderHandle().catch(() => null);
+    if (!handle) {
+      await updateFolderStatus();
+      setZipStatus("No saved zips folder selected yet.");
+      return false;
+    }
+    const permitted = await verifyFolderPermission(handle, "read");
+    if (!permitted) {
+      await updateFolderStatus("Folder access blocked. Click Refresh to re-authorize.");
+      return false;
+    }
+    const files = await getFilesFromFolder(handle);
+    setZipStatus(`${files.length} file(s) found in saved zips folder.`);
+    await updateFolderStatus();
+    return true;
+  }
+
+  async function renameFileInFolder(folderHandle, entries, fromName, toName) {
+    const sourceName = findEntryNameIgnoreCase(entries, fromName);
+    if (!sourceName || !toName || sourceName === toName) return false;
+    const sourceHandle = await folderHandle.getFileHandle(sourceName);
+    const sourceFile = await sourceHandle.getFile();
+    const existingTarget = findEntryNameIgnoreCase(entries, toName);
+    if (existingTarget) await folderHandle.removeEntry(existingTarget);
+    const targetHandle = await folderHandle.getFileHandle(toName, { create: true });
+    const writable = await targetHandle.createWritable({ keepExistingData: false });
+    await writable.write(sourceFile);
+    await writable.close();
+    await folderHandle.removeEntry(sourceName);
+    return true;
+  }
+
+  async function renameSavedZipFilesForCheckin() {
+    const result = { renamed: [], skipped: [], checkinName: "", gridName: "" };
+    const handle = await loadFolderHandle().catch(() => null);
+    if (!handle) {
+      result.skipped.push("folder-missing");
+      setZipStatus("No saved zips folder selected. Skipping saved zip rename.", true);
+      return result;
+    }
+    const permitted = await verifyFolderPermission(handle, "readwrite");
+    if (!permitted) {
+      result.skipped.push("permission-blocked");
+      setZipStatus("Saved zips folder access blocked. Re-authorize with Refresh.", true);
+      return result;
+    }
+
+    const entries = [];
+    for await (const entry of handle.values()) {
+      if (entry.kind === "file") entries.push(entry.name);
+    }
+    result.checkinName = buildZipFilenameFromVocabTypes(getSelectedValues("sidekick-vocabTypes"));
+    result.gridName = `${sanitizeClientName(value("firstName"))} ${sanitizeClientName(value("lastName"))} Grid user from Trial ${formatDateForFilename()}.zip`.replace(/\s+/g, " ").trim();
+
+    if (await renameFileInFolder(handle, entries, "Current Checkin.zip", result.checkinName)) result.renamed.push(result.checkinName);
+    else result.skipped.push("Current Checkin.zip");
+    if (!field("vocabNotReturned")?.checked && getSelectedValues("sidekick-vocabTypes").includes("Grid")) {
+      if (await renameFileInFolder(handle, entries, "Current Grid user.zip", result.gridName)) result.renamed.push(result.gridName);
+      else result.skipped.push("Current Grid user.zip");
+    }
+    setZipStatus(result.renamed.length ? `Renamed: ${result.renamed.join(" | ")}` : "No matching Current Checkin.zip / Current Grid user.zip files were renamed.");
+    return result;
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function downloadVocabZip() {
+    if (typeof JSZip === "undefined") {
+      setStatus("JSZip is unavailable; cannot create vocab ZIP.", true);
+      return;
+    }
+    const zip = new JSZip();
+    const note = buildCannedNote();
+    zip.file("CRM Note.txt", note);
+    zip.file("Sidekick Check-in Summary.txt", [
+      `Client: ${value("firstName")} ${value("lastName")}`.trim(),
+      `CRM ID: ${value("crmId")}`,
+      `AAC: ${value("aac")}`,
+      `Device: ${value("deviceNumber")}`,
+      `Vocab: ${field("vocabNotReturned")?.checked ? "NOT returned" : getSelectedValues("sidekick-vocabTypes").join(", ")}`
+    ].join("\n"));
+    const blob = await zip.generateAsync({ type: "blob" });
+    downloadBlob(blob, buildZipFilenameFromVocabTypes(getSelectedValues("sidekick-vocabTypes")));
+    setStatus("Vocab ZIP downloaded.");
+  }
+
+  async function copyNoteToClipboard(note) {
+    try {
+      await navigator.clipboard.writeText(note);
+    } catch {
+      // Clipboard is a convenience backup only; CRM insertion still continues.
+    }
+  }
+
+  function selectNoteCategory(text = "Device Returned") {
+    const ok = setDropdownByVisibleText(NOTE_XPATHS.category, text);
+    setStatus(ok ? `Selected note category: ${text}.` : `Could not find the CRM note category dropdown.`, !ok);
+    return ok;
+  }
+
+  async function generateNote() {
+    if (!hasValidVocabSelection()) {
+      setStatus('Select at least one vocab or check "Vocab NOT returned" before continuing.', true);
+      return "";
+    }
+    const note = buildCannedNote();
+    const preview = document.getElementById(ids.notePreview);
+    if (preview) preview.textContent = note;
+    await copyNoteToClipboard(note);
+    setStatus("Note generated and copied to clipboard.");
+    return note;
+  }
+
+  async function insertNoteIntoCrm() {
+    const note = await generateNote();
+    if (!note) return;
+    setProgress(15, "Preparing saved zip rename…");
+    await refreshTrialFilesFromFolder();
+    setProgress(45, "Renaming saved zip files…");
+    const renamedZipResult = await renameSavedZipFilesForCheckin();
+    setProgress(70, "Inserting CRM note…");
+
+    const noteOk = setValueByXPath(NOTE_XPATHS.noteBox, note);
+    if (!noteOk) {
+      setStatus("Could not find the CRM note box. Open the Notes tab and try again.", true);
+      setProgress(0);
+      return;
+    }
+    const category = field("ltlFlow")?.checked ? "Device Updated" : "Device Returned";
+    const categoryOk = selectNoteCategory(category);
+    if (!categoryOk) {
+      setProgress(0);
+      return;
+    }
+    const submitOk = clickByXPath(NOTE_XPATHS.submit);
+    if (!submitOk) {
+      setStatus("Note was inserted, but the CRM submit button was not found.", true);
+      setProgress(0);
+      return;
+    }
+    clickByXPath(NOTE_XPATHS.documentsTab);
+    setProgress(100, "CRM note submitted and Documents tab opened.");
+    const renamedSummary = renamedZipResult.renamed.length
+      ? ` Renamed: ${renamedZipResult.renamed.map(stripZipExtension).join(" | ")}.`
+      : " No matching Current Checkin.zip / Current Grid user.zip files were renamed.";
+    setStatus(`CRM note submitted.${renamedSummary}`);
+  }
+
+  function clearForm() {
+    qa("input, textarea, select").forEach(input => {
+      if (input.type === "checkbox") input.checked = false;
+      else input.value = "";
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const preview = document.getElementById(ids.notePreview);
+    if (preview) preview.textContent = "Generated note will appear here.";
+    qa(".sidekick-hidden-section").forEach(section => section.hidden = true);
+    setProgress(0);
+    setStatus("Form cleared.");
+    updateDeviceRules();
+    fillClientDataFromCrm();
+  }
+
+  function updateVocabSelectionAvailability() {
+    const disabled = Boolean(field("vocabNotReturned")?.checked);
+    qa('input[name="sidekick-vocabTypes"]').forEach(input => {
+      input.disabled = disabled;
+      if (disabled) input.checked = false;
+    });
+  }
+
+  function updateDeviceRules() {
+    const isMountOnly = value("deviceNumber").toLowerCase() === "x";
+    const conditionWrap = q('[data-sidekick-section="condition"]');
+    const condition = field("condition");
+    const mountSection = q('[data-sidekick-section="mounts"]');
+    if (isMountOnly && !field("ltlFlow")?.checked) {
+      if (mountSection) mountSection.hidden = false;
+      if (conditionWrap) conditionWrap.hidden = true;
+      if (condition) {
+        condition.required = false;
+        condition.value = "";
+      }
+    } else {
+      if (conditionWrap) conditionWrap.hidden = false;
+      if (condition) condition.required = true;
+    }
+  }
+
+  function togglePanelCollapsed() {
+    const panel = document.getElementById(ids.panel);
+    if (!panel) return;
+    panel.classList.toggle("sidekick-collapsed");
+  }
+
+  function openPanel() {
+    const root = document.getElementById(ids.root);
+    if (!root) return;
+    root.hidden = false;
+    fillClientDataFromCrm();
+  }
+
+  function closePanel() {
+    const root = document.getElementById(ids.root);
+    if (root) root.hidden = true;
+  }
+
+  function makeDraggable(panel, handle) {
+    let drag = null;
+    handle.addEventListener("pointerdown", event => {
+      if (event.target.closest("button")) return;
+      const rect = panel.getBoundingClientRect();
+      drag = { dx: event.clientX - rect.left, dy: event.clientY - rect.top };
+      panel.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    });
+    handle.addEventListener("pointermove", event => {
+      if (!drag) return;
+      const nextLeft = Math.min(window.innerWidth - 80, Math.max(8, event.clientX - drag.dx));
+      const nextTop = Math.min(window.innerHeight - 80, Math.max(8, event.clientY - drag.dy));
+      panel.style.left = `${nextLeft}px`;
+      panel.style.top = `${nextTop}px`;
+      panel.style.right = "auto";
+      panel.style.bottom = "auto";
+    });
+    handle.addEventListener("pointerup", event => {
+      drag = null;
+      panel.releasePointerCapture?.(event.pointerId);
+    });
+  }
+
+  function fillClientDataFromCrm() {
+    const data = collectClientData();
+    if (!data) return;
+    if (data.firstName) setValue("firstName", data.firstName);
+    if (data.lastName) setValue("lastName", data.lastName);
+    if (data.aac) setValue("aac", data.aac);
+    if (data.crmId) setValue("crmId", data.crmId);
+  }
+
+  function createInput({ label, fieldName, type = "text", required = false, placeholder = "" }) {
+    const id = `sidekick-${fieldName}`;
+    return `
+      <label class="sidekick-label" for="${id}">${label}</label>
+      <input class="sidekick-input" id="${id}" data-sidekick-field="${fieldName}" type="${type}" ${required ? "required" : ""} placeholder="${placeholder}" />
+    `;
+  }
+
+  function createOverlayHtml() {
+    return `
+      <div id="${ids.panel}" class="sidekick-panel" role="dialog" aria-label="Sidekick check-in overlay">
+        <div id="${ids.header}" class="sidekick-header">
+          <div><span class="sidekick-kicker">CRM</span><strong>Sidekick</strong></div>
+          <div class="sidekick-header-actions">
+            <button type="button" class="sidekick-icon-btn" data-sidekick-action="refresh" title="Refresh from CRM">↻</button>
+            <button type="button" class="sidekick-icon-btn" data-sidekick-action="collapse" title="Collapse">–</button>
+            <button type="button" class="sidekick-icon-btn" data-sidekick-action="close" title="Close">×</button>
+          </div>
+        </div>
+        <div id="${ids.body}" class="sidekick-body">
+          <div class="sidekick-quick-actions">
+            <button type="button" class="sidekick-primary" data-sidekick-action="generate">Generate Note</button>
+            <button type="button" class="sidekick-primary" data-sidekick-action="insert">Insert Note into CRM</button>
+            <button type="button" data-sidekick-action="category">Select Device Returned category</button>
+            <button type="button" data-sidekick-action="download">Download Vocab ZIP</button>
+            <button type="button" data-sidekick-action="clear">Clear Form</button>
+          </div>
+          <div id="${ids.status}" class="sidekick-status" aria-live="polite">Ready.</div>
+          <form id="sidekick-checkin-form" class="sidekick-form">
+            ${createInput({ label: "Device Number (Put an X if only checking in mount) *", fieldName: "deviceNumber", required: true })}
+            <label class="sidekick-checkbox"><input data-sidekick-field="ltlFlow" type="checkbox" /> LTL yearly update flow</label>
+            <div data-sidekick-section="condition">
+              <label class="sidekick-label" for="sidekick-condition">Device Condition *</label>
+              <select class="sidekick-input" id="sidekick-condition" data-sidekick-field="condition" required>
+                <option value="">Select condition...</option>
+                <option value="Working">Working</option>
+                <option value="Needs Repair">Needs Repair</option>
+              </select>
+            </div>
+            <div class="sidekick-hidden-section" data-sidekick-section="repairs" hidden>
+              <label class="sidekick-label" for="sidekick-repairs">Repairs Needed</label>
+              <div class="sidekick-chip-row">
+                ${["Loose or broken handle", "Loose or broken kickstand", "Replace screen protector", "Missing buttons", "Broken display"].map(item => `<button type="button" class="sidekick-chip" data-sidekick-repair="${item}">${item}</button>`).join("")}
+              </div>
+              <textarea class="sidekick-input" id="sidekick-repairs" data-sidekick-field="repairs" placeholder="Selected repairs will appear here..."></textarea>
+            </div>
+            <div class="sidekick-hidden-section" data-sidekick-section="ltlUpdates" hidden>
+              <label class="sidekick-label">Updates Made</label>
+              <div class="sidekick-checkbox-grid">
+                ${["Fixed Handle", "Fixed Stand", "Replaced Screen Protector", "Replaced Device", "Replaced Case", "N/A", "Other"].map((item, index) => `<label class="sidekick-checkbox" for="sidekick-ltl-${index}"><input id="sidekick-ltl-${index}" name="sidekick-ltlUpdates" value="${item}" type="checkbox" /> ${item}</label>`).join("")}
+              </div>
+              ${createInput({ label: "Other updates", fieldName: "ltlOther", placeholder: "Describe other updates..." })}
+              ${createInput({ label: "New serial number", fieldName: "newSerial", placeholder: "Enter new serial number..." })}
+            </div>
+            <div class="sidekick-grid-2">
+              ${createInput({ label: "Client First Name", fieldName: "firstName" })}
+              ${createInput({ label: "Client Last Name", fieldName: "lastName" })}
+              ${createInput({ label: "AAC", fieldName: "aac" })}
+              ${createInput({ label: "CRM ID", fieldName: "crmId" })}
+            </div>
+            <label class="sidekick-checkbox"><input data-sidekick-field="vocabNotReturned" type="checkbox" /> Vocab NOT returned</label>
+            <label class="sidekick-label">What Vocabs did you pull off the device?</label>
+            <div class="sidekick-checkbox-grid">
+              ${["Grid", "P2G", "TC", "LAMP", "Dialogue"].map(item => `<label class="sidekick-checkbox"><input name="sidekick-vocabTypes" value="${item}" type="checkbox" /> ${item}</label>`).join("")}
+            </div>
+            <button type="button" class="sidekick-toggle" data-sidekick-toggle="camera">+ Add Camera & Lumin-I Info</button>
+            <div class="sidekick-hidden-section" data-sidekick-section="camera" hidden>
+              ${createInput({ label: "Camera Number", fieldName: "cameraNumber" })}
+              ${createInput({ label: "Lumin-I Number (GPL.XXXXXXX)", fieldName: "luminNumber" })}
+            </div>
+            <button type="button" class="sidekick-toggle" data-sidekick-toggle="mounts">+ Add Mount Info</button>
+            <div class="sidekick-hidden-section" data-sidekick-section="mounts" hidden>
+              ${createInput({ label: "Clamp Mount Number", fieldName: "clampMount" })}
+              ${createInput({ label: "Table Mount Number", fieldName: "tableMount" })}
+              ${createInput({ label: "Rolling Mount Number", fieldName: "rollingMount" })}
+            </div>
+            <button type="button" class="sidekick-toggle" data-sidekick-toggle="accessories">+ Add Trial Accessories</button>
+            <div class="sidekick-hidden-section" data-sidekick-section="accessories" hidden>
+              ${createInput({ label: "Trial Accessories (Switches, KGs)", fieldName: "accessories" })}
+            </div>
+            <div class="sidekick-upload-block">
+              <label class="sidekick-label">Saved zips folder</label>
+              <div class="sidekick-mini-row">
+                <button type="button" data-sidekick-action="pickFolder">Choose saved zips folder</button>
+                <button type="button" data-sidekick-action="refreshFolder">Refresh folder access</button>
+              </div>
+              <div id="${ids.folderStatus}" class="sidekick-muted">No saved zips folder selected yet.</div>
+              <div class="sidekick-hint">Sidekick will rename <strong>Current Checkin.zip</strong> and <strong>Current Grid user.zip</strong> when inserting the note.</div>
+              <div id="${ids.zipStatus}" class="sidekick-muted">Waiting to rename saved zip files.</div>
+              <div id="${ids.progress}" class="sidekick-progress" hidden><div id="${ids.progressFill}" class="sidekick-progress-fill"></div></div>
+            </div>
+            <pre id="${ids.notePreview}" class="sidekick-note-preview">Generated note will appear here.</pre>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireOverlay() {
+    const root = document.getElementById(ids.root);
+    const panel = document.getElementById(ids.panel);
+    const header = document.getElementById(ids.header);
+    if (!root || !panel || !header || root.dataset.sidekickWired === "true") return;
+    root.dataset.sidekickWired = "true";
+    makeDraggable(panel, header);
+
+    root.addEventListener("click", event => {
+      const action = event.target.closest("[data-sidekick-action]")?.dataset.sidekickAction;
+      const toggle = event.target.closest("[data-sidekick-toggle]")?.dataset.sidekickToggle;
+      const repair = event.target.closest("[data-sidekick-repair]")?.dataset.sidekickRepair;
+      if (toggle) {
+        const section = q(`[data-sidekick-section="${toggle}"]`);
+        if (section) section.hidden = !section.hidden;
+      }
+      if (repair) {
+        const repairs = field("repairs");
+        if (repairs && !repairs.value.includes(repair)) repairs.value = [repairs.value.trim(), repair].filter(Boolean).join("; ");
+      }
+      if (!action) return;
+      event.preventDefault();
+      if (action === "refresh") fillClientDataFromCrm();
+      if (action === "collapse") togglePanelCollapsed();
+      if (action === "close") closePanel();
+      if (action === "generate") void generateNote();
+      if (action === "insert") void insertNoteIntoCrm();
+      if (action === "category") selectNoteCategory("Device Returned");
+      if (action === "download") void downloadVocabZip();
+      if (action === "clear") clearForm();
+      if (action === "pickFolder") void pickTrialFilesFolder();
+      if (action === "refreshFolder") void refreshTrialFilesFromFolder();
+    });
+
+    root.addEventListener("change", event => {
+      if (event.target.matches('[data-sidekick-field="vocabNotReturned"]')) updateVocabSelectionAvailability();
+      if (event.target.matches('[data-sidekick-field="condition"]')) {
+        const repairs = q('[data-sidekick-section="repairs"]');
+        if (repairs) repairs.hidden = event.target.value !== "Needs Repair";
+      }
+      if (event.target.matches('[data-sidekick-field="ltlFlow"]')) {
+        const ltl = q('[data-sidekick-section="ltlUpdates"]');
+        if (ltl) ltl.hidden = !event.target.checked;
+        updateDeviceRules();
+      }
+      if (event.target.matches('[data-sidekick-field="deviceNumber"]')) updateDeviceRules();
+    });
+
+    q("#sidekick-checkin-form")?.addEventListener("submit", event => {
+      event.preventDefault();
+      void insertNoteIntoCrm();
+    });
+
+    void updateFolderStatus();
+    void refreshTrialFilesFromFolder();
+    fillClientDataFromCrm();
+    updateDeviceRules();
+  }
+
+  function ensureOverlay() {
+    if (!document.body) return;
+    if (!document.getElementById(ids.button)) {
+      const button = document.createElement("button");
+      button.id = ids.button;
+      button.type = "button";
+      button.textContent = "Sidekick";
+      button.addEventListener("click", openPanel);
+      document.body.appendChild(button);
+    }
+    if (!document.getElementById(ids.root)) {
+      const root = document.createElement("div");
+      root.id = ids.root;
+      root.hidden = true;
+      root.innerHTML = createOverlayHtml();
+      document.body.appendChild(root);
+    }
+    wireOverlay();
+  }
+
+  let reinjectTimer = null;
+  function scheduleReinject() {
+    clearTimeout(reinjectTimer);
+    reinjectTimer = setTimeout(() => {
+      ensureOverlay();
+      if (!document.getElementById(ids.root)?.hidden) fillClientDataFromCrm();
+    }, 150);
+  }
+
+  ensureOverlay();
+  const observer = new MutationObserver(scheduleReinject);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener("popstate", scheduleReinject);
+  window.addEventListener("hashchange", scheduleReinject);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) scheduleReinject();
+  });
+})();
