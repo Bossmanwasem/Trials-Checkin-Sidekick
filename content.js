@@ -1062,7 +1062,7 @@ if (isDafFormPage()) {
     "crm.talktometechnologies.com",
     "portal.talktometechnologies.com"
   ]);
-  if (!CRM_HOSTS.has(window.location.hostname)) return;
+  const isSidekickCrmPage = () => CRM_HOSTS.has(window.location.hostname);
 
   const ids = {
     button: "sidekick-launch-button",
@@ -1449,6 +1449,7 @@ if (isDafFormPage()) {
   }
 
   async function downloadVocabZip() {
+    if (!requireCrmPage("Downloading the check-in vocab ZIP")) return;
     if (typeof JSZip === "undefined") {
       setStatus("JSZip is unavailable; cannot create vocab ZIP.", true);
       return;
@@ -1476,13 +1477,21 @@ if (isDafFormPage()) {
     }
   }
 
+  function requireCrmPage(actionLabel = "This Sidekick check-in action") {
+    if (isSidekickCrmPage()) return true;
+    setStatus(`${actionLabel} is available on CRM pages only. Open https://crm.talktometechnologies.com/ to use check-in tools.`, true);
+    return false;
+  }
+
   function selectNoteCategory(text = "Device Returned") {
+    if (!requireCrmPage("Selecting the CRM note category")) return false;
     const ok = setDropdownByVisibleText(NOTE_XPATHS.category, text);
     setStatus(ok ? `Selected note category: ${text}.` : `Could not find the CRM note category dropdown.`, !ok);
     return ok;
   }
 
   async function generateNote() {
+    if (!requireCrmPage("Generating a check-in note")) return "";
     if (!hasValidVocabSelection()) {
       setStatus('Select at least one vocab or check "Vocab NOT returned" before continuing.', true);
       return "";
@@ -1496,6 +1505,7 @@ if (isDafFormPage()) {
   }
 
   async function insertNoteIntoCrm() {
+    if (!requireCrmPage("Inserting a CRM note")) return;
     const note = await generateNote();
     if (!note) return;
     setProgress(15, "Preparing saved zip rename…");
@@ -1614,12 +1624,43 @@ if (isDafFormPage()) {
   }
 
   function fillClientDataFromCrm() {
+    if (!isSidekickCrmPage()) return;
     const data = collectClientData();
     if (!data) return;
     if (data.firstName) setValue("firstName", data.firstName);
     if (data.lastName) setValue("lastName", data.lastName);
     if (data.aac) setValue("aac", data.aac);
     if (data.crmId) setValue("crmId", data.crmId);
+  }
+
+  async function copyPageLink() {
+    const text = `${document.title || "Untitled page"}
+${window.location.href}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("Page title and URL copied to clipboard.");
+    } catch {
+      setStatus("Could not copy the page link from this browser context.", true);
+    }
+  }
+
+  function refreshPageMode() {
+    const root = document.getElementById(ids.root);
+    if (!root) return;
+    const isCrm = isSidekickCrmPage();
+    root.classList.toggle("sidekick-crm-page", isCrm);
+    root.classList.toggle("sidekick-non-crm-page", !isCrm);
+    qa("[data-sidekick-crm-only]").forEach(el => {
+      el.disabled = !isCrm;
+      el.title = isCrm ? "" : "CRM check-in tools are available only on CRM pages.";
+    });
+    const notice = q("[data-sidekick-page-mode]");
+    if (notice) {
+      notice.textContent = isCrm
+        ? "CRM page detected. Check-in tools are unlocked."
+        : "General Sidekick tools are available here. CRM check-in tools unlock only on crm.talktometechnologies.com pages.";
+      notice.classList.toggle("sidekick-error", !isCrm);
+    }
   }
 
   function createInput({ label, fieldName, type = "text", required = false, placeholder = "" }) {
@@ -1642,13 +1683,24 @@ if (isDafFormPage()) {
           </div>
         </div>
         <div id="${ids.body}" class="sidekick-body">
-          <div class="sidekick-quick-actions">
-            <button type="button" class="sidekick-primary" data-sidekick-action="generate">Generate Note</button>
-            <button type="button" class="sidekick-primary" data-sidekick-action="insert">Insert Note into CRM</button>
-            <button type="button" data-sidekick-action="category">Select Device Returned category</button>
-            <button type="button" data-sidekick-action="download">Download Vocab ZIP</button>
-            <button type="button" data-sidekick-action="clear">Clear Form</button>
+          <div class="sidekick-page-tools">
+            <div class="sidekick-section-title">Page tools</div>
+            <div class="sidekick-quick-actions">
+              <button type="button" class="sidekick-primary" data-sidekick-action="copyPageLink">Copy Page Link</button>
+              <button type="button" data-sidekick-action="refreshMode">Refresh Sidekick</button>
+              <button type="button" data-sidekick-action="clear">Clear Form</button>
+            </div>
           </div>
+          <div class="sidekick-crm-tools">
+            <div class="sidekick-section-title">CRM check-in tools</div>
+            <div class="sidekick-quick-actions">
+              <button type="button" class="sidekick-primary" data-sidekick-crm-only data-sidekick-action="generate">Generate Note</button>
+              <button type="button" class="sidekick-primary" data-sidekick-crm-only data-sidekick-action="insert">Insert Note into CRM</button>
+              <button type="button" data-sidekick-crm-only data-sidekick-action="category">Select Device Returned category</button>
+              <button type="button" data-sidekick-crm-only data-sidekick-action="download">Download Vocab ZIP</button>
+            </div>
+          </div>
+          <div class="sidekick-status" data-sidekick-page-mode aria-live="polite">Checking current page…</div>
           <div id="${ids.status}" class="sidekick-status" aria-live="polite">Ready.</div>
           <form id="sidekick-checkin-form" class="sidekick-form">
             ${createInput({ label: "Device Number (Put an X if only checking in mount) *", fieldName: "deviceNumber", required: true })}
@@ -1742,7 +1794,9 @@ if (isDafFormPage()) {
       }
       if (!action) return;
       event.preventDefault();
-      if (action === "refresh") fillClientDataFromCrm();
+      if (action === "refresh") { refreshPageMode(); fillClientDataFromCrm(); }
+      if (action === "refreshMode") { refreshPageMode(); fillClientDataFromCrm(); setStatus("Sidekick refreshed for this page."); }
+      if (action === "copyPageLink") void copyPageLink();
       if (action === "collapse") togglePanelCollapsed();
       if (action === "close") closePanel();
       if (action === "generate") void generateNote();
@@ -1773,6 +1827,7 @@ if (isDafFormPage()) {
       void insertNoteIntoCrm();
     });
 
+    refreshPageMode();
     void updateFolderStatus();
     void refreshTrialFilesFromFolder();
     fillClientDataFromCrm();
@@ -1804,11 +1859,25 @@ if (isDafFormPage()) {
     clearTimeout(reinjectTimer);
     reinjectTimer = setTimeout(() => {
       ensureOverlay();
+      refreshPageMode();
       if (!document.getElementById(ids.root)?.hidden) fillClientDataFromCrm();
     }, 150);
   }
 
+  if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
+    chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+      if (msg?.type !== "TOGGLE_SIDEKICK_OVERLAY") return false;
+      ensureOverlay();
+      const root = document.getElementById(ids.root);
+      if (root?.hidden) openPanel();
+      else closePanel();
+      sendResponse({ ok: true, crm: isSidekickCrmPage() });
+      return true;
+    });
+  }
+
   ensureOverlay();
+  refreshPageMode();
   const observer = new MutationObserver(scheduleReinject);
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener("popstate", scheduleReinject);
