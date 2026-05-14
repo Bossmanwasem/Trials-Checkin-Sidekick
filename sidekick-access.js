@@ -20,6 +20,12 @@
       name: "Trials Preprep",
       description: "Reserved for the separate Trials Preprep tool set that will be designed later.",
       tools: Object.freeze([])
+    }),
+    admin: Object.freeze({
+      id: "admin",
+      name: "Sidekick Admin",
+      description: "Admin tools plus full access to every current Sidekick tool.",
+      tools: Object.freeze(["*"])
     })
   });
 
@@ -43,7 +49,8 @@
     { id: "smartboxRepair", label: "Smartbox Repair Tracker", selectors: ["#openSmartboxRepairBtn", "#smartboxContinueBtn"] },
     { id: "inventory", label: "Manage Inventory", selectors: ["#inventoryNextStepBtn"] },
     { id: "dafRecap", label: "DAF Recap", selectors: ["#dafRecapView", "#finishCheckinBtn"] },
-    { id: "emailFallback", label: "Email fallback", selectors: ["#emailView"] }
+    { id: "emailFallback", label: "Email fallback", selectors: ["#emailView"] },
+    { id: "adminSuite", label: "Admin tools", selectors: ["#sidekickAdminSuiteBtn", "#sidekickAdminSuiteView", "[data-sidekick-admin-tool]"] }
   ]);
 
   let currentRoleId = DEFAULT_ROLE_ID;
@@ -79,6 +86,7 @@
     const compact = safe.toLowerCase().replace(/[^a-z0-9]/g, "");
     if (compact === "devicecoordinator") return "deviceCoordinator";
     if (compact === "trialspreprep") return "trialsPreprep";
+    if (compact === "admin" || compact === "sidekickadmin") return "admin";
     return DEFAULT_ROLE_ID;
   }
 
