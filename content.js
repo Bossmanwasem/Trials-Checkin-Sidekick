@@ -1073,6 +1073,7 @@ if (isDafFormPage()) {
   const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyCounterEnabled";
   const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
   const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyCounterCollapsed";
+  const DASHBOARD_COLLAPSED_STORAGE_KEY = "ttmtSidekickDashboardCollapsed";
   const DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY = "ttmtSidekickDashboardCountersCollapsed";
   const DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY = "ttmtSidekickDashboardCrmNavCollapsed";
   const CRM_LINK_BASE = "https://portal.talktometechnologies.com/admin/EditClient.aspx?ID=";
@@ -1170,6 +1171,21 @@ if (isDafFormPage()) {
   function setDashboardText(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
+  }
+
+  function setDashboardCollapsed(collapsed) {
+    const dashboard = document.getElementById(DASHBOARD_ID);
+    if (!dashboard) return;
+    const body = dashboard.querySelector(".sidekick-dashboard-body");
+    const toggle = dashboard.querySelector("[data-sidekick-dashboard-toggle]");
+    dashboard.classList.toggle("sidekick-dashboard-collapsed", collapsed);
+    if (body) body.hidden = collapsed;
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      toggle.textContent = collapsed ? "+" : "–";
+      toggle.title = collapsed ? "Expand mini dashboard" : "Collapse mini dashboard";
+      toggle.setAttribute("aria-label", toggle.title);
+    }
   }
 
   function setPanelCollapsed(sectionName, collapsed) {
@@ -1288,7 +1304,7 @@ if (isDafFormPage()) {
     const dashboard = document.getElementById(DASHBOARD_ID);
     if (!dashboard) return;
 
-    const [dailyEnabled, weeklyEnabled, customEnabled, customLabel, dailyCounters, weeklyTotal, dailyCollapsed, weeklyCollapsed, countersCollapsed, crmNavCollapsed] = await Promise.all([
+    const [dailyEnabled, weeklyEnabled, customEnabled, customLabel, dailyCounters, weeklyTotal, dailyCollapsed, weeklyCollapsed, dashboardCollapsed, countersCollapsed, crmNavCollapsed] = await Promise.all([
       getDailyCounterEnabled(),
       getWeeklyCounterEnabled(),
       getDailyCustomCounterEnabled(),
@@ -1297,6 +1313,7 @@ if (isDafFormPage()) {
       getWeeklyCounterTotal(),
       getCollapsedState(DAILY_COUNTER_COLLAPSED_STORAGE_KEY),
       getCollapsedState(WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY),
+      getCollapsedState(DASHBOARD_COLLAPSED_STORAGE_KEY),
       getCollapsedState(DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY),
       getCollapsedState(DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY)
     ]);
@@ -1312,6 +1329,7 @@ if (isDafFormPage()) {
     setDashboardText("sidekick-dashboard-weekly-total", String(weeklyTotal));
     setCounterSectionCollapsed("daily", dailyCollapsed);
     setCounterSectionCollapsed("weekly", weeklyCollapsed);
+    setDashboardCollapsed(dashboardCollapsed);
     setPanelCollapsed("counters", countersCollapsed);
     setPanelCollapsed("crmNav", crmNavCollapsed);
   }
@@ -1387,6 +1405,7 @@ if (isDafFormPage()) {
     return `
       <div id="${DASHBOARD_HEADER_ID}" class="sidekick-dashboard-header" title="Drag Sidekick dashboard">
         <button id="${LAUNCH_BUTTON_ID}" type="button">Sidekick</button>
+        <button class="sidekick-dashboard-collapse-btn" type="button" data-sidekick-dashboard-toggle aria-expanded="true" aria-label="Collapse mini dashboard" title="Collapse mini dashboard">–</button>
         <span class="sidekick-dashboard-drag-hint">⋮⋮</span>
       </div>
       <div class="sidekick-dashboard-body">
@@ -1522,6 +1541,14 @@ if (isDafFormPage()) {
       const dashboard = event.target.closest(`#${DASHBOARD_ID}`);
       if (!dashboard) return;
 
+      const dashboardToggle = event.target.closest("[data-sidekick-dashboard-toggle]");
+      if (dashboardToggle) {
+        const nextCollapsed = !(await getCollapsedState(DASHBOARD_COLLAPSED_STORAGE_KEY));
+        await setCollapsedState(DASHBOARD_COLLAPSED_STORAGE_KEY, nextCollapsed);
+        setDashboardCollapsed(nextCollapsed);
+        return;
+      }
+
       const dailyDeltaButton = event.target.closest("[data-sidekick-counter-delta]");
       if (dailyDeltaButton) {
         const counterKey = dailyDeltaButton.dataset.sidekickCounterKey;
@@ -1603,6 +1630,7 @@ if (isDafFormPage()) {
         WEEKLY_COUNTER_ENABLED_STORAGE_KEY,
         DAILY_COUNTER_COLLAPSED_STORAGE_KEY,
         WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY,
+        DASHBOARD_COLLAPSED_STORAGE_KEY,
         DASHBOARD_COUNTERS_COLLAPSED_STORAGE_KEY,
         DASHBOARD_CRM_NAV_COLLAPSED_STORAGE_KEY
       ];
