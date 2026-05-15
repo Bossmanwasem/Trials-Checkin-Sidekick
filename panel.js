@@ -4537,7 +4537,7 @@ async function logLtlUpdateOutcome(outcome) {
   }
 }
 
-const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+const UNSAFE_NAME_REGEX = /\s*(\*.*$|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();

@@ -79,7 +79,8 @@ function resolveInputTarget(el) {
   return el.querySelector("input, textarea");
 }
 
-const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+// Removes unsafe CRM name annotations: asterisk notes and everything after them (example: "Jane *12345" or "Jane *do not use"), parenthetical notes ("Jane (trial)"), standalone 5-digit IDs ("Jane 12345"), and quoted nicknames ("Jane \"JJ\"").
+const UNSAFE_NAME_REGEX = /\s*(\*.*$|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
@@ -1509,7 +1510,7 @@ if (isDafFormPage()) {
       frame.id = FRAME_ID;
       frame.title = "CRM Sidekick";
       frame.src = getPanelUrl();
-      frame.allow = "clipboard-read; clipboard-write";
+      frame.allow = "clipboard-read; clipboard-write; filesystem; file-system-access";
 
       wrap.appendChild(closeButton);
       wrap.appendChild(frame);
