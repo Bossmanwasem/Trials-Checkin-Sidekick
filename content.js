@@ -1610,6 +1610,69 @@ if (isDafFormPage()) {
     reinjectTimer = setTimeout(ensureSidekickLauncher, 150);
   }
 
+  function sendFolderPickerResult(targetWindow, targetOrigin, requestId, payload) {
+    targetWindow?.postMessage({
+      source: "ttmt-sidekick-content",
+      type: "PICK_TRIAL_FILES_FOLDER_RESULT",
+      requestId,
+      ...payload
+    }, targetOrigin);
+  }
+
+  function showFolderPickerProxy({ targetWindow, targetOrigin, requestId }) {
+    document.getElementById("sidekick-folder-picker-proxy")?.remove();
+    const proxy = document.createElement("div");
+    proxy.id = "sidekick-folder-picker-proxy";
+    proxy.innerHTML = `
+      <div class="sidekick-folder-picker-proxy__card">
+        <div class="sidekick-folder-picker-proxy__title">Sidekick needs folder access</div>
+        <div class="sidekick-folder-picker-proxy__body">Click below to choose your saved zips folder.</div>
+        <div class="sidekick-folder-picker-proxy__actions">
+          <button type="button" data-sidekick-folder-picker-confirm>Choose saved zips folder</button>
+          <button type="button" data-sidekick-folder-picker-cancel>Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(proxy);
+
+    proxy.querySelector("[data-sidekick-folder-picker-confirm]")?.addEventListener("click", async () => {
+      try {
+        if (typeof window.showDirectoryPicker !== "function") {
+          throw new Error("Folder picking isn't supported in this browser.");
+        }
+        const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+        sendFolderPickerResult(targetWindow, targetOrigin, requestId, { ok: true, handle });
+      } catch (err) {
+        sendFolderPickerResult(targetWindow, targetOrigin, requestId, {
+          ok: false,
+          message: err?.message || "Folder selection canceled."
+        });
+      } finally {
+        proxy.remove();
+      }
+    });
+
+    proxy.querySelector("[data-sidekick-folder-picker-cancel]")?.addEventListener("click", () => {
+      sendFolderPickerResult(targetWindow, targetOrigin, requestId, {
+        ok: false,
+        message: "Folder selection canceled."
+      });
+      proxy.remove();
+    });
+  }
+
+  window.addEventListener("message", event => {
+    const data = event.data || {};
+    if (data.source !== "ttmt-sidekick-panel" || data.type !== "PICK_TRIAL_FILES_FOLDER") return;
+    const extensionOrigin = new URL(chrome.runtime.getURL("panel.html")).origin;
+    if (event.origin !== extensionOrigin) return;
+    showFolderPickerProxy({
+      targetWindow: event.source,
+      targetOrigin: event.origin,
+      requestId: data.requestId
+    });
+  });
+
   if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg?.type !== "TOGGLE_SIDEKICK_OVERLAY") return false;

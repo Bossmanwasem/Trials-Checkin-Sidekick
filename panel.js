@@ -4364,16 +4364,50 @@ async function refreshTrialFilesFromFolder({ promptIfMissing = false, handleOver
   return true;
 }
 
+
+function requestTrialFilesFolderFromParent() {
+  if (window.parent === window) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const requestId = `trial-files-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const timeout = setTimeout(() => {
+      window.removeEventListener("message", handleMessage);
+      resolve(null);
+    }, 60000);
+
+    function handleMessage(event) {
+      const data = event.data || {};
+      if (data.source !== "ttmt-sidekick-content" || data.type !== "PICK_TRIAL_FILES_FOLDER_RESULT" || data.requestId !== requestId) return;
+      clearTimeout(timeout);
+      window.removeEventListener("message", handleMessage);
+      if (!data.ok) {
+        if (data.message) updateTrialFilesStatus(data.message, true);
+        resolve(null);
+        return;
+      }
+      resolve(data.handle || null);
+    }
+
+    window.addEventListener("message", handleMessage);
+    window.parent.postMessage({
+      source: "ttmt-sidekick-panel",
+      type: "PICK_TRIAL_FILES_FOLDER",
+      requestId
+    }, "*");
+  });
+}
+
 async function pickTrialFilesFolder() {
-  if (typeof window.showDirectoryPicker !== "function") {
-    alert("Folder picking isn't supported in this browser.");
-    return null;
-  }
-  let handle;
-  try {
-    handle = await window.showDirectoryPicker({ mode: "readwrite" });
-  } catch {
-    return null;
+  let handle = await requestTrialFilesFolderFromParent();
+  if (!handle) {
+    if (typeof window.showDirectoryPicker !== "function") {
+      alert("Folder picking isn't supported in this browser.");
+      return null;
+    }
+    try {
+      handle = await window.showDirectoryPicker({ mode: "readwrite" });
+    } catch {
+      return null;
+    }
   }
   if (!handle) return null;
   await saveTrialFilesFolderHandle(handle);
