@@ -39,7 +39,7 @@
         "https://smartboxassistivetnam.sharepoint.com/*",
         "https://forms.office.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["crm-custom-css-worker.js", "content.js"],
       "run_at": "document_idle"
     }
   ]
