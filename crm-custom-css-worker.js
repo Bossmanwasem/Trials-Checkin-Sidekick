@@ -494,17 +494,114 @@ td div div div div table tbody tr td img{
  border-color:#42c5fa;
 }
 
-/* Card header */
-.ajax__tab_panel > div > .card .card-header{
- background-color:#42c5fa;
-}
-
 /* Card body */
 .ajax__tab_panel > div > .card .card-body{
  background-color:#1e1e2f;
  color:#ffffff;
- display:inline-block;
  transform:translatex(0px) translatey(0px);
+}
+
+/* Form label */
+.ajax__tab_panel > div > .card .col-md-3 .form-label{
+ color:#ffffff;
+}
+
+/* Card header */
+.ajax__tab_panel > div > .card .card-header{
+ background-color:#42c5fa;
+ border-color:#42c5fa;
+}
+
+/* Select */
+.pageContent table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel div .card .card-body .container-fluid .row .col-md-9 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Select */
+.card-body .container-fluid .row .col-md-9 select{
+ color:#ffffff;
+}
+
+/* Th */
+.col-12 div .table-striped tbody tr th{
+ background-color:#42c5fa;
+ border-top-right-radius:0px;
+}
+
+/* Table Data */
+.ajax__tab_panel > div > .card .col-12 > div .table-striped > tbody > tr > td{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+ border-width:1px;
+ border-top-color:#849bb2;
+}
+
+/* Text Area */
+#ContentAdmin tr textarea{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Select */
+.pageContent table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel > div > .card .card-body .mb-3 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Select */
+.ajax__tab_panel > div > .card .mb-3 select{
+ color:#ffffff;
+}
+
+/* Text Area */
+.card-body .container-fluid .row .col-md-10 textarea{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Form label */
+.ajax__tab_panel > div > .card .col-md-2 .form-label{
+ color:#ffffff;
+}
+
+/* Select */
+.pageContent table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel div .card .card-body .container-fluid .row .col-md-10 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Select */
+.card-body .container-fluid .row .col-md-10 select{
+ color:#ffffff;
+}
+
+/* Input */
+.ajax__tab_panel > div > .card input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Input */
+.timeSelector tr input{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa !important;
+}
+
+/* Ajax tab body */
+#ContentAdmin > div > .ajax__tab_body{
+ background-color:#1e1e2f;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Card header */
+.ajax__tab_panel > .card .card-header{
+ background-color:#42c5fa;
 }
 
 `;
