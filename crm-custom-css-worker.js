@@ -604,6 +604,58 @@ td div div div div table tbody tr td img{
  background-color:#42c5fa;
 }
 
+
+/* Card body */
+#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(1) .card-body{
+ background-color:#1e1e2f;
+}
+
+/* Card header */
+#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(1) .card-header{
+ background-color:#42c5fa;
+}
+
+/* Body Of Table */
+.card-body div .table-striped > tbody{
+ background-color:#42c5fa;
+}
+
+/* Body Of Table */
+#aspnetForm table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel:nth-child(7) .card .card-body div .table-striped tbody{
+ transform:translatex(0px) translatey(0px) !important;
+}
+
+/* Card body */
+#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(2) .card-body{
+ background-color:#1e1e2f;
+ color:#ffffff;
+}
+
+/* Form control */
+#aspnetForm tr input[type=file].form-control{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-style:solid;
+ border-color:#42c5fa;
+}
+
+/* Form control */
+.card-body .container-fluid .row:nth-child(1) .col-md-9 input[type=text].form-control{
+ background-color:#2c3e50;
+ border-color:#42c5fa;
+ color:#ffffff;
+}
+
+/* Column 9/12 */
+.card-body div .container-fluid .row:nth-child(2) .col-md-9{
+ background-color:rgba(0,0,0,0.21);
+}
+
+/* Card header */
+#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(2) .card-header{
+ background-color:#42c5fa;
+}
+
 `;
 
   function getStoredValue(key) {
