@@ -44,7 +44,8 @@ const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
 const LANDING_TOOLTIPS_ENABLED_STORAGE_KEY = "ttmtLandingTooltipsEnabled";
-const CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY = "ttmtCrmSmartboxBlueThemeEnabled";
+const CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY = "ttmtCrmSmartboxBlueThemeEnabled";
+const CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY = "ttmtCrmCustomCssThemeVars";
 const CORNER_SYMOJI_STORAGE_KEY = "ttmtSidekickCornerSymoji";
 const LANDING_LAYOUT_STORAGE_KEY = "ttmtLandingLayoutOrder";
 const LANDING_LAYOUT_POSITIONS_STORAGE_KEY = "ttmtLandingLayoutPositions";
@@ -3218,6 +3219,7 @@ function applyChaosThemeTransition(themeId, theme) {
   setThemeVars(theme.vars);
   setBodyThemeAttribute(themeId);
   setButtonTextColor(themeId, theme);
+  saveCrmCustomCssThemeVars(themeId, theme);
   layer.style.backgroundColor = theme.vars["bg-color"] || "";
   document.body.classList.remove("chaos-transitioning");
   void layer.offsetHeight;
@@ -3267,6 +3269,15 @@ function updateThemeSelection(themeId) {
   updateSurpriseControlsVisibility(themeId);
 }
 
+function saveCrmCustomCssThemeVars(themeId, theme) {
+  if (!theme?.vars) return;
+  void setStoredValue(CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY, {
+    themeId,
+    label: theme.label || themeId,
+    vars: { ...theme.vars }
+  });
+}
+
 function saveThemePreference(themeId) {
   if (chrome?.storage?.local) {
     chrome.storage.local.set({ [THEME_STORAGE_KEY]: themeId });
@@ -3288,6 +3299,7 @@ function applyTheme(themeId, { persist = true } = {}) {
   const resolvedTheme = THEMES[requestedTheme] ? requestedTheme : "ocean";
   activeThemeId = resolvedTheme;
   if (resolvedTheme === "chaos") {
+    saveCrmCustomCssThemeVars("ocean", THEMES.ocean);
     clearInlineThemeVars();
     setBodyThemeAttribute(resolvedTheme);
     updateThemeSelection(resolvedTheme);
@@ -3302,6 +3314,7 @@ function applyTheme(themeId, { persist = true } = {}) {
     currentSurpriseThemeId = null;
   }
   const theme = THEMES[resolvedTheme];
+  saveCrmCustomCssThemeVars(resolvedTheme, theme);
   if (isCustomThemeId(resolvedTheme)) {
     setThemeVars(theme.vars);
     setButtonTextColor(resolvedTheme, theme);
@@ -4407,7 +4420,7 @@ void initThemeSystem();
 initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
-initCrmSmartboxBlueThemeSetting();
+initCrmCustomCssThemeSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -4993,14 +5006,14 @@ async function setLandingTooltipsEnabled(enabled) {
   await setStoredValue(LANDING_TOOLTIPS_ENABLED_STORAGE_KEY, Boolean(enabled));
 }
 
-async function getCrmSmartboxBlueThemeEnabled() {
-  const stored = await getStoredValue(CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY);
+async function getCrmCustomCssThemeEnabled() {
+  const stored = await getStoredValue(CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY);
   if (stored === null || typeof stored === "undefined") return false;
   return Boolean(stored);
 }
 
-async function setCrmSmartboxBlueThemeEnabled(enabled) {
-  await setStoredValue(CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY, Boolean(enabled));
+async function setCrmCustomCssThemeEnabled(enabled) {
+  await setStoredValue(CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY, Boolean(enabled));
 }
 
 function applyLandingTooltipsEnabled(enabled) {
@@ -5037,12 +5050,12 @@ async function initLandingTooltipsSetting() {
   });
 }
 
-async function initCrmSmartboxBlueThemeSetting() {
-  const toggle = document.getElementById("settingsCrmSmartboxBlueToggle");
+async function initCrmCustomCssThemeSetting() {
+  const toggle = document.getElementById("settingsCrmCustomCssToggle");
   if (!toggle) return;
-  toggle.checked = await getCrmSmartboxBlueThemeEnabled();
+  toggle.checked = await getCrmCustomCssThemeEnabled();
   toggle.addEventListener("change", async () => {
-    await setCrmSmartboxBlueThemeEnabled(Boolean(toggle.checked));
+    await setCrmCustomCssThemeEnabled(Boolean(toggle.checked));
   });
 }
 
