@@ -42,5 +42,16 @@
       "js": ["crm-custom-css-worker.js", "content.js"],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["crm-css-themes/custom-crm-theme.css", "themes.css"],
+      "matches": [
+        "https://portal.talktometechnologies.com/*",
+        "https://talktometechnologies2com.sharepoint.com/*",
+        "https://smartboxassistivetnam.sharepoint.com/*",
+        "https://forms.office.com/*"
+      ]
+    }
   ]
 }

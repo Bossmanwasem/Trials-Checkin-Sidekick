@@ -2,661 +2,21 @@
 
 (() => {
   const CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY = "ttmtCrmSmartboxBlueThemeEnabled";
-  const CRM_CUSTOM_CSS_STYLE_ID = "ttmt-crm-smartbox-blue-theme-style";
-  const CRM_CUSTOM_CSS = `
-/* Import Google Fonts */
-@import url("//fonts.googleapis.com/css2?family=Quicksand:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap");
-
-/* Aspnet form */
-#aspnetForm{
- background-color:#1e1e2f;
-}
-
-/* Footertxt */
-.pageContent tr .footertxt{
- transform:translatex(0px) translatey(0px);
- background-color:#1e1e2f;
- color:#ffffff;
- font-family:'Quicksand', sans-serif;
-}
-
-/* Table Data */
-.pageContent > table > tbody > tr > td > table > tbody > tr > td{
- background-color:#1e1e2f;
- color:#ffffff;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Label */
-#Content div label{
- color:#ffffff;
-}
-
-/* Heading */
-#Content h1{
- color:#4ca5e0;
-}
-
-/* Image */
-.pageContent tr img{
- transform:scale(1.26);
- filter: brightness(0.4) invert(1) hue-rotate(215deg) saturate(10);
-}
-
-/* Table Data */
-.pageContent > table > tbody > tr > td{
- background-color:#1e1e2f;
-}
-
-/* Input */
-#Content div input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#23cfff;
-}
-
-/* Input */
-#Content div input[type=password]{
- background-color:#1e1e2f;
- border-color:#1eceff;
- color:#ffffff;
-}
-
-/* Paragraph */
-#Content div p{
- color:#ffffff;
-}
-
-/* Page content */
-#aspnetForm .pageContent{
- background-color:#1e1e2f;
- color:#ffffff;
-}
-
-/* Table Data */
-.pageContent > table > tbody > tr > td{
- background-color:#1e1e2f !important;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Division */
-#ctl00_MainContent_FormView1_lblBody div:nth-child(4){
- letter-spacing:0.7px;
- color:#ffffff;
- display:block;
- background-color:#1e1e2f;
-}
-
-/* Division */
-#ctl00_MainContent_FormView1_lblBody div:nth-child(8){
- background-color:#1e1e2f;
- line-height:19px;
-}
-
-/* Image */
-div > a img{
- filter: brightness(0.35) invert(1) hue-rotate(176deg);
-}
-
-/* Link */
-td > div > table .ctl00_TreeView1_2 a{
- color:#ffffff;
-}
-
-/* Link */
-div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(3) a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(3) a{
- color:#ffffff;
-}
-
-/* Link */
-div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(4) a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(4) a{
- color:#ffffff;
-}
-
-/* Link */
-td div div div div:nth-child(3) table:nth-child(1) tbody tr .ctl00_TreeView1_2 a{
- color:#ffffff;
-}
-
-/* Link */
-td div div div div:nth-child(3) table:nth-child(2) tbody tr .ctl00_TreeView1_2 a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm table:nth-child(4) .ctl00_TreeView1_2:nth-child(4) a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm div:nth-child(5) table:nth-child(1) a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm div:nth-child(5) table:nth-child(2) a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm table:nth-child(3) a{
- color:#ffffff;
-}
-
-/* Link */
-td div div div div table:nth-child(4) tbody tr .ctl00_TreeView1_2 a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm table:nth-child(5) a{
- color:#ffffff;
-}
-
-/* Link */
-td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a{
- color:#ffffff;
-}
-
-/* Link */
-#aspnetForm table:nth-child(6) .ctl00_TreeView1_2:nth-child(4) a{
- color:#ffffff;
-}
-
-/* Heading */
-#ContentAdmin h1{
- color:#ffffff;
-}
-
-/* Span Tag */
-#ctl00_MainContent_FormView1_lblBody > div > span{
- background-color:#1e1e2f !important;
-}
-
-/* Underline text tag */
-#ctl00_MainContent_FormView1_lblBody div > span > u{
- background-color:#1e1e2f !important;
-}
-
-/* Span Tag */
-#ctl00_MainContent_FormView1_lblBody div > span span{
- background-color:#1e1e2f;
-}
-
-/* Font */
-#ctl00_MainContent_FormView1_lblBody > div > font{
- background-color:#1e1e2f;
- color:#ffffff !important;
-}
-
-/* Span Tag */
-#ctl00_MainContent_FormView1_lblBody div font > span{
- background-color:#1e1e2f !important;
-}
-
-/* Division */
-#ctl00_MainContent_FormView1_lblBody div font > div{
- background-color:#1e1e2f;
-}
-
-/* Strong Tag */
-#ctl00_MainContent_FormView1_lblBody > div > strong{
- background-color:#1e1e2f !important;
-}
-
-/* Login name */
-.pageContent tr .loginName{
- color:#ffffff;
-}
-
-/* Link */
-.pageContent .loginName a{
- color:#38afff;
-}
-
-/* Underline text tag */
-#ctl00_MainContent_FormView1_lblBody div > u{
- background-color:#1e1e2f !important;
-}
-
-/* Image */
-td div div div div table tbody tr td img{
- filter: invert(1);
-}
-
-/* Content admin */
-#ContentAdmin{
- background-color:#1e1e2f;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Heading */
-#ctl00_MainContent_FormView1_lblBody h3{
- background-color:#1e1e2f;
-}
-
-
-/* Ajax tab body */
-#ContentAdmin div div .ajax__tab_body{
- background-color:#1e1e2f;
- border-color:#42c5fa;
- border-width:2px;
- color:#ffffff;
-}
-
-/* Ajax tab body */
-#ContentAdmin > div > .ajax__tab_body{
- background-color:#1e1e2f;
- border-width:2px;
- border-color:#42c5fa;
- color:#ffffff;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Div alphabet */
-#divAlphabet{
- border-top-left-radius:25px;
- border-top-right-radius:25px;
- border-bottom-left-radius:25px;
- border-bottom-right-radius:25px;
- background-color:#42c5fa;
-}
-
-/* Card body */
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body{
- background-color:#1e1e2f;
- color:#ffffff;
- border-width:2px;
-}
-
-/* Card header */
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-header{
- background-color:#42c5fa;
- border-width:0px;
-}
-
-/* Input */
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body .row .col-md-9 input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Select */
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body .row .col-md-9 select{
- background-color:#1e1e2f !important;
- color:#ffffff;
- border-color:#42c5fa !important;
-}
-
-/* Text Area */
-.card .card-body .row .col-md-9 textarea{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Input */
-.card .card-body .row .col-md-10 input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Select */
-.col-md-6 .card .card-body .row .col-md-10 select{
- color:#ffffff;
-}
-
-/* Select */
-#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body .row .col-md-10 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Input */
-.col-md-6 .card .card-body .row .col-md-6 input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Text Area */
-.col-md-6 .card .card-body .row .col-md-6 textarea{
- color:#ffffff;
- background-color:#1e1e2f;
- border-color:#42c5fa;
-}
-
-/* Input */
-.col-md-4 .row .col-7 .d-flex input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Input */
-.col-md-4 .row .col-md-7 .d-flex input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Column 6/12 */
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid > .row > .col-md-6{
- background-color:#1e1e2f;
-}
-
-/* Ajax tab tab */
-#ContentAdmin .ajax__tab_body .ajax__tab_tab{
- background-color:transparent;
-}
-
-/* Ajax tab inner */
-#ContentAdmin .ajax__tab_body .ajax__tab_inner{
- background-color:transparent;
-}
-
-/* Card header */
-#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-header{
- background-color:#42c5fa;
-}
-
-/* Card header */
-.col-md-6 .card .card-body .card .card-header{
- background-color:#42c5fa;
-}
-
-/* Card body */
-#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body{
- background-color:#1e1e2f;
- color:#ffffff;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Table Data */
-.col-md-6 .card .card-body div div .table-striped tbody tr td{
- background-color:#1e1e2f;
- color:#ffffff;
-}
-
-/* Th */
-.col-md-6 .card .card-body div div .table-striped tbody tr th{
- background-color:#42c5fa;
-}
-
-/* Card body */
-.col-md-6 .card .card-body div .card .card-body{
- background-color:#1e1e2f;
- color:#ffffff;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Select */
-#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .container-fluid .row .col-md-6 .card .card-body div .card .card-body .row .col-md-9 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Select */
-.card-body div .card .card-body .row .col-md-9 select{
- color:#ffffff;
-}
-
-/* Card body */
-.col-md-6 .card .card-body .card .card-body{
- background-color:#1e1e2f;
-}
-
-/* Text Area */
-#ContentAdmin .card .card textarea{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Column 3/12 */
-.col-md-6 .card .card-body .card .card-body .row .col-md-3{
- color:#ffffff;
-}
-
-/* Select */
-#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .container-fluid .row .col-md-6 .card .card-body .row .col-md-8 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Select */
-.card .card-body .row .col-md-8 select{
- color:#ffffff;
-}
-
-/* Input */
-.ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body > .row .col-md-8 .d-flex input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Input */
-#ContentAdmin .vocabfile-search input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Column 9/12 */
-.col-md-6 .card .card-body .card .card-body .row .col-md-9{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Select */
-#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .container-fluid .row .col-md-6 .card .card-body .card .card-body .row .col-md-9 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Select */
-.card-body .card .card-body .row .col-md-9 select{
- color:#ffffff;
-}
-
-/* Input */
-.card-body .card .card-body .row .col-md-9 .d-flex input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Text Area */
-.card .card-body .row .col-md-8 textarea{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Input */
-.ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body > .row .col-md-8 input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Card body */
-.ajax__tab_panel > div > .card .card-body{
- background-color:#1e1e2f;
- color:#ffffff;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Form label */
-.ajax__tab_panel > div > .card .col-md-3 .form-label{
- color:#ffffff;
-}
-
-/* Card header */
-.ajax__tab_panel > div > .card .card-header{
- background-color:#42c5fa;
- border-color:#42c5fa;
-}
-
-/* Select */
-.pageContent table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel div .card .card-body .container-fluid .row .col-md-9 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Select */
-.card-body .container-fluid .row .col-md-9 select{
- color:#ffffff;
-}
-
-/* Th */
-.col-12 div .table-striped tbody tr th{
- background-color:#42c5fa;
- border-top-right-radius:0px;
-}
-
-/* Table Data */
-.ajax__tab_panel > div > .card .col-12 > div .table-striped > tbody > tr > td{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
- border-width:1px;
- border-top-color:#849bb2;
-}
-
-/* Text Area */
-#ContentAdmin tr textarea{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Select */
-.pageContent table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel > div > .card .card-body .mb-3 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Select */
-.ajax__tab_panel > div > .card .mb-3 select{
- color:#ffffff;
-}
-
-/* Text Area */
-.card-body .container-fluid .row .col-md-10 textarea{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Form label */
-.ajax__tab_panel > div > .card .col-md-2 .form-label{
- color:#ffffff;
-}
-
-/* Select */
-.pageContent table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel div .card .card-body .container-fluid .row .col-md-10 select{
- background-color:#1e1e2f !important;
- border-color:#42c5fa !important;
-}
-
-/* Select */
-.card-body .container-fluid .row .col-md-10 select{
- color:#ffffff;
-}
-
-/* Input */
-.ajax__tab_panel > div > .card input[type=text]{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa;
-}
-
-/* Input */
-.timeSelector tr input{
- background-color:#1e1e2f;
- color:#ffffff;
- border-color:#42c5fa !important;
-}
-
-/* Ajax tab body */
-#ContentAdmin > div > .ajax__tab_body{
- background-color:#1e1e2f;
- transform:translatex(0px) translatey(0px);
-}
-
-/* Card header */
-.ajax__tab_panel > .card .card-header{
- background-color:#42c5fa;
-}
-
-
-/* Card body */
-#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(1) .card-body{
- background-color:#1e1e2f;
-}
-
-/* Card header */
-#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(1) .card-header{
- background-color:#42c5fa;
-}
-
-/* Body Of Table */
-.card-body div .table-striped > tbody{
- background-color:#42c5fa;
-}
-
-/* Body Of Table */
-#aspnetForm table tbody tr td #ContentAdmin div .ajax__tab_body .ajax__tab_panel:nth-child(7) .card .card-body div .table-striped tbody{
- transform:translatex(0px) translatey(0px) !important;
-}
-
-/* Card body */
-#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(2) .card-body{
- background-color:#1e1e2f;
- color:#ffffff;
-}
-
-/* Form control */
-#aspnetForm tr input[type=file].form-control{
- background-color:#1e1e2f;
- color:#ffffff;
- border-style:solid;
- border-color:#42c5fa;
-}
-
-/* Form control */
-.card-body .container-fluid .row:nth-child(1) .col-md-9 input[type=text].form-control{
- background-color:#2c3e50;
- border-color:#42c5fa;
- color:#ffffff;
-}
-
-/* Column 9/12 */
-.card-body div .container-fluid .row:nth-child(2) .col-md-9{
- background-color:rgba(0,0,0,0.21);
-}
-
-/* Card header */
-#aspnetForm .ajax__tab_panel:nth-child(7) .card:nth-child(2) .card-header{
- background-color:#42c5fa;
-}
-
-`;
+  const CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY = "ttmtCrmCustomCssThemeVars";
+  const SIDEKICK_THEME_STORAGE_KEY = "ttmtSidekickTheme";
+  const CRM_CUSTOM_CSS_LINK_ID = "ttmt-crm-custom-theme-stylesheet";
+  const CRM_CUSTOM_CSS_VARIABLE_STYLE_ID = "ttmt-crm-custom-theme-vars";
+  const CRM_CUSTOM_CSS_PATH = "crm-css-themes/custom-crm-theme.css";
+  const SIDEKICK_THEMES_CSS_PATH = "themes.css";
+  const DEFAULT_SIDEKICK_THEME_VARS = {
+    "text-color": "#e0e0e0",
+    "container-bg": "#1e1e2f",
+    "container-border": "#81cfff",
+    "accent": "#81cfff",
+    "input-bg": "#2a2a3a",
+    "input-border": "#555555"
+  };
+  let sidekickThemeCssTextPromise = null;
 
   function getStoredValue(key) {
     return new Promise(resolve => {
@@ -677,17 +37,108 @@ td div div div div table tbody tr td img{
     });
   }
 
-  function setCrmCustomCssEnabled(enabled) {
-    const existing = document.getElementById(CRM_CUSTOM_CSS_STYLE_ID);
+
+  function escapeRegex(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  async function getSidekickThemeCssText() {
+    if (!sidekickThemeCssTextPromise) {
+      sidekickThemeCssTextPromise = fetch(chrome.runtime.getURL(SIDEKICK_THEMES_CSS_PATH)).then(response => {
+        if (!response.ok) throw new Error(`Unable to load ${SIDEKICK_THEMES_CSS_PATH}`);
+        return response.text();
+      }).catch(() => "");
+    }
+    return sidekickThemeCssTextPromise;
+  }
+
+  function parseThemeVarsFromCss(themeId, cssText) {
+    if (!themeId || !cssText) return null;
+    const pattern = new RegExp(`body\\[data-theme="${escapeRegex(themeId)}"\\]\\s*\\{([\\s\\S]*?)\\}`, "m");
+    const match = cssText.match(pattern);
+    if (!match) return null;
+    const vars = {};
+    match[1].replace(/--([a-z0-9-]+)\s*:\s*([^;]+);/gi, (_, key, value) => {
+      vars[key] = value.trim();
+      return "";
+    });
+    return Object.keys(vars).length ? vars : null;
+  }
+
+  async function getStoredSidekickThemeVars() {
+    const themePayload = await getStoredValue(CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY);
+    if (themePayload?.vars && typeof themePayload.vars === "object") return themePayload.vars;
+
+    const themeId = await getStoredValue(SIDEKICK_THEME_STORAGE_KEY) || "ocean";
+    const cssText = await getSidekickThemeCssText();
+    return parseThemeVarsFromCss(themeId, cssText) || DEFAULT_SIDEKICK_THEME_VARS;
+  }
+
+  function cssVar(name, value) {
+    return `  ${name}: ${value};`;
+  }
+
+  function buildCrmCustomCssVariableText(themeVars) {
+    const vars = { ...DEFAULT_SIDEKICK_THEME_VARS, ...(themeVars || {}) };
+    const bg = vars["container-bg"] || DEFAULT_SIDEKICK_THEME_VARS["container-bg"];
+    const text = vars["text-color"] || DEFAULT_SIDEKICK_THEME_VARS["text-color"];
+    const accent = vars["container-border"] || vars.accent || DEFAULT_SIDEKICK_THEME_VARS.accent;
+    const inputBg = vars["input-bg"] || bg;
+    const inputBorder = vars["input-border"] || accent;
+    const link = vars.accent || accent;
+
+    return [
+      ":root{",
+      cssVar("--ttmt-crm-bg", bg),
+      cssVar("--ttmt-crm-text", text),
+      cssVar("--ttmt-crm-accent", accent),
+      cssVar("--ttmt-crm-heading", vars.accent || accent),
+      cssVar("--ttmt-crm-link", link),
+      cssVar("--ttmt-crm-input-bg", inputBg),
+      cssVar("--ttmt-crm-muted-border", inputBorder),
+      cssVar("--ttmt-crm-row-highlight", "rgba(0, 0, 0, 0.21)"),
+      "}"
+    ].join("\n");
+  }
+
+  function ensureCrmCustomCssVariables(themeVars) {
+    let style = document.getElementById(CRM_CUSTOM_CSS_VARIABLE_STYLE_ID);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = CRM_CUSTOM_CSS_VARIABLE_STYLE_ID;
+      document.head.appendChild(style);
+    }
+    style.textContent = buildCrmCustomCssVariableText(themeVars);
+  }
+
+  function ensureCrmCustomCssLink() {
+    if (document.getElementById(CRM_CUSTOM_CSS_LINK_ID)) return;
+    const link = document.createElement("link");
+    link.id = CRM_CUSTOM_CSS_LINK_ID;
+    link.rel = "stylesheet";
+    link.href = chrome.runtime.getURL(CRM_CUSTOM_CSS_PATH);
+    document.head.appendChild(link);
+  }
+
+  async function setCrmCustomCssEnabled(enabled) {
     if (!enabled) {
-      existing?.remove();
+      document.getElementById(CRM_CUSTOM_CSS_LINK_ID)?.remove();
+      document.getElementById(CRM_CUSTOM_CSS_VARIABLE_STYLE_ID)?.remove();
       return;
     }
-    if (existing) return;
-    const style = document.createElement("style");
-    style.id = CRM_CUSTOM_CSS_STYLE_ID;
-    style.textContent = CRM_CUSTOM_CSS;
-    document.head.appendChild(style);
+
+    const themeVars = await getStoredSidekickThemeVars();
+    ensureCrmCustomCssVariables(themeVars);
+    ensureCrmCustomCssLink();
+  }
+
+  async function updateCrmCustomCssThemeVars(themePayload) {
+    if (!document.getElementById(CRM_CUSTOM_CSS_LINK_ID)) return;
+    if (themePayload?.vars && typeof themePayload.vars === "object") {
+      ensureCrmCustomCssVariables(themePayload.vars);
+      return;
+    }
+    ensureCrmCustomCssVariables(await getStoredSidekickThemeVars());
   }
 
   function initCrmCustomCssWorker() {
@@ -697,8 +148,15 @@ td div div div div table tbody tr td img{
     if (chrome?.storage?.onChanged) {
       chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== "local") return;
-        if (!changes[CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY]) return;
-        setCrmCustomCssEnabled(Boolean(changes[CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY].newValue));
+        if (changes[CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY]) {
+          setCrmCustomCssEnabled(Boolean(changes[CRM_CUSTOM_CSS_ENABLED_STORAGE_KEY].newValue));
+        }
+        if (changes[CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY]) {
+          updateCrmCustomCssThemeVars(changes[CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY].newValue);
+        }
+        if (changes[SIDEKICK_THEME_STORAGE_KEY] && !changes[CRM_CUSTOM_CSS_THEME_VARS_STORAGE_KEY]) {
+          updateCrmCustomCssThemeVars(null);
+        }
       });
     }
   }
