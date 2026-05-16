@@ -100,49 +100,249 @@ const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const CRM_SMARTBOX_BLUE_THEME_ENABLED_STORAGE_KEY = "ttmtCrmSmartboxBlueThemeEnabled";
 const CRM_SMARTBOX_BLUE_THEME_STYLE_ID = "ttmt-crm-smartbox-blue-theme-style";
 const CRM_SMARTBOX_BLUE_THEME_CSS = `
-/* Smartbox Blue CRM Theme */
+/* Import Google Fonts */
+@import url("//fonts.googleapis.com/css2?family=Quicksand:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap");
+
+/* Aspnet form */
+#aspnetForm{
+ background-color:#1e1e2f;
+}
+
+/* Footertxt */
+.pageContent tr .footertxt{
+ transform:translatex(0px) translatey(0px);
+ background-color:#1e1e2f;
+ color:#ffffff;
+ font-family:'Quicksand', sans-serif;
+}
+
+/* Table Data */
+.pageContent > table > tbody > tr > td > table > tbody > tr > td{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Label */
+#Content div label{
+ color:#ffffff;
+}
+
+/* Heading */
+#Content h1{
+ color:#4ca5e0;
+}
+
+/* Image */
+.pageContent tr img{
+ transform:scale(1.26);
+ filter: brightness(0.4) invert(1) hue-rotate(215deg) saturate(10);
+}
+
+/* Table Data */
+.pageContent > table > tbody > tr > td{
+ background-color:#1e1e2f;
+}
+
+/* Input */
+#Content div input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#23cfff;
+}
+
+/* Input */
+#Content div input[type=password]{
+ background-color:#1e1e2f;
+ border-color:#1eceff;
+ color:#ffffff;
+}
+
+/* Paragraph */
+#Content div p{
+ color:#ffffff;
+}
+
+/* Page content */
 #aspnetForm .pageContent{
  background-color:#1e1e2f;
  color:#ffffff;
- border-style:solid;
- border-color:#81cfff;
 }
+
+/* Table Data */
 .pageContent > table > tbody > tr > td{
  background-color:#1e1e2f !important;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Division */
+#ctl00_MainContent_FormView1_lblBody div:nth-child(4){
+ letter-spacing:0.7px;
+ color:#ffffff;
+ display:block;
+ background-color:#1e1e2f;
+}
+
+/* Division */
+#ctl00_MainContent_FormView1_lblBody div:nth-child(8){
+ background-color:#1e1e2f;
+ line-height:19px;
+}
+
+/* Image */
+div > a img{
+ filter: brightness(0.35) invert(1) hue-rotate(176deg);
+}
+
+/* Link */
+td > div > table .ctl00_TreeView1_2 a{
  color:#ffffff;
 }
-#ContentAdmin > div > .ajax__tab_body{
+
+/* Link */
+div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(3) a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(3) a{
+ color:#ffffff;
+}
+
+/* Link */
+div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(4) a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(4) a{
+ color:#ffffff;
+}
+
+/* Link */
+td div div div div:nth-child(3) table:nth-child(1) tbody tr .ctl00_TreeView1_2 a{
+ color:#ffffff;
+}
+
+/* Link */
+td div div div div:nth-child(3) table:nth-child(2) tbody tr .ctl00_TreeView1_2 a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm table:nth-child(4) .ctl00_TreeView1_2:nth-child(4) a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm div:nth-child(5) table:nth-child(1) a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm div:nth-child(5) table:nth-child(2) a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm table:nth-child(3) a{
+ color:#ffffff;
+}
+
+/* Link */
+td div div div div table:nth-child(4) tbody tr .ctl00_TreeView1_2 a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm table:nth-child(5) a{
+ color:#ffffff;
+}
+
+/* Link */
+td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a{
+ color:#ffffff;
+}
+
+/* Link */
+#aspnetForm table:nth-child(6) .ctl00_TreeView1_2:nth-child(4) a{
+ color:#ffffff;
+}
+
+/* Heading */
+#ContentAdmin h1{
+ color:#ffffff;
+}
+
+/* Span Tag */
+#ctl00_MainContent_FormView1_lblBody > div > span{
+ background-color:#1e1e2f !important;
+}
+
+/* Underline text tag */
+#ctl00_MainContent_FormView1_lblBody div > span > u{
+ background-color:#1e1e2f !important;
+}
+
+/* Span Tag */
+#ctl00_MainContent_FormView1_lblBody div > span span{
  background-color:#1e1e2f;
- border-color:#81cfff;
- border-width:4px;
 }
-#ContentAdmin div div .ajax__tab_body{
+
+/* Font */
+#ctl00_MainContent_FormView1_lblBody > div > font{
  background-color:#1e1e2f;
- border-color:#81cfff;
- border-width:3px;
+ color:#ffffff !important;
 }
-#ContentAdmin h1 span{ color:#ffffff; }
-div[id='ContentAdmin'] h1{ color:#ffffff; }
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body{
- background-color:#1e1e2f; color:#ffffff; border-color:#83c7f1; border-width:4px;
+
+/* Span Tag */
+#ctl00_MainContent_FormView1_lblBody div font > span{
+ background-color:#1e1e2f !important;
 }
-.pageContent tr .loginName{ color:#ffffff; }
-#divAlphabet{
- border-color:#75caff; border-width:4px; border-radius:7px; background-color:#81cfff; color:#000000;
+
+/* Division */
+#ctl00_MainContent_FormView1_lblBody div font > div{
+ background-color:#1e1e2f;
 }
-.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-header{ background-color:#81cfff; }
-.pageContent .loginName a, div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(3) a, td > div > table .ctl00_TreeView1_2 a{ color:#83c7f1; }
-td > div > a img{ display:inline-block; transform:translatex(-5px) translatey(-42px); filter: grayscale(1) invert(1); }
-#aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(3) a, div div table:nth-child(1) tbody tr .ctl00_TreeView1_2:nth-child(4) a, #aspnetForm table:nth-child(2) .ctl00_TreeView1_2:nth-child(4) a, td div div div div:nth-child(3) table:nth-child(1) tbody tr .ctl00_TreeView1_2 a, td div div div div:nth-child(3) table:nth-child(2) tbody tr .ctl00_TreeView1_2 a, #aspnetForm table:nth-child(4) .ctl00_TreeView1_2:nth-child(4) a, #aspnetForm div:nth-child(5) table:nth-child(1) a, #aspnetForm div:nth-child(5) table:nth-child(2) a, #aspnetForm table:nth-child(3) a, td div div div div table:nth-child(4) tbody tr .ctl00_TreeView1_2 a, #aspnetForm table:nth-child(5) a, td div div div div table:nth-child(6) tbody tr .ctl00_TreeView1_2 a, #aspnetForm table:nth-child(6) .ctl00_TreeView1_2:nth-child(4) a{ color:#83c7f1; }
-#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-header, .col-md-6 .card .card-body div .card .card-header, .col-md-6 .card .card-body .card .card-header{ background-color:#83c7f1; }
-#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body, .ajax__tab_panel > div > .card .card-body, .ajax__tab_panel > .card .card-body{ background-color:#1e1e2f; color:#ffffff; }
-.ajax__tab_panel > div > .card .card-body{ transform:translatex(-5px) translatey(-42px); display:inline-block; }
-.ajax__tab_panel > div > .card .col-md-3 .form-label, .ajax__tab_panel > div > .card .col-md-2 .form-label{ color:#ffffff; }
-.ajax__tab_panel > div > .card .col-12 > div .table-striped > tbody > tr > td{
- background-color:#1e1e2f; color:#ffffff; border-color:#89c8ef; border-width:3px; border-radius:13px;
+
+/* Strong Tag */
+#ctl00_MainContent_FormView1_lblBody > div > strong{
+ background-color:#1e1e2f !important;
 }
-.col-12 div .table-striped tbody tr th{ background-color:#55b8dc; border-top-left-radius:12px; border-top-right-radius:12px; }
+
+/* Login name */
+.pageContent tr .loginName{
+ color:#ffffff;
+}
+
+/* Link */
+.pageContent .loginName a{
+ color:#38afff;
+}
+
+/* Underline text tag */
+#ctl00_MainContent_FormView1_lblBody div > u{
+ background-color:#1e1e2f !important;
+}
+
+/* Image */
+td div div div div table tbody tr td img{
+ filter: invert(1);
+}
+
+/* Content admin */
+#ContentAdmin{
+ background-color:#1e1e2f;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Heading */
+#ctl00_MainContent_FormView1_lblBody h3{
+ background-color:#1e1e2f;
+}
+
 `;
+
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div',
   '//*[@id="CommonEditorCalloutId"]/div/div',
