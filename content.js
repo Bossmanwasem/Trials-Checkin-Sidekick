@@ -341,6 +341,268 @@ td div div div div table tbody tr td img{
  background-color:#1e1e2f;
 }
 
+
+/* Ajax tab body */
+#ContentAdmin div div .ajax__tab_body{
+ background-color:#1e1e2f;
+ border-color:#42c5fa;
+ border-width:2px;
+ color:#ffffff;
+}
+
+/* Ajax tab body */
+#ContentAdmin > div > .ajax__tab_body{
+ background-color:#1e1e2f;
+ border-width:2px;
+ border-color:#42c5fa;
+ color:#ffffff;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Div alphabet */
+#divAlphabet{
+ border-top-left-radius:25px;
+ border-top-right-radius:25px;
+ border-bottom-left-radius:25px;
+ border-bottom-right-radius:25px;
+ background-color:#42c5fa;
+}
+
+/* Card body */
+.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-width:2px;
+}
+
+/* Card header */
+.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-header{
+ background-color:#42c5fa;
+ border-width:0px;
+}
+
+/* Input */
+.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body .row .col-md-9 input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Select */
+.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body .row .col-md-9 select{
+ background-color:#1e1e2f !important;
+ color:#ffffff;
+ border-color:#42c5fa !important;
+}
+
+/* Text Area */
+.card .card-body .row .col-md-9 textarea{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Input */
+.card .card-body .row .col-md-10 input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Select */
+.col-md-6 .card .card-body .row .col-md-10 select{
+ color:#ffffff;
+}
+
+/* Select */
+#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid .row .col-md-6 .card .card-body .row .col-md-10 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Input */
+.col-md-6 .card .card-body .row .col-md-6 input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Text Area */
+.col-md-6 .card .card-body .row .col-md-6 textarea{
+ color:#ffffff;
+ background-color:#1e1e2f;
+ border-color:#42c5fa;
+}
+
+/* Input */
+.col-md-4 .row .col-7 .d-flex input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Input */
+.col-md-4 .row .col-md-7 .d-flex input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Column 6/12 */
+.ajax__tab_panel div .ajax__tab_body .ajax__tab_panel .container-fluid > .row > .col-md-6{
+ background-color:#1e1e2f;
+}
+
+/* Ajax tab tab */
+#ContentAdmin .ajax__tab_body .ajax__tab_tab{
+ background-color:transparent;
+}
+
+/* Ajax tab inner */
+#ContentAdmin .ajax__tab_body .ajax__tab_inner{
+ background-color:transparent;
+}
+
+/* Card header */
+#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-header{
+ background-color:#42c5fa;
+}
+
+/* Card header */
+.col-md-6 .card .card-body .card .card-header{
+ background-color:#42c5fa;
+}
+
+/* Card body */
+#ContentAdmin > div > .ajax__tab_body > .ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Table Data */
+.col-md-6 .card .card-body div div .table-striped tbody tr td{
+ background-color:#1e1e2f;
+ color:#ffffff;
+}
+
+/* Th */
+.col-md-6 .card .card-body div div .table-striped tbody tr th{
+ background-color:#42c5fa;
+}
+
+/* Card body */
+.col-md-6 .card .card-body div .card .card-body{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ transform:translatex(0px) translatey(0px);
+}
+
+/* Select */
+#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .container-fluid .row .col-md-6 .card .card-body div .card .card-body .row .col-md-9 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Select */
+.card-body div .card .card-body .row .col-md-9 select{
+ color:#ffffff;
+}
+
+/* Card body */
+.col-md-6 .card .card-body .card .card-body{
+ background-color:#1e1e2f;
+}
+
+/* Text Area */
+#ContentAdmin .card .card textarea{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Column 3/12 */
+.col-md-6 .card .card-body .card .card-body .row .col-md-3{
+ color:#ffffff;
+}
+
+/* Select */
+#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .container-fluid .row .col-md-6 .card .card-body .row .col-md-8 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Select */
+.card .card-body .row .col-md-8 select{
+ color:#ffffff;
+}
+
+/* Input */
+.ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body > .row .col-md-8 .d-flex input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Input */
+#ContentAdmin .vocabfile-search input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Column 9/12 */
+.col-md-6 .card .card-body .card .card-body .row .col-md-9{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Select */
+#ContentAdmin div .ajax__tab_body .ajax__tab_panel div .container-fluid .row .col-md-6 .card .card-body .card .card-body .row .col-md-9 select{
+ background-color:#1e1e2f !important;
+ border-color:#42c5fa !important;
+}
+
+/* Select */
+.card-body .card .card-body .row .col-md-9 select{
+ color:#ffffff;
+}
+
+/* Input */
+.card-body .card .card-body .row .col-md-9 .d-flex input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Text Area */
+.card .card-body .row .col-md-8 textarea{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Input */
+.ajax__tab_panel > div > .container-fluid > .row > .col-md-6 > .card > .card-body > .row .col-md-8 input[type=text]{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ border-color:#42c5fa;
+}
+
+/* Card header */
+.ajax__tab_panel > div > .card .card-header{
+ background-color:#42c5fa;
+}
+
+/* Card body */
+.ajax__tab_panel > div > .card .card-body{
+ background-color:#1e1e2f;
+ color:#ffffff;
+ display:inline-block;
+ transform:translatex(0px) translatey(0px);
+}
+
 `;
 
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
