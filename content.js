@@ -82,6 +82,17 @@ const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
+const DAF_CONSULTANT_LISTBOX_XPATHS = [
+  '//*[@id="CommonEditorCalloutId"]/div',
+  '//*[@id="CommonEditorCalloutId"]/div/div',
+  '//*[@id="CommonEditorCalloutId"]'
+];
+const DAF_AAC_FIELD_XPATH = "/html/body/div/div/div/form/div/div/div/div[6]/div/span/div/div/div/input";
+
+function sanitizeName(name) {
+  return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
+}
+
 function normalizeText(str) {
   return (str || "").replace(/\s+/g, " ").trim().toLowerCase();
 }
