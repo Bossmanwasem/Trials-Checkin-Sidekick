@@ -78,22 +78,7 @@ function resolveInputTarget(el) {
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el;
   return el.querySelector("input, textarea");
 }
-// UNSAFE_NAME_REGEX Removes:
-// - Optional leading whitespace
-// - Asterisk-prefixed values (everything from * to end of token/line)
-// - Text wrapped in *asterisks*
-// - Text inside parentheses
-// - Standalone 5-digit numbers
-// - Text inside double quotes
-//
-// Examples matched:
-//   *12345
-//   *Device Returned
-//   *anything after here
-//   (Damaged)
-//   54321
-//   "Needs repair"
-const UNSAFE_NAME_REGEX = /\s?(\*.*$|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
