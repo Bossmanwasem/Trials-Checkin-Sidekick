@@ -83,6 +83,12 @@ const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
+const CRM_ORIGINS = [
+  "https://portal.talktometechnologies.com",
+  "https://crm.talktometechnologies.com"
+];
+const CRM_TAB_URL_PATTERNS = CRM_ORIGINS.map(origin => `${origin}/*`);
+const CRM_PRIMARY_ORIGIN = CRM_ORIGINS[0];
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
@@ -5268,8 +5274,8 @@ async function getActiveCrmTab() {
 }
 
 function isCrmUrl(url) {
-  return typeof url === "string" &&
-    url.startsWith("https://portal.talktometechnologies.com/");
+  if (typeof url !== "string") return false;
+  return CRM_ORIGINS.some(origin => url === origin || url.startsWith(`${origin}/`));
 }
 
 async function getActiveCrmTabId() {
@@ -5277,9 +5283,124 @@ async function getActiveCrmTabId() {
   if (tab?.id && isCrmUrl(tab.url)) return tab.id;
 
   const tabs = await chrome.tabs.query({
-    url: "https://portal.talktometechnologies.com/*"
+    url: CRM_TAB_URL_PATTERNS
   });
   return tabs?.[0]?.id || null;
+}
+
+function countClientDataFields(data) {
+  if (!data) return 0;
+  return [data.crmId, data.firstName, data.lastName, data.aac].filter(value => `${value || ""}`.trim()).length;
+}
+
+function mergeClientData(primary = {}, fallback = {}) {
+  return {
+    crmId: `${primary.crmId || fallback.crmId || ""}`.trim(),
+    firstName: `${primary.firstName || fallback.firstName || ""}`.trim(),
+    lastName: `${primary.lastName || fallback.lastName || ""}`.trim(),
+    aac: `${primary.aac || fallback.aac || ""}`.trim()
+  };
+}
+
+function scrapeClientDataFromCrmPage() {
+  const unsafeNameRegex = /\s?(\*.*$|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
+  const sanitize = value => (value || "").replace(unsafeNameRegex, "").trim();
+  const getFieldValue = el => {
+    if (!el) return "";
+    if (el.tagName === "SELECT") {
+      return el.options?.[el.selectedIndex]?.textContent?.trim() || el.value?.trim() || "";
+    }
+    return (el.value || el.textContent || "").trim();
+  };
+  const getById = id => getFieldValue(document.getElementById(id));
+  const getSearchParamValue = (url, names) => {
+    const targets = new Set(names.map(name => String(name).toLowerCase()));
+    for (const [key, value] of url.searchParams.entries()) {
+      if (targets.has(key.toLowerCase()) && value.trim()) return value.trim();
+    }
+    return "";
+  };
+  const getCrmId = () => {
+    try {
+      const url = new URL(window.location.href);
+      const fromQuery = getSearchParamValue(url, ["ID", "ClientID", "ClientId", "Client"]);
+      if (fromQuery) return fromQuery;
+      return url.pathname.match(/(?:EditClient|Client)[^\d]*(\d+)/i)?.[1] || "";
+    } catch {
+      return "";
+    }
+  };
+  const getBySuffix = suffixes => {
+    const fields = Array.from(document.querySelectorAll("input, textarea, select"));
+    for (const suffix of suffixes.map(value => String(value).toLowerCase())) {
+      const field = fields.find(el =>
+        (el.id || "").toLowerCase().endsWith(suffix) ||
+        (el.name || "").toLowerCase().endsWith(suffix)
+      );
+      const value = getFieldValue(field);
+      if (value) return value;
+    }
+    return "";
+  };
+  const normalizeLabel = value => (value || "").replace(/\s+/g, " ").replace(/[\*:]+$/g, "").trim().toLowerCase();
+  const findNearLabel = patterns => {
+    for (const label of Array.from(document.querySelectorAll("label, td, th, span, div"))) {
+      const text = normalizeLabel(label.textContent);
+      if (!text || !patterns.some(pattern => pattern.test(text))) continue;
+      if (label.htmlFor) {
+        const linked = document.getElementById(label.htmlFor);
+        if (linked && ["INPUT", "TEXTAREA", "SELECT"].includes(linked.tagName)) return linked;
+      }
+      const nested = label.querySelector("input, textarea, select");
+      if (nested) return nested;
+      const rowField = label.closest("tr")?.querySelector("input, textarea, select");
+      if (rowField && !label.contains(rowField)) return rowField;
+      let sibling = label.nextElementSibling;
+      for (let i = 0; sibling && i < 4; i += 1, sibling = sibling.nextElementSibling) {
+        if (["INPUT", "TEXTAREA", "SELECT"].includes(sibling.tagName)) return sibling;
+        const siblingField = sibling.querySelector?.("input, textarea, select");
+        if (siblingField) return siblingField;
+      }
+    }
+    return null;
+  };
+  const getByLabel = patterns => getFieldValue(findNearLabel(patterns));
+
+  return {
+    crmId: getCrmId(),
+    firstName: sanitize(
+      getById("ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientFirstName") ||
+      getBySuffix(["txtClientFirstName", "ClientFirstName", "FirstName", "txtFirstName"]) ||
+      getByLabel([/^(client )?first name$/, /^first$/])
+    ),
+    lastName: sanitize(
+      getById("ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientLastName") ||
+      getBySuffix(["txtClientLastName", "ClientLastName", "LastName", "txtLastName"]) ||
+      getByLabel([/^(client )?last name$/, /^last$/])
+    ),
+    aac: getById("ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_ddlSalesperson") ||
+      getBySuffix(["ddlSalesperson", "Salesperson", "AAC", "Consultant"]) ||
+      getByLabel([/^(aac|aac consultant|consultant|salesperson|sales person)$/])
+  };
+}
+
+async function scrapeClientDataFromTab(tabId) {
+  if (!tabId || !chrome?.scripting?.executeScript) return null;
+
+  const runScrape = (target) => chrome.scripting.executeScript({
+    target,
+    func: scrapeClientDataFromCrmPage
+  }).catch(() => null);
+
+  const results = await runScrape({ tabId, allFrames: true }) || await runScrape({ tabId });
+  if (!Array.isArray(results)) return null;
+
+  const dataResults = results
+    .map(result => result?.result)
+    .filter(Boolean)
+    .sort((a, b) => countClientDataFields(b) - countClientDataFields(a));
+
+  return dataResults.reduce((merged, data) => mergeClientData(merged, data), {});
 }
 
 async function getActiveDafTabId() {
@@ -5307,17 +5428,27 @@ async function fetchClientData(tabIdOverride = null) {
   if (!tabId) return null;
 
   const res = await chrome.tabs.sendMessage(tabId, { type: "GET_CLIENT_DATA" }).catch(() => null);
-  if (!res?.ok) return null;
+  const messageData = res?.ok ? res.data : null;
+  if (countClientDataFields(messageData) >= 4) return { tabId, data: messageData };
 
-  return { tabId, data: res.data };
+  const scrapedData = await scrapeClientDataFromTab(tabId);
+  const data = mergeClientData(messageData, scrapedData);
+  if (!countClientDataFields(data)) return null;
+
+  return { tabId, data };
+}
+
+function setValueIfPresent(id, value) {
+  const safeValue = `${value || ""}`.trim();
+  if (safeValue) setValue(id, safeValue);
 }
 
 function applyClientData(data) {
   if (!data) return;
-  setValue("firstName", data.firstName);
-  setValue("lastName", data.lastName);
-  setValue("aac", data.aac);
-  setValue("crmId", data.crmId);
+  setValueIfPresent("firstName", data.firstName);
+  setValueIfPresent("lastName", data.lastName);
+  setValueIfPresent("aac", data.aac);
+  setValueIfPresent("crmId", data.crmId);
 }
 
 function applyGridClientData(data) {
@@ -6295,7 +6426,7 @@ async function runDeviceLookupSearch(rawInput) {
   const hasMounts = mountResult.clamp.length || mountResult.table.length || mountResult.rolling.length;
   const foundInLtl = serialResult.sheetsFound.includes("LTL Update List");
   const foundInRwl = serialResult.sheetsFound.includes("Return Watchlist");
-  const crmFullUrl = crmId ? `https://crm.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
+  const crmFullUrl = crmId ? `${CRM_PRIMARY_ORIGIN}/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
 
   updateLookupBeginLtlUpdateButton(foundInLtl);
 
@@ -6932,7 +7063,7 @@ function buildDafRecapEntries(data) {
     .filter(entry => Boolean(entry.value));
 }
 
-const CRM_LINK_BASE = "https://portal.talktometechnologies.com/admin/EditClient.aspx?ID=";
+const CRM_LINK_BASE = `${CRM_PRIMARY_ORIGIN}/admin/EditClient.aspx?ID=`;
 
 function buildCrmLink(data) {
   const crmId = `${data?.crmId ?? ""}`.trim();
@@ -7159,7 +7290,7 @@ function isDafFormUrl(url) {
 
 async function closeManageInventoryTabs(excludeTabId = null) {
   const tabs = await chrome.tabs.query({
-    url: "*://portal.talktometechnologies.com/*ManageInventory.aspx*"
+    url: CRM_ORIGINS.map(origin => `${origin}/*ManageInventory.aspx*`)
   });
   const tabIds = tabs
     .map(tab => tab.id)
@@ -7644,7 +7775,7 @@ document.getElementById("startAnotherBtn")?.addEventListener("click", async () =
     smartboxRepairTabId = tab?.id ?? null;
     return;
   }
-  chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
+  chrome.tabs.create({ url: `${CRM_PRIMARY_ORIGIN}/admin/ManageInventory.aspx` });
 });
 
 document.getElementById("openSmartboxRepairBtn")?.addEventListener("click", async () => {
@@ -7662,7 +7793,7 @@ document.getElementById("smartboxContinueBtn")?.addEventListener("click", async 
     }
     smartboxRepairTabId = null;
   }
-  chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
+  chrome.tabs.create({ url: `${CRM_PRIMARY_ORIGIN}/admin/ManageInventory.aspx` });
 });
 
 /* ---------------- Refresh ---------------- */
@@ -8390,7 +8521,7 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
       return;
     }
     chrome.tabs.create({
-      url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
+      url: `${CRM_PRIMARY_ORIGIN}/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
     });
     setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     showFormView();
