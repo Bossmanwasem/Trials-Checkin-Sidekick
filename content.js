@@ -183,10 +183,22 @@ function selectClosestConsultantFromListBox(listBox, targetName) {
 
 /* ---------------- Existing CRM Data Grab ---------------- */
 
+function getSearchParamValue(url, names) {
+  const targets = new Set((Array.isArray(names) ? names : [names]).map(name => String(name).toLowerCase()));
+  for (const [key, value] of url.searchParams.entries()) {
+    if (targets.has(key.toLowerCase()) && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 function getCrmIdFromUrl() {
   try {
     const url = new URL(window.location.href);
-    return (url.searchParams.get("ID") || "").trim();
+    const fromQuery = getSearchParamValue(url, ["ID", "ClientID", "ClientId", "Client"]);
+    if (fromQuery) return fromQuery;
+
+    const pathMatch = url.pathname.match(/(?:EditClient|Client)[^\d]*(\d+)/i);
+    return pathMatch?.[1] || "";
   } catch {
     return "";
   }
@@ -194,30 +206,99 @@ function getCrmIdFromUrl() {
 
 function getInputValueById(id) {
   const el = document.getElementById(id);
-  return (el?.value || "").trim();
+  return getFieldValue(el);
+}
+
+function getFieldValue(el) {
+  if (!el) return "";
+  if (el.tagName === "SELECT") {
+    return el.options?.[el.selectedIndex]?.textContent?.trim() || el.value?.trim() || "";
+  }
+  return (el.value || el.textContent || "").trim();
+}
+
+function getFieldValueBySuffix(suffixes) {
+  for (const suffix of suffixes) {
+    const escapedSuffix = CSS.escape(suffix);
+    const selector = [
+      `input[id$="${escapedSuffix}" i]`,
+      `textarea[id$="${escapedSuffix}" i]`,
+      `select[id$="${escapedSuffix}" i]`,
+      `input[name$="${escapedSuffix}" i]`,
+      `textarea[name$="${escapedSuffix}" i]`,
+      `select[name$="${escapedSuffix}" i]`
+    ].join(",");
+    const value = getFieldValue(document.querySelector(selector));
+    if (value) return value;
+  }
+  return "";
+}
+
+function normalizeLabelText(value) {
+  return (value || "").replace(/\s+/g, " ").replace(/[\*:]+$/g, "").trim().toLowerCase();
+}
+
+function findFieldNearLabel(labelPatterns) {
+  const patterns = Array.isArray(labelPatterns) ? labelPatterns : [labelPatterns];
+  const labels = Array.from(document.querySelectorAll("label, td, th, span, div"));
+
+  for (const label of labels) {
+    const labelText = normalizeLabelText(label.textContent);
+    if (!labelText || !patterns.some(pattern => pattern.test(labelText))) continue;
+
+    if (label.htmlFor) {
+      const linked = document.getElementById(label.htmlFor);
+      if (linked && ["INPUT", "TEXTAREA", "SELECT"].includes(linked.tagName)) return linked;
+    }
+
+    const nested = label.querySelector("input, textarea, select");
+    if (nested) return nested;
+
+    const row = label.closest("tr");
+    const rowField = row?.querySelector("input, textarea, select");
+    if (rowField && !label.contains(rowField)) return rowField;
+
+    let sibling = label.nextElementSibling;
+    for (let i = 0; sibling && i < 4; i += 1, sibling = sibling.nextElementSibling) {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(sibling.tagName)) return sibling;
+      const siblingField = sibling.querySelector?.("input, textarea, select");
+      if (siblingField) return siblingField;
+    }
+  }
+
+  return null;
+}
+
+function getFieldValueByLabel(labelPatterns) {
+  return getFieldValue(findFieldNearLabel(labelPatterns));
+}
+
+function getClientFirstName() {
+  return getInputValueById("ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientFirstName")
+    || getFieldValueBySuffix(["txtClientFirstName", "ClientFirstName", "FirstName", "txtFirstName"])
+    || getFieldValueByLabel([/^(client )?first name$/, /^first$/]);
+}
+
+function getClientLastName() {
+  return getInputValueById("ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientLastName")
+    || getFieldValueBySuffix(["txtClientLastName", "ClientLastName", "LastName", "txtLastName"])
+    || getFieldValueByLabel([/^(client )?last name$/, /^last$/]);
 }
 
 function getAacSelectedText() {
   const el = document.getElementById(
     "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_ddlSalesperson"
   );
-  if (!el || el.tagName !== "SELECT") return "";
-  return el.options[el.selectedIndex]?.textContent?.trim() || "";
+  return getFieldValue(el)
+    || getFieldValueBySuffix(["ddlSalesperson", "Salesperson", "AAC", "Consultant"])
+    || getFieldValueByLabel([/^(aac|aac consultant|consultant|salesperson|sales person)$/]);
 }
 
 function collectClientData() {
   return {
     crmId: getCrmIdFromUrl(),
-    firstName: sanitizeName(
-      getInputValueById(
-      "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientFirstName"
-      )
-    ),
-    lastName: sanitizeName(
-      getInputValueById(
-      "ctl00_MainContent_Tabs_tpClient_ClientTabs_tpClientInfo_txtClientLastName"
-      )
-    ),
+    firstName: sanitizeName(getClientFirstName()),
+    lastName: sanitizeName(getClientLastName()),
     aac: getAacSelectedText()
   };
 }
