@@ -83,6 +83,12 @@ const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
+const CRM_ORIGINS = [
+  "https://portal.talktometechnologies.com",
+  "https://crm.talktometechnologies.com"
+];
+const CRM_TAB_URL_PATTERNS = CRM_ORIGINS.map(origin => `${origin}/*`);
+const CRM_PRIMARY_ORIGIN = CRM_ORIGINS[0];
 let qaFormTabId = null;
 let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
@@ -5268,8 +5274,8 @@ async function getActiveCrmTab() {
 }
 
 function isCrmUrl(url) {
-  return typeof url === "string" &&
-    url.startsWith("https://portal.talktometechnologies.com/");
+  if (typeof url !== "string") return false;
+  return CRM_ORIGINS.some(origin => url === origin || url.startsWith(`${origin}/`));
 }
 
 async function getActiveCrmTabId() {
@@ -5277,7 +5283,7 @@ async function getActiveCrmTabId() {
   if (tab?.id && isCrmUrl(tab.url)) return tab.id;
 
   const tabs = await chrome.tabs.query({
-    url: "https://portal.talktometechnologies.com/*"
+    url: CRM_TAB_URL_PATTERNS
   });
   return tabs?.[0]?.id || null;
 }
@@ -6295,7 +6301,7 @@ async function runDeviceLookupSearch(rawInput) {
   const hasMounts = mountResult.clamp.length || mountResult.table.length || mountResult.rolling.length;
   const foundInLtl = serialResult.sheetsFound.includes("LTL Update List");
   const foundInRwl = serialResult.sheetsFound.includes("Return Watchlist");
-  const crmFullUrl = crmId ? `https://crm.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
+  const crmFullUrl = crmId ? `${CRM_PRIMARY_ORIGIN}/Admin/EditClient.aspx?ID=${encodeURIComponent(crmId)}` : "";
 
   updateLookupBeginLtlUpdateButton(foundInLtl);
 
@@ -6932,7 +6938,7 @@ function buildDafRecapEntries(data) {
     .filter(entry => Boolean(entry.value));
 }
 
-const CRM_LINK_BASE = "https://portal.talktometechnologies.com/admin/EditClient.aspx?ID=";
+const CRM_LINK_BASE = `${CRM_PRIMARY_ORIGIN}/admin/EditClient.aspx?ID=`;
 
 function buildCrmLink(data) {
   const crmId = `${data?.crmId ?? ""}`.trim();
@@ -7159,7 +7165,7 @@ function isDafFormUrl(url) {
 
 async function closeManageInventoryTabs(excludeTabId = null) {
   const tabs = await chrome.tabs.query({
-    url: "*://portal.talktometechnologies.com/*ManageInventory.aspx*"
+    url: CRM_ORIGINS.map(origin => `${origin}/*ManageInventory.aspx*`)
   });
   const tabIds = tabs
     .map(tab => tab.id)
@@ -7644,7 +7650,7 @@ document.getElementById("startAnotherBtn")?.addEventListener("click", async () =
     smartboxRepairTabId = tab?.id ?? null;
     return;
   }
-  chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
+  chrome.tabs.create({ url: `${CRM_PRIMARY_ORIGIN}/admin/ManageInventory.aspx` });
 });
 
 document.getElementById("openSmartboxRepairBtn")?.addEventListener("click", async () => {
@@ -7662,7 +7668,7 @@ document.getElementById("smartboxContinueBtn")?.addEventListener("click", async 
     }
     smartboxRepairTabId = null;
   }
-  chrome.tabs.create({ url: "https://portal.talktometechnologies.com/admin/ManageInventory.aspx" });
+  chrome.tabs.create({ url: `${CRM_PRIMARY_ORIGIN}/admin/ManageInventory.aspx` });
 });
 
 /* ---------------- Refresh ---------------- */
@@ -8390,7 +8396,7 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
       return;
     }
     chrome.tabs.create({
-      url: `https://portal.talktometechnologies.com/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
+      url: `${CRM_PRIMARY_ORIGIN}/Admin/EditClient.aspx?ID=${encodeURIComponent(deviceLookupLastCrmId)}`
     });
     setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     showFormView();

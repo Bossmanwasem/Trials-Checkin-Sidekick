@@ -6,6 +6,7 @@
   "permissions": ["sidePanel", "activeTab", "tabs", "scripting", "downloads", "storage", "hid"],
   "host_permissions": [
     "https://portal.talktometechnologies.com/*",
+    "https://crm.talktometechnologies.com/*",
     "https://talktometechnologies2com.sharepoint.com/*",
     "https://smartboxassistivetnam.sharepoint.com/*",
     "https://forms.office.com/*"
@@ -35,6 +36,7 @@
     {
       "matches": [
         "https://portal.talktometechnologies.com/*",
+        "https://crm.talktometechnologies.com/*",
         "https://talktometechnologies2com.sharepoint.com/*",
         "https://smartboxassistivetnam.sharepoint.com/*",
         "https://forms.office.com/*"
@@ -48,6 +50,7 @@
       "resources": ["crm-css-themes/custom-crm-theme.css", "themes.css"],
       "matches": [
         "https://portal.talktometechnologies.com/*",
+        "https://crm.talktometechnologies.com/*",
         "https://talktometechnologies2com.sharepoint.com/*",
         "https://smartboxassistivetnam.sharepoint.com/*",
         "https://forms.office.com/*"
