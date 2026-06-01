@@ -87,7 +87,7 @@ const DAF_CONSULTANT_LISTBOX_XPATHS = [
   '//*[@id="CommonEditorCalloutId"]/div/div',
   '//*[@id="CommonEditorCalloutId"]'
 ];
-const DAF_AAC_FIELD_XPATH = "/html/body/div/div/div/form/div/div/div/div[6]/div/span/div/div/div/input";
+const DAF_AAC_FIELD_XPATH = "/html/body/div[1]/div/div/form/div/div/div/div[5]/div/span/div/div/div/input";
 
 function sanitizeName(name) {
   return (name || "").replace(UNSAFE_NAME_REGEX, "").trim();
@@ -962,7 +962,7 @@ async function fillDafFormFromStorage() {
     },
     {
       value: fullName,
-      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[5]/div/span/div/div/div/input',
+      xpath: '/html/body/div[1]/div/div/form/div/div/div/div[6]/div/span/div/div/div/input',
       labels: ["client name", "full name", "name of client"]
     },
     {
