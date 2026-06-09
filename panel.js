@@ -62,7 +62,7 @@ const DEVICE_LOOKUP_SHEET_LINKS = {
   "LTL Update List": DEVICE_LOOKUP_EXCEL_WEB_URL,
   "Return Watchlist": DEVICE_LOOKUP_EXCEL_WEB_URL
 };
-const MOUNT_LOG_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
+const MOUNT_LOG_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TrialsSharePoint.us/_layouts/15/Doc.aspx?sourcedoc=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D&file=MountLog.xlsx&action=default&mobileredirect=true";
 const LOAN_LIBRARY_CRM_CHECK_EXCEL_WEB_URL = "https://smartboxassistivetnam.sharepoint.com/:x:/r/sites/TTM-TrialsSharePointDonotemail/_layouts/15/Doc.aspx?sourcedoc=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D&file=Loan%20Library%20CRM%20Check%20V3.xlsm&action=default&mobileredirect=true";
 const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
   ltl: DEVICE_LOOKUP_EXCEL_WEB_URL,
@@ -71,7 +71,7 @@ const DEVICE_LOOKUP_WORKBOOK_WEB_URLS = {
 };
 const DEVICE_LOOKUP_WORKBOOK_DOWNLOAD_URLS = {
   ltl: "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B26B9A3EE-E208-45EA-802D-1537F50DB403%7D",
-  mount: "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D",
+  mount: "https://smartboxassistivetnam.sharepoint.com/sites/TrialsSharePoint.us/_layouts/15/download.aspx?UniqueId=%7BA4CCC729-C4AC-4A69-83C1-2F0EB73A39B5%7D",
   crm: "https://smartboxassistivetnam.sharepoint.com/sites/TTM-TrialsSharePointDonotemail/_layouts/15/download.aspx?UniqueId=%7B1C8B4B2D-D0A2-4D7F-98BB-48E88633474B%7D"
 };
 const DEVICE_LOOKUP_WORKBOOK_DISPLAY_NAMES = {
@@ -6077,29 +6077,29 @@ function findCrmIdFromSerial(serialNumber, workbook) {
 function searchMountInventory(serialNumber, workbook, crmId) {
   try {
     const serialNorm = normalizeLookupValue(serialNumber);
-    const mountMap = {
-      "CM inv.": "Clamp Mount",
-      "TM inv.": "Table Mount",
-      "RM inv.": "Rolling Mount"
-    };
+    const mountSheets = [
+      { sheetName: "CLAMP MOUNT", mountType: "Clamp Mount", target: "clamp" },
+      { sheetName: "TABLE MOUNT", mountType: "Table Mount", target: "table" },
+      { sheetName: "ROLLING MOUNT", mountType: "Rolling Mount", target: "rolling" }
+    ];
     const clamp = [];
     const table = [];
     const rolling = [];
     let mismatched = false;
 
-    Object.entries(mountMap).forEach(([sheetName, mountType]) => {
+    mountSheets.forEach(({ sheetName, mountType, target }) => {
       const rows = getSheetRows(workbook, sheetName);
       rows.slice(1).forEach(row => {
         if (!row) return;
         if (normalizeLookupValue(row[1]) === serialNorm) {
           const mountSn = String(row[0] || "").trim();
           const mountCrm = String(row[4] || "").trim();
-          const match = mountCrm === crmId;
+          const match = !mountCrm || !crmId || mountCrm === crmId;
           if (!match) mismatched = true;
           const mountInfo = { serial: mountSn, type: mountType, match };
-          if (mountType === "Clamp Mount") clamp.push(mountInfo);
-          if (mountType === "Table Mount") table.push(mountInfo);
-          if (mountType === "Rolling Mount") rolling.push(mountInfo);
+          if (target === "clamp") clamp.push(mountInfo);
+          if (target === "table") table.push(mountInfo);
+          if (target === "rolling") rolling.push(mountInfo);
         }
       });
     });
