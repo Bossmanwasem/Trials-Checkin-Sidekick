@@ -6077,29 +6077,29 @@ function findCrmIdFromSerial(serialNumber, workbook) {
 function searchMountInventory(serialNumber, workbook, crmId) {
   try {
     const serialNorm = normalizeLookupValue(serialNumber);
-    const mountMap = {
-      "CM inv.": "Clamp Mount",
-      "TM inv.": "Table Mount",
-      "RM inv.": "Rolling Mount"
-    };
+    const mountSheets = [
+      { sheetName: "CLAMP MOUNT", mountType: "Clamp Mount", target: "clamp" },
+      { sheetName: "TABLE MOUNT", mountType: "Table Mount", target: "table" },
+      { sheetName: "ROLLING MOUNT", mountType: "Rolling Mount", target: "rolling" }
+    ];
     const clamp = [];
     const table = [];
     const rolling = [];
     let mismatched = false;
 
-    Object.entries(mountMap).forEach(([sheetName, mountType]) => {
+    mountSheets.forEach(({ sheetName, mountType, target }) => {
       const rows = getSheetRows(workbook, sheetName);
       rows.slice(1).forEach(row => {
         if (!row) return;
         if (normalizeLookupValue(row[1]) === serialNorm) {
           const mountSn = String(row[0] || "").trim();
           const mountCrm = String(row[4] || "").trim();
-          const match = mountCrm === crmId;
+          const match = !mountCrm || !crmId || mountCrm === crmId;
           if (!match) mismatched = true;
           const mountInfo = { serial: mountSn, type: mountType, match };
-          if (mountType === "Clamp Mount") clamp.push(mountInfo);
-          if (mountType === "Table Mount") table.push(mountInfo);
-          if (mountType === "Rolling Mount") rolling.push(mountInfo);
+          if (target === "clamp") clamp.push(mountInfo);
+          if (target === "table") table.push(mountInfo);
+          if (target === "rolling") rolling.push(mountInfo);
         }
       });
     });
