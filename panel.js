@@ -5585,6 +5585,7 @@ let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
 let deviceLookupLastLtlRow = null;
+const MOUNT_NOT_FOUND_NOTE_TITLE = "Mount not found with device return:";
 let deviceLookupLastAutofill = {
   cameraSerials: [],
   evoSerials: [],
@@ -5592,6 +5593,11 @@ let deviceLookupLastAutofill = {
   clampMounts: [],
   tableMounts: [],
   rollingMounts: []
+};
+let deviceLookupMountReturnReview = {
+  hasFoundMounts: false,
+  selectedCount: 0,
+  notReturnedMounts: []
 };
 const lookupCopyButtons = [
   { id: "copyDeviceSnBtn", label: "Copy device SN" },
@@ -6316,6 +6322,110 @@ function resetLookupCopyButtons() {
   lookupCopyButtons.forEach(({ id, label }) => updateCopyButton(id, "", label));
 }
 
+function resetMountReturnReview() {
+  deviceLookupMountReturnReview = {
+    hasFoundMounts: false,
+    selectedCount: 0,
+    notReturnedMounts: []
+  };
+}
+
+function getAllMountReturnItems(mountResult) {
+  return [
+    ...mountResult.clamp.map(item => ({ ...item, target: "clampMounts" })),
+    ...mountResult.table.map(item => ({ ...item, target: "tableMounts" })),
+    ...mountResult.rolling.map(item => ({ ...item, target: "rollingMounts" }))
+  ];
+}
+
+function closeMountReturnModal() {
+  const modal = document.getElementById("mountReturnModal");
+  if (!modal) return;
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function showMountReturnModal(mountItems) {
+  const modal = document.getElementById("mountReturnModal");
+  const checklist = document.getElementById("mountReturnChecklist");
+  if (!modal || !checklist || !mountItems.length) return;
+
+  checklist.innerHTML = "";
+  mountItems.forEach((item, index) => {
+    const checkboxId = `mountReturnItem${index}`;
+    const label = document.createElement("label");
+    label.className = "mount-return-modal__item";
+    label.setAttribute("for", checkboxId);
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = checkboxId;
+    checkbox.dataset.mountTarget = item.target;
+    checkbox.dataset.mountSerial = item.serial;
+    checkbox.dataset.mountType = item.type;
+
+    const textWrap = document.createElement("span");
+    textWrap.className = "mount-return-modal__item-text";
+
+    const type = document.createElement("span");
+    type.className = "mount-return-modal__item-type";
+    type.textContent = item.type;
+
+    const serial = document.createElement("span");
+    serial.className = "mount-return-modal__item-serial";
+    serial.textContent = item.serial;
+
+    textWrap.append(type, serial);
+    label.append(checkbox, textWrap);
+    checklist.append(label);
+  });
+
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function confirmMountReturnSelection() {
+  const selected = {
+    clampMounts: [],
+    tableMounts: [],
+    rollingMounts: []
+  };
+  const notReturnedMounts = [];
+
+  document.querySelectorAll('#mountReturnChecklist input[type="checkbox"]').forEach(input => {
+    const target = input.dataset.mountTarget;
+    const serial = input.dataset.mountSerial;
+    const mountType = input.dataset.mountType || "Mount";
+    if (!target || !serial) return;
+    if (input.checked && selected[target]) {
+      selected[target].push(serial);
+      return;
+    }
+    notReturnedMounts.push({ type: mountType, serial });
+  });
+
+  deviceLookupLastAutofill = {
+    ...deviceLookupLastAutofill,
+    ...selected
+  };
+  deviceLookupMountReturnReview = {
+    hasFoundMounts: true,
+    selectedCount: selected.clampMounts.length + selected.tableMounts.length + selected.rollingMounts.length,
+    notReturnedMounts
+  };
+
+  applyLookupAutofillToCheckin();
+  closeMountReturnModal();
+}
+
+function buildMountNotFoundNote() {
+  if (!deviceLookupMountReturnReview.hasFoundMounts || !deviceLookupMountReturnReview.notReturnedMounts.length) return "";
+  return [
+    MOUNT_NOT_FOUND_NOTE_TITLE,
+    ...deviceLookupMountReturnReview.notReturnedMounts.map(item => `${item.type} (${item.serial})`)
+  ].join("\n");
+}
+
 function applyLookupAutofillToCheckin() {
   const cameraInput = document.querySelector('input[name="cameraNumber"]');
   const luminInput = document.querySelector('input[name="luminNumber"]');
@@ -6364,6 +6474,8 @@ async function runDeviceLookupSearch(rawInput) {
     tableMounts: [],
     rollingMounts: []
   };
+  resetMountReturnReview();
+  closeMountReturnModal();
 
   if (!extracted) {
     updateLookupResultCard("lookupSerialCard", "lookupSerialResult", "Invalid serial number detected. Please enter it manually and try again.", "red");
@@ -6504,14 +6616,23 @@ async function runDeviceLookupSearch(rawInput) {
   updateCopyButton("copyClampBtn", mountResult.clamp.map(item => item.serial).join(", "), "Copy clamp mount");
   updateCopyButton("copyTableBtn", mountResult.table.map(item => item.serial).join(", "), "Copy table mount");
   updateCopyButton("copyRollingBtn", mountResult.rolling.map(item => item.serial).join(", "), "Copy rolling mount");
+  const mountReturnItems = getAllMountReturnItems(mountResult);
   deviceLookupLastAutofill = {
     cameraSerials,
     evoSerials,
     luminSerials,
-    clampMounts: mountResult.clamp.map(item => item.serial),
-    tableMounts: mountResult.table.map(item => item.serial),
-    rollingMounts: mountResult.rolling.map(item => item.serial)
+    clampMounts: [],
+    tableMounts: [],
+    rollingMounts: []
   };
+  deviceLookupMountReturnReview = {
+    hasFoundMounts: mountReturnItems.length > 0,
+    selectedCount: 0,
+    notReturnedMounts: []
+  };
+  if (mountReturnItems.length) {
+    showMountReturnModal(mountReturnItems);
+  }
 
 }
 
@@ -6839,12 +6960,16 @@ function buildMountsBlockIfAny() {
   const clamp = getFormValue('input[name="clampMount"]');
   const rolling = getFormValue('input[name="rollingMount"]');
   const table = getFormValue('input[name="tableMount"]');
-  if (!(clamp || rolling || table)) return "";
+  const mountNotFoundNote = buildMountNotFoundNote();
+  if (!(clamp || rolling || table)) {
+    return mountNotFoundNote ? `\n\n${mountNotFoundNote}` : "";
+  }
 
   const lines = ["", "", "Mount(s) Returned with the device:"];
   if (clamp) lines.push(`Clamp Mount (${clamp})`);
   if (rolling) lines.push(`Rolling Mount (${rolling})`);
   if (table) lines.push(`Table Mount (${table})`);
+  if (mountNotFoundNote) lines.push("", mountNotFoundNote);
   return lines.join("\n");
 }
 
@@ -8061,6 +8186,8 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 
   document.getElementById("startCheckinBtn")?.addEventListener("click", async () => {
     clearLookupLtlRow();
+    resetMountReturnReview();
+    closeMountReturnModal();
     setActiveCheckinFlow(CHECKIN_FLOW.CHECKIN);
     updateDeviceRules();
     showFormView();
@@ -8071,6 +8198,8 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 
   document.getElementById("startLtlUpdateBtn")?.addEventListener("click", async () => {
     clearLookupLtlRow();
+    resetMountReturnReview();
+    closeMountReturnModal();
     setActiveCheckinFlow(CHECKIN_FLOW.LTL_UPDATE);
     updateDeviceRules();
     showFormView();
@@ -8464,6 +8593,8 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     }
     await runDeviceLookupSearch(raw);
   });
+
+  document.getElementById("mountReturnConfirmBtn")?.addEventListener("click", confirmMountReturnSelection);
 
   document.querySelectorAll("[data-workbook-connect]").forEach(button => {
     button.addEventListener("click", () => {

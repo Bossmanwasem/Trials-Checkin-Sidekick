@@ -2192,3 +2192,123 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   content: none;
 }
 
+
+.mount-return-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(6px);
+}
+
+.mount-return-modal.is-open {
+  display: flex;
+}
+
+.mount-return-modal__dialog {
+  width: min(92vw, 560px);
+  max-height: min(86vh, 680px);
+  overflow: auto;
+  color: var(--text-color);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 34%),
+    var(--container-bg);
+  border: 1px solid var(--container-border);
+  border-radius: 22px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+  padding: 22px;
+}
+
+.mount-return-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.mount-return-modal__header h2 {
+  margin: 0;
+  color: var(--title-color);
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.mount-return-modal__eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mount-return-modal__message {
+  margin: 0 0 16px;
+  color: var(--text-color);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.mount-return-modal__list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.mount-return-modal__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--note-border);
+  border-radius: 14px;
+  background: var(--note-bg);
+  cursor: pointer;
+}
+
+.mount-return-modal__item input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.mount-return-modal__item-text {
+  display: grid;
+  gap: 2px;
+}
+
+.mount-return-modal__item-type {
+  color: var(--muted-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mount-return-modal__item-serial {
+  color: var(--text-color);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mount-return-modal__hint {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.mount-return-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
