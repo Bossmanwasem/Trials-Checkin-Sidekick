@@ -2312,3 +2312,142 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   margin-top: 20px;
 }
 
+
+.settings-passcode-option {
+  display: grid;
+  gap: 8px;
+}
+
+.pre-prep-view .complete-intro {
+  margin-bottom: 8px;
+}
+
+.pre-prep-view .lookup-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 8px;
+  align-items: end;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--note-border);
+  border-radius: 10px;
+  background: var(--note-bg);
+}
+
+.pre-prep-view .lookup-form label,
+.pre-prep-view .lookup-form .lookup-meta,
+.pre-prep-view .lookup-form .status-line {
+  grid-column: 1 / -1;
+}
+
+.pre-prep-view .lookup-form label {
+  margin: 0;
+  font-size: clamp(0.78rem, 2.4vw, 0.95rem);
+}
+
+.pre-prep-view .lookup-form input {
+  min-width: 0;
+  padding: clamp(6px, 1.8vw, 8px);
+  font-size: clamp(0.78rem, 2.4vw, 0.95rem);
+}
+
+.pre-prep-view .lookup-form button {
+  white-space: nowrap;
+  padding: clamp(6px, 1.8vw, 8px) clamp(8px, 2.4vw, 12px);
+  font-size: clamp(0.72rem, 2.2vw, 0.9rem);
+}
+
+.pre-prep-view .lookup-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin: 2px 0 0;
+}
+
+.pre-prep-view .lookup-meta__label {
+  font-size: clamp(0.58rem, 1.9vw, 0.75rem);
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.pre-prep-view .lookup-meta__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  font-size: clamp(0.7rem, 2.2vw, 0.9rem);
+  color: var(--text-color);
+  background: var(--container-bg);
+  border: 1px solid var(--note-border);
+  border-radius: 6px;
+  padding: clamp(4px, 1.5vw, 6px) clamp(6px, 1.8vw, 8px);
+}
+
+.pre-prep-actions {
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pre-prep-actions .toggle-btn {
+  padding: clamp(6px, 1.8vw, 8px) clamp(8px, 2.4vw, 12px);
+  font-size: clamp(0.72rem, 2.2vw, 0.9rem);
+}
+
+.pre-prep-list-card {
+  margin-top: 12px;
+}
+
+.pre-prep-table {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.pre-prep-table__header,
+.pre-prep-table__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(4px, 1.8vw, 10px);
+  align-items: center;
+}
+
+.pre-prep-table__header {
+  font-size: clamp(0.62rem, 2vw, 0.85rem);
+  font-weight: 700;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.pre-prep-table__body {
+  display: grid;
+  gap: 8px;
+}
+
+.pre-prep-copy-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(4px, 1.6vw, 8px);
+  min-width: 0;
+}
+
+.pre-prep-copy-cell .copy-field {
+  min-width: 0;
+  width: 100%;
+  padding: clamp(5px, 1.8vw, 8px);
+  font-size: clamp(0.68rem, 2.4vw, 0.95rem);
+}
+
+.pre-prep-copy-cell .copy-btn {
+  min-width: 0;
+  white-space: nowrap;
+  padding: clamp(5px, 1.8vw, 8px) clamp(6px, 2vw, 12px);
+  font-size: clamp(0.62rem, 2.1vw, 0.85rem);
+}
+
+.pre-prep-copy-cell .copy-field[readonly] {
+  opacity: 0.82;
+}

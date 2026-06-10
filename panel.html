@@ -280,6 +280,9 @@
       <button id="qaFormBtn" class="toggle-btn landing-btn" data-layout-item="qaForm" type="button" data-tooltip="Opens the QA form.">
         QA Form
       </button>
+      <button id="prePrepSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Build a pre-prep scan list with corrected device serials and internal serial fields." style="display:none;">
+        Pre-prep Sidekick
+      </button>
       <div class="landing-section" data-layout-item="trialsLinks">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false" data-tooltip="Folder of useful links like CRM Navigator, APP override codes, and KG request form.">
           Trials Links
@@ -322,6 +325,15 @@
           <input type="checkbox" id="settingsCrmCustomCssToggle" />
           Enable matching CRM page theme
         </label>
+        <div class="settings-passcode-option">
+          <label class="checkbox-row" for="settingsPrePrepToggle">
+            <input type="checkbox" id="settingsPrePrepToggle" />
+            Enable Pre-prep Sidekick
+          </label>
+          <label for="settingsPrePrepPasscode">Pre-prep passcode</label>
+          <input type="password" id="settingsPrePrepPasscode" placeholder="Enter passcode" autocomplete="off" />
+          <div class="status-line" id="settingsPrePrepStatus"></div>
+        </div>
         <button id="editUserProfileBtn" class="toggle-btn settings-card__action" type="button">
           Edit user profile
         </button>
@@ -581,6 +593,51 @@
       </div>
       <p class="hint-text" id="symojiPickerHint">Pick a Symoji from the built-in set.</p>
       <div class="symoji-grid" id="symojiPickerGrid"></div>
+    </div>
+  </div>
+
+
+  <!-- PRE-PREP SIDEKICK VIEW -->
+  <div class="container pre-prep-view" id="prePrepView" style="display:none;">
+    <h1>Pre-prep Sidekick</h1>
+    <p class="complete-intro">Scan device serial numbers into a prep list, then paste matching internal serial numbers beside them.</p>
+
+    <form id="prePrepScanForm" class="lookup-form">
+      <label for="prePrepScanInput">Device serial number</label>
+      <input type="text" id="prePrepScanInput" placeholder="Scan or type the device serial number" required />
+      <button type="submit" id="prePrepAddBtn">Add device</button>
+      <div class="lookup-meta">
+        <div>
+          <div class="lookup-meta__label">Last raw scan</div>
+          <div id="prePrepRawScan" class="lookup-meta__value">—</div>
+        </div>
+        <div>
+          <div class="lookup-meta__label">Corrected serial</div>
+          <div id="prePrepCorrectedScan" class="lookup-meta__value">—</div>
+        </div>
+      </div>
+      <div id="prePrepStatus" class="status-line"></div>
+    </form>
+
+    <div class="mini-row pre-prep-actions">
+      <button id="prePrepLockBtn" class="toggle-btn" type="button">Lock edits: Off</button>
+      <button id="prePrepClearBtn" class="toggle-btn" type="button">Clear list</button>
+    </div>
+
+    <div class="note-preview pre-prep-list-card">
+      <div class="note-preview__title">Scanned device list</div>
+      <div class="pre-prep-table" role="table" aria-label="Pre-prep device and internal serial list">
+        <div class="pre-prep-table__header" role="row">
+          <div role="columnheader">Scanned device numbers</div>
+          <div role="columnheader">Internal serial numbers</div>
+        </div>
+        <div id="prePrepRows" class="pre-prep-table__body"></div>
+      </div>
+      <p id="prePrepEmptyState" class="hint-text">No devices added yet.</p>
+    </div>
+
+    <div class="crm-nav-footer">
+      <button id="prePrepReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
     </div>
   </div>
 
