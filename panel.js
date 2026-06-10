@@ -83,6 +83,8 @@ const DEVICE_LOOKUP_WORKBOOKS_STORAGE_KEY = "ttmtDeviceLookupWorkbooks";
 const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
+const PRE_PREP_SIDEKICK_ENABLED_STORAGE_KEY = "ttmtPrePrepSidekickEnabled";
+const PRE_PREP_SIDEKICK_PASSCODE = "@ppl3";
 const CRM_ORIGINS = [
   "https://portal.talktometechnologies.com",
   "https://crm.talktometechnologies.com"
@@ -94,7 +96,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -475,6 +477,7 @@ function showThemeBuilderView() {
   showView("themeBuilderView");
   refreshThemeBuilderFromActiveTheme();
 }
+function showPrePrepView() { showView("prePrepView"); }
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
@@ -4427,6 +4430,7 @@ initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
 initCrmCustomCssThemeSetting();
+initPrePrepSidekickSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -5065,6 +5069,83 @@ async function initCrmCustomCssThemeSetting() {
   });
 }
 
+async function getPrePrepSidekickEnabled() {
+  const stored = await getStoredValue(PRE_PREP_SIDEKICK_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setPrePrepSidekickEnabled(enabled) {
+  await setStoredValue(PRE_PREP_SIDEKICK_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+function applyPrePrepSidekickEnabled(enabled) {
+  const button = document.getElementById("prePrepSidekickBtn");
+  if (button) {
+    button.style.display = enabled ? "inline-flex" : "none";
+  }
+}
+
+function updatePrePrepSettingsState(enabled, message = "") {
+  const toggle = document.getElementById("settingsPrePrepToggle");
+  const passcode = document.getElementById("settingsPrePrepPasscode");
+  const status = document.getElementById("settingsPrePrepStatus");
+  if (toggle) toggle.checked = Boolean(enabled);
+  if (passcode) {
+    passcode.value = "";
+    passcode.disabled = Boolean(enabled);
+    passcode.placeholder = enabled ? "Enabled" : "Enter passcode";
+  }
+  if (status) {
+    status.textContent = message || (enabled ? "Pre-prep Sidekick is enabled." : "Enter the passcode to enable Pre-prep Sidekick.");
+  }
+}
+
+async function refreshPrePrepSidekickEnabled() {
+  const enabled = await getPrePrepSidekickEnabled();
+  applyPrePrepSidekickEnabled(enabled);
+  updatePrePrepSettingsState(enabled);
+}
+
+async function initPrePrepSidekickSetting() {
+  const toggle = document.getElementById("settingsPrePrepToggle");
+  const passcode = document.getElementById("settingsPrePrepPasscode");
+  if (!toggle) return;
+
+  const enabled = await getPrePrepSidekickEnabled();
+  applyPrePrepSidekickEnabled(enabled);
+  updatePrePrepSettingsState(enabled);
+
+  toggle.addEventListener("change", async () => {
+    if (!toggle.checked) {
+      await setPrePrepSidekickEnabled(false);
+      applyPrePrepSidekickEnabled(false);
+      updatePrePrepSettingsState(false, "Pre-prep Sidekick is disabled.");
+      return;
+    }
+
+    if ((passcode?.value || "") !== PRE_PREP_SIDEKICK_PASSCODE) {
+      await setPrePrepSidekickEnabled(false);
+      applyPrePrepSidekickEnabled(false);
+      updatePrePrepSettingsState(false, "Incorrect passcode. Pre-prep Sidekick was not enabled.");
+      passcode?.focus();
+      return;
+    }
+
+    await setPrePrepSidekickEnabled(true);
+    applyPrePrepSidekickEnabled(true);
+    updatePrePrepSettingsState(true, "Pre-prep Sidekick is enabled and will stay enabled on this browser.");
+  });
+
+  passcode?.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event("change"));
+    }
+  });
+}
+
 async function getDailyCounterCollapsed() {
   const stored = await getStoredValue(DAILY_COUNTER_COLLAPSED_STORAGE_KEY);
   return Boolean(stored);
@@ -5264,6 +5345,7 @@ async function refreshLandingView() {
   await updateDailyCounterCollapseState();
   await updateWeeklyCounterCollapseState();
   await updateLandingTooltipsEnabled();
+  await refreshPrePrepSidekickEnabled();
 }
 
 /* ---------------- Tab + CRM data fetch ---------------- */
@@ -5925,6 +6007,108 @@ function extractValidSerial(scanInput) {
   }
 
   return null;
+}
+
+let prePrepRows = [];
+let prePrepEditsLocked = false;
+
+function makePrePrepRowId() {
+  return `pre-prep-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function updatePrePrepLockState() {
+  const lockButton = document.getElementById("prePrepLockBtn");
+  if (lockButton) {
+    lockButton.textContent = `Lock edits: ${prePrepEditsLocked ? "On" : "Off"}`;
+    lockButton.setAttribute("aria-pressed", prePrepEditsLocked ? "true" : "false");
+  }
+  document.querySelectorAll("#prePrepRows input").forEach(input => {
+    input.readOnly = prePrepEditsLocked;
+  });
+}
+
+function updatePrePrepEmptyState() {
+  const emptyState = document.getElementById("prePrepEmptyState");
+  if (emptyState) {
+    emptyState.style.display = prePrepRows.length ? "none" : "block";
+  }
+}
+
+function buildPrePrepCopyCell(row, field, label) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "pre-prep-copy-cell";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "copy-field";
+  input.value = row[field] || "";
+  input.readOnly = prePrepEditsLocked;
+  input.setAttribute("aria-label", label);
+  input.addEventListener("input", () => {
+    row[field] = input.value;
+  });
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "copy-btn";
+  copyButton.textContent = "Copy";
+  copyButton.addEventListener("click", async () => {
+    const value = input.value.trim();
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    const original = copyButton.textContent;
+    copyButton.textContent = "Copied!";
+    setTimeout(() => { copyButton.textContent = original; }, 1200);
+  });
+
+  wrapper.append(input, copyButton);
+  return wrapper;
+}
+
+function renderPrePrepRows() {
+  const rowsEl = document.getElementById("prePrepRows");
+  if (!rowsEl) return;
+  rowsEl.innerHTML = "";
+  prePrepRows.forEach(row => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "pre-prep-table__row";
+    rowEl.dataset.rowId = row.id;
+    rowEl.append(
+      buildPrePrepCopyCell(row, "deviceSerial", "Scanned device number"),
+      buildPrePrepCopyCell(row, "internalSerial", "Internal serial number")
+    );
+    rowsEl.append(rowEl);
+  });
+  updatePrePrepLockState();
+  updatePrePrepEmptyState();
+}
+
+function addPrePrepScan(rawInput) {
+  const corrected = extractValidSerial(rawInput);
+  setText("prePrepRawScan", rawInput || "—");
+  setText("prePrepCorrectedScan", corrected ? `✅ ${corrected}` : "❌ Invalid serial scanned");
+
+  if (!corrected) {
+    setText("prePrepStatus", "Invalid serial number detected. Please enter it manually and try again.");
+    return false;
+  }
+
+  prePrepRows.push({
+    id: makePrePrepRowId(),
+    deviceSerial: corrected,
+    internalSerial: ""
+  });
+  renderPrePrepRows();
+  setText("prePrepStatus", `Added ${corrected}.`);
+  return true;
+}
+
+function clearPrePrepRows() {
+  prePrepRows = [];
+  renderPrePrepRows();
+  setText("prePrepRawScan", "—");
+  setText("prePrepCorrectedScan", "—");
+  setText("prePrepStatus", "Pre-prep list cleared.");
 }
 
 function getSheetRows(workbook, sheetName) {
@@ -8372,6 +8556,16 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     await refreshDeviceLookupWorkbooksFromHandles();
   });
 
+  document.getElementById("prePrepSidekickBtn")?.addEventListener("click", async () => {
+    if (!(await getPrePrepSidekickEnabled())) {
+      alert("Enable Pre-prep Sidekick in user settings first.");
+      await refreshPrePrepSidekickEnabled();
+      return;
+    }
+    showPrePrepView();
+    renderPrePrepRows();
+  });
+
   document.getElementById("qaFormBtn")?.addEventListener("click", async () => {
     const result = await runQaFlowAction("OPEN_QA_FORM");
     if (result?.status === "error") {
@@ -8490,6 +8684,10 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
     showLandingView();
   });
 
+  document.getElementById("prePrepReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
   document.getElementById("appOverridesReturnBtn")?.addEventListener("click", () => {
     showLandingView();
   });
@@ -8592,6 +8790,31 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
       return;
     }
     await runDeviceLookupSearch(raw);
+  });
+
+  document.getElementById("prePrepScanForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const input = document.getElementById("prePrepScanInput");
+    const raw = (input?.value || "").trim();
+    if (!raw) {
+      alert("Enter a device serial number to continue.");
+      return;
+    }
+    if (addPrePrepScan(raw) && input) {
+      input.value = "";
+      input.focus();
+    }
+  });
+
+  document.getElementById("prePrepLockBtn")?.addEventListener("click", () => {
+    prePrepEditsLocked = !prePrepEditsLocked;
+    updatePrePrepLockState();
+  });
+
+  document.getElementById("prePrepClearBtn")?.addEventListener("click", () => {
+    if (!prePrepRows.length || confirm("Clear the pre-prep list?")) {
+      clearPrePrepRows();
+    }
   });
 
   document.getElementById("mountReturnConfirmBtn")?.addEventListener("click", confirmMountReturnSelection);

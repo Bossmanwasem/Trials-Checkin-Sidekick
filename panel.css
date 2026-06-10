@@ -2312,3 +2312,96 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   margin-top: 20px;
 }
 
+
+.settings-passcode-option {
+  display: grid;
+  gap: 8px;
+}
+
+.pre-prep-view .lookup-form {
+  margin-top: 16px;
+}
+
+.pre-prep-view .lookup-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 12px 0 4px;
+}
+
+.pre-prep-view .lookup-meta__label {
+  font-size: 12px;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.pre-prep-view .lookup-meta__value {
+  font-weight: 600;
+  color: var(--text-color);
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.pre-prep-actions {
+  align-items: center;
+}
+
+.pre-prep-list-card {
+  margin-top: 16px;
+}
+
+.pre-prep-table {
+  display: grid;
+  gap: 8px;
+}
+
+.pre-prep-table__header,
+.pre-prep-table__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.pre-prep-table__header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pre-prep-table__body {
+  display: grid;
+  gap: 8px;
+}
+
+.pre-prep-copy-cell {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pre-prep-copy-cell .copy-field {
+  min-width: 0;
+}
+
+.pre-prep-copy-cell .copy-field[readonly] {
+  opacity: 0.82;
+}
+
+@media (max-width: 640px) {
+  .pre-prep-table__header {
+    display: none;
+  }
+
+  .pre-prep-table__row {
+    grid-template-columns: 1fr;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--note-border);
+  }
+}
