@@ -5585,7 +5585,7 @@ let deviceLookupLastSheetLink = DEVICE_LOOKUP_EXCEL_WEB_URL;
 let deviceLookupLastSerial = "";
 let deviceLookupLastCrmId = "";
 let deviceLookupLastLtlRow = null;
-const MOUNT_NOT_FOUND_NOTE = "Mount not Found with device return";
+const MOUNT_NOT_FOUND_NOTE_TITLE = "Mount not found with device return:";
 let deviceLookupLastAutofill = {
   cameraSerials: [],
   evoSerials: [],
@@ -5596,7 +5596,8 @@ let deviceLookupLastAutofill = {
 };
 let deviceLookupMountReturnReview = {
   hasFoundMounts: false,
-  selectedCount: 0
+  selectedCount: 0,
+  notReturnedMounts: []
 };
 const lookupCopyButtons = [
   { id: "copyDeviceSnBtn", label: "Copy device SN" },
@@ -6324,7 +6325,8 @@ function resetLookupCopyButtons() {
 function resetMountReturnReview() {
   deviceLookupMountReturnReview = {
     hasFoundMounts: false,
-    selectedCount: 0
+    selectedCount: 0,
+    notReturnedMounts: []
   };
 }
 
@@ -6360,6 +6362,7 @@ function showMountReturnModal(mountItems) {
     checkbox.id = checkboxId;
     checkbox.dataset.mountTarget = item.target;
     checkbox.dataset.mountSerial = item.serial;
+    checkbox.dataset.mountType = item.type;
 
     const textWrap = document.createElement("span");
     textWrap.className = "mount-return-modal__item-text";
@@ -6387,11 +6390,18 @@ function confirmMountReturnSelection() {
     tableMounts: [],
     rollingMounts: []
   };
+  const notReturnedMounts = [];
 
-  document.querySelectorAll('#mountReturnChecklist input[type="checkbox"]:checked').forEach(input => {
+  document.querySelectorAll('#mountReturnChecklist input[type="checkbox"]').forEach(input => {
     const target = input.dataset.mountTarget;
     const serial = input.dataset.mountSerial;
-    if (selected[target] && serial) selected[target].push(serial);
+    const mountType = input.dataset.mountType || "Mount";
+    if (!target || !serial) return;
+    if (input.checked && selected[target]) {
+      selected[target].push(serial);
+      return;
+    }
+    notReturnedMounts.push({ type: mountType, serial });
   });
 
   deviceLookupLastAutofill = {
@@ -6400,15 +6410,20 @@ function confirmMountReturnSelection() {
   };
   deviceLookupMountReturnReview = {
     hasFoundMounts: true,
-    selectedCount: selected.clampMounts.length + selected.tableMounts.length + selected.rollingMounts.length
+    selectedCount: selected.clampMounts.length + selected.tableMounts.length + selected.rollingMounts.length,
+    notReturnedMounts
   };
 
   applyLookupAutofillToCheckin();
   closeMountReturnModal();
 }
 
-function shouldAddMountNotFoundNote() {
-  return deviceLookupMountReturnReview.hasFoundMounts && deviceLookupMountReturnReview.selectedCount === 0;
+function buildMountNotFoundNote() {
+  if (!deviceLookupMountReturnReview.hasFoundMounts || !deviceLookupMountReturnReview.notReturnedMounts.length) return "";
+  return [
+    MOUNT_NOT_FOUND_NOTE_TITLE,
+    ...deviceLookupMountReturnReview.notReturnedMounts.map(item => `${item.type} (${item.serial})`)
+  ].join("\n");
 }
 
 function applyLookupAutofillToCheckin() {
@@ -6612,7 +6627,8 @@ async function runDeviceLookupSearch(rawInput) {
   };
   deviceLookupMountReturnReview = {
     hasFoundMounts: mountReturnItems.length > 0,
-    selectedCount: 0
+    selectedCount: 0,
+    notReturnedMounts: []
   };
   if (mountReturnItems.length) {
     showMountReturnModal(mountReturnItems);
@@ -6944,14 +6960,16 @@ function buildMountsBlockIfAny() {
   const clamp = getFormValue('input[name="clampMount"]');
   const rolling = getFormValue('input[name="rollingMount"]');
   const table = getFormValue('input[name="tableMount"]');
+  const mountNotFoundNote = buildMountNotFoundNote();
   if (!(clamp || rolling || table)) {
-    return shouldAddMountNotFoundNote() ? `\n\n${MOUNT_NOT_FOUND_NOTE}` : "";
+    return mountNotFoundNote ? `\n\n${mountNotFoundNote}` : "";
   }
 
   const lines = ["", "", "Mount(s) Returned with the device:"];
   if (clamp) lines.push(`Clamp Mount (${clamp})`);
   if (rolling) lines.push(`Rolling Mount (${rolling})`);
   if (table) lines.push(`Table Mount (${table})`);
+  if (mountNotFoundNote) lines.push("", mountNotFoundNote);
   return lines.join("\n");
 }
 
@@ -8577,8 +8595,6 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   });
 
   document.getElementById("mountReturnConfirmBtn")?.addEventListener("click", confirmMountReturnSelection);
-  document.getElementById("mountReturnCloseBtn")?.addEventListener("click", closeMountReturnModal);
-  document.getElementById("mountReturnCloseIconBtn")?.addEventListener("click", closeMountReturnModal);
 
   document.querySelectorAll("[data-workbook-connect]").forEach(button => {
     button.addEventListener("click", () => {

@@ -2247,19 +2247,6 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   text-transform: uppercase;
 }
 
-.mount-return-modal__x {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--note-border);
-  border-radius: 999px;
-  color: var(--text-color);
-  background: var(--note-bg);
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-}
-
 .mount-return-modal__message {
   margin: 0 0 16px;
   color: var(--text-color);
@@ -2325,8 +2312,3 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   margin-top: 20px;
 }
 
-.mount-return-modal__close-btn {
-  background: var(--note-bg);
-  color: var(--text-color);
-  border: 1px solid var(--note-border);
-}
