@@ -2451,3 +2451,59 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
 .pre-prep-copy-cell .copy-field[readonly] {
   opacity: 0.82;
 }
+
+.timecard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.timecard-actions .toggle-btn {
+  flex: 1 1 140px;
+}
+
+.timecard-week {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.timecard-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  background: var(--note-bg);
+}
+
+.timecard-row__day {
+  color: var(--header-color);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.timecard-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.timecard-row .copy-field {
+  width: 100%;
+}
+
+.timecard-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--container-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}

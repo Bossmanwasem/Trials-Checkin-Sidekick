@@ -20,6 +20,7 @@ const KG_REQUESTS_URL = "https://smartboxassistivetnam.sharepoint.com/sites/TTM-
 const OUTLOOK_COMPOSE_BASE_URL = "https://outlook.office.com/mail/deeplink/compose";
 const OUTLOOK_SETUP_URL = "https://outlook.office365.com/mail/";
 const GRID_LICENSE_REGISTRATION_URL = "https://grids.thinksmartbox.com/en/log-in";
+const ADP_SIGNIN_URL = "https://online.adp.com/signin/v1/?APPID=WFNPortal&productId=80e309c3-7085-bae1-e053-3505430b5495&returnURL=https://workforcenow.adp.com/&callingAppId=WFN&TARGET=-SM-https%3a%2f%2fworkforcenow%2eadp%2ecom%2ftheme%2findex%2ehtml%23/home";
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
 const THEME_STORAGE_KEY = "ttmtSidekickTheme";
 const CUSTOM_THEME_STORAGE_KEY = "ttmtSidekickCustomTheme";
@@ -40,6 +41,7 @@ const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
 const DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyCustomCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
+const TIMECARD_STORAGE_KEY = "ttmtTimecardSidekickWeek";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
 const WEEKLY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtWeeklyTaskCounterCollapsed";
@@ -96,7 +98,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "timecardView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -478,6 +480,10 @@ function showThemeBuilderView() {
   refreshThemeBuilderFromActiveTheme();
 }
 function showPrePrepView() { showView("prePrepView"); }
+function showTimecardView() {
+  showView("timecardView");
+  void renderTimecardWeek();
+}
 function showDeviceLookupView() { showView("deviceLookupView"); }
 function showGridView() {
   showView("gridView");
@@ -8323,6 +8329,97 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
   setTimeout(() => { btn.textContent = original; }, 1200);
 });
 
+const TIMECARD_WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+function createDefaultTimecardWeek() {
+  return TIMECARD_WEEKDAYS.reduce((week, day) => {
+    week[day] = { in: "", out: "", notes: "" };
+    return week;
+  }, {});
+}
+
+async function getTimecardWeek() {
+  const stored = await getStoredValue(TIMECARD_STORAGE_KEY);
+  return { ...createDefaultTimecardWeek(), ...(stored && typeof stored === "object" ? stored : {}) };
+}
+
+async function saveTimecardWeek(week) {
+  await setStoredValue(TIMECARD_STORAGE_KEY, week);
+}
+
+function getCurrentTimeValue() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function getCurrentTimecardDay() {
+  const day = new Date().getDay();
+  return TIMECARD_WEEKDAYS[day - 1] || "Monday";
+}
+
+function calculateTimecardHours(entry) {
+  if (!entry?.in || !entry?.out) return 0;
+  const [inHours, inMinutes] = entry.in.split(":").map(Number);
+  const [outHours, outMinutes] = entry.out.split(":").map(Number);
+  if ([inHours, inMinutes, outHours, outMinutes].some(Number.isNaN)) return 0;
+  let minutes = (outHours * 60 + outMinutes) - (inHours * 60 + inMinutes);
+  if (minutes < 0) minutes += 24 * 60;
+  return minutes / 60;
+}
+
+function escapeTimecardAttribute(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function formatTimecardCopy(day, entry) {
+  const hours = calculateTimecardHours(entry).toFixed(2);
+  const note = entry.notes ? ` - ${entry.notes}` : "";
+  return `${day}: ${entry.in || "--:--"} to ${entry.out || "--:--"} (${hours} hours)${note}`;
+}
+
+async function renderTimecardWeek() {
+  const rows = document.getElementById("timecardWeekRows");
+  if (!rows) return;
+  const week = await getTimecardWeek();
+  rows.innerHTML = "";
+  let total = 0;
+  TIMECARD_WEEKDAYS.forEach(day => {
+    const entry = { in: "", out: "", notes: "", ...(week[day] || {}) };
+    total += calculateTimecardHours(entry);
+    const row = document.createElement("div");
+    row.className = "timecard-row";
+    row.innerHTML = `
+      <div class="timecard-row__day">${day}</div>
+      <label>In <input type="time" data-timecard-day="${day}" data-timecard-field="in" value="${escapeTimecardAttribute(entry.in)}"></label>
+      <label>Out <input type="time" data-timecard-day="${day}" data-timecard-field="out" value="${escapeTimecardAttribute(entry.out)}"></label>
+      <label>Note <input type="text" data-timecard-day="${day}" data-timecard-field="notes" value="${escapeTimecardAttribute(entry.notes)}" placeholder="Optional note"></label>
+      <input class="copy-field" type="text" readonly value="${escapeTimecardAttribute(formatTimecardCopy(day, entry))}">
+      <button class="copy-btn" type="button" data-timecard-copy="${day}">Copy</button>
+    `;
+    rows.appendChild(row);
+  });
+  const totalEl = document.getElementById("timecardTotalHours");
+  if (totalEl) totalEl.textContent = total.toFixed(2);
+}
+
+async function updateTimecardEntry(day, field, value) {
+  const week = await getTimecardWeek();
+  week[day] = { in: "", out: "", notes: "", ...(week[day] || {}), [field]: value };
+  await saveTimecardWeek(week);
+  await renderTimecardWeek();
+}
+
+async function setCurrentTimecardPunch(field) {
+  const day = getCurrentTimecardDay();
+  await updateTimecardEntry(day, field, getCurrentTimeValue());
+  const status = document.getElementById("timecardStatus");
+  if (status) status.textContent = `${field === "in" ? "Clocked in" : "Clocked out"} for ${day}.`;
+}
+
 /* ---------------- Init ---------------- */
 
 (async function init() {
@@ -8650,6 +8747,51 @@ document.getElementById("emailView")?.addEventListener("click", async (e) => {
 
   document.getElementById("kgRequestsBtn")?.addEventListener("click", () => {
     chrome.tabs.create({ url: KG_REQUESTS_URL });
+  });
+
+  document.getElementById("timecardSidekickBtn")?.addEventListener("click", () => {
+    showTimecardView();
+  });
+
+  document.getElementById("timecardClockInBtn")?.addEventListener("click", () => {
+    void setCurrentTimecardPunch("in");
+  });
+
+  document.getElementById("timecardClockOutBtn")?.addEventListener("click", () => {
+    void setCurrentTimecardPunch("out");
+  });
+
+  document.getElementById("timecardOpenAdpBtn")?.addEventListener("click", () => {
+    chrome.tabs.create({ url: ADP_SIGNIN_URL });
+  });
+
+  document.getElementById("timecardClearWeekBtn")?.addEventListener("click", async () => {
+    if (!confirm("Clear this week's timecard hours?")) return;
+    await saveTimecardWeek(createDefaultTimecardWeek());
+    await renderTimecardWeek();
+  });
+
+  document.getElementById("timecardReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("timecardWeekRows")?.addEventListener("input", async event => {
+    const input = event.target;
+    const day = input?.dataset?.timecardDay;
+    const field = input?.dataset?.timecardField;
+    if (!day || !field) return;
+    await updateTimecardEntry(day, field, input.value || "");
+  });
+
+  document.getElementById("timecardWeekRows")?.addEventListener("click", async event => {
+    const btn = event.target?.closest?.("button[data-timecard-copy]");
+    if (!btn) return;
+    const week = await getTimecardWeek();
+    const day = btn.dataset.timecardCopy;
+    await navigator.clipboard.writeText(formatTimecardCopy(day, week[day] || {}));
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = original; }, 1200);
   });
 
   document.getElementById("landingCrmNavigatorForm")?.addEventListener("submit", (event) => {

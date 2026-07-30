@@ -295,6 +295,9 @@
           <button id="kgRequestsBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Opens the KG request form.">
             KG Requests
           </button>
+          <button id="timecardSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Track and copy Monday-Friday time entries.">
+            Timecard Sidekick
+          </button>
         </div>
       </div>
       <button id="themeMenuBtn" class="toggle-btn landing-settings-btn" data-layout-item="userSettings" type="button">
@@ -307,6 +310,31 @@
     <button class="landing-corner-symojo-btn" id="landingCornerSymojiBtn" type="button" aria-label="Change corner Symoji">
       <img class="landing-corner-symojo" id="landingCornerSymoji" src="assets/symoji.png" alt="Symoji mascot" />
     </button>
+  </div>
+
+  <!-- TIMECARD SIDEKICK VIEW -->
+  <div class="container timecard-view" id="timecardView" style="display:none;">
+    <h1>Timecard Sidekick</h1>
+    <p class="complete-intro">Clock in and out, edit this week's Monday-Friday entries, and copy each time entry for ADP.</p>
+
+    <div class="timecard-actions">
+      <button id="timecardClockInBtn" class="toggle-btn" type="button">Clock In</button>
+      <button id="timecardClockOutBtn" class="toggle-btn" type="button">Clock Out</button>
+      <button id="timecardOpenAdpBtn" class="toggle-btn" type="button">Open ADP</button>
+    </div>
+    <div id="timecardStatus" class="status-line" aria-live="polite"></div>
+
+    <div class="timecard-week" id="timecardWeekRows"></div>
+
+    <div class="timecard-summary">
+      <strong>Total Monday-Friday hours:</strong>
+      <span id="timecardTotalHours">0.00</span>
+    </div>
+
+    <div class="timecard-actions">
+      <button id="timecardClearWeekBtn" class="toggle-btn" type="button">Clear Week's Hours</button>
+      <button id="timecardReturnBtn" class="toggle-btn" type="button">Return to main menu</button>
+    </div>
   </div>
 
   <!-- SETTINGS VIEW -->
