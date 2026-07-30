@@ -8387,9 +8387,6 @@ function escapeTimecardAttribute(value) {
     .replace(/>/g, "&gt;");
 }
 
-function formatTimecardCopy(field, entry) {
-  return String(entry?.[field] || "").trim();
-}
 
 async function renderTimecardWeek() {
   const rows = document.getElementById("timecardWeekRows");
@@ -8405,8 +8402,8 @@ async function renderTimecardWeek() {
     row.className = "timecard-row";
     row.innerHTML = `
       <div class="timecard-row__day">${day}</div>
-      <label>In <span class="timecard-input-copy"><input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="in" value="${escapeTimecardAttribute(entry.in)}" placeholder="8:00 AM"><button class="copy-btn" type="button" data-timecard-copy-day="${day}" data-timecard-copy-field="in">Copy</button></span></label>
-      <label>Out <span class="timecard-input-copy"><input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="out" value="${escapeTimecardAttribute(entry.out)}" placeholder="4:30 PM"><button class="copy-btn" type="button" data-timecard-copy-day="${day}" data-timecard-copy-field="out">Copy</button></span></label>
+      <label>In <input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="in" value="${escapeTimecardAttribute(entry.in)}" placeholder="8:00 AM"></label>
+      <label>Out <input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="out" value="${escapeTimecardAttribute(entry.out)}" placeholder="4:30 PM"></label>
       <label class="timecard-note">Note <input type="text" data-timecard-day="${day}" data-timecard-field="notes" value="${escapeTimecardAttribute(entry.notes)}" placeholder="Optional"></label>
       <div class="timecard-row__hours">${hours.toFixed(2)} hrs</div>
     `;
@@ -8793,17 +8790,6 @@ async function setCurrentTimecardPunch(field) {
     await updateTimecardEntry(day, field, input.value || "");
   });
 
-  document.getElementById("timecardWeekRows")?.addEventListener("click", async event => {
-    const btn = event.target?.closest?.("button[data-timecard-copy-day][data-timecard-copy-field]");
-    if (!btn) return;
-    const week = await getTimecardWeek();
-    const day = btn.dataset.timecardCopyDay;
-    const field = btn.dataset.timecardCopyField;
-    await navigator.clipboard.writeText(formatTimecardCopy(field, week[day] || {}));
-    const original = btn.textContent;
-    btn.textContent = "Copied!";
-    setTimeout(() => { btn.textContent = original; }, 1200);
-  });
 
   document.getElementById("landingCrmNavigatorForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
