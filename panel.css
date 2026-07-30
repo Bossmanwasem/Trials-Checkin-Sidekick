@@ -2455,55 +2455,95 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
 .timecard-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin: 14px 0;
+  gap: 8px;
+  margin: 10px 0;
 }
 
 .timecard-actions .toggle-btn {
-  flex: 1 1 140px;
+  flex: 1 1 110px;
+  padding: 8px 10px;
 }
 
 .timecard-week {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 16px 0;
+  gap: 8px;
+  margin: 12px 0;
 }
 
 .timecard-row {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  padding: 12px;
+  grid-template-columns: minmax(76px, 0.8fr) minmax(92px, 1fr) minmax(140px, 1.45fr) minmax(92px, 1fr) minmax(140px, 1.45fr) minmax(80px, 0.8fr);
+  gap: 6px;
+  align-items: end;
+  padding: 8px;
   border: 1px solid var(--input-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--note-bg);
 }
 
 .timecard-row__day {
+  align-self: center;
   color: var(--header-color);
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .timecard-row label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   margin: 0;
+  font-size: 12px;
   font-weight: 600;
 }
 
-.timecard-row .copy-field {
+.timecard-row input {
+  padding: 7px 8px;
+}
+
+.timecard-copy-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+}
+
+.timecard-copy-pair .copy-field {
   width: 100%;
+  min-width: 0;
+}
+
+.timecard-copy-pair .copy-btn {
+  padding: 7px 8px;
+}
+
+.timecard-note {
+  display: none !important;
+}
+
+.timecard-row__hours {
+  align-self: center;
+  justify-self: end;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .timecard-summary {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   border: 1px solid var(--container-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 760px) {
+  .timecard-row {
+    grid-template-columns: 1fr;
+  }
+
+  .timecard-row__hours {
+    justify-self: start;
+  }
 }
