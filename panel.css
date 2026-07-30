@@ -2451,3 +2451,87 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
 .pre-prep-copy-cell .copy-field[readonly] {
   opacity: 0.82;
 }
+
+.timecard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.timecard-actions .toggle-btn {
+  flex: 1 1 110px;
+  padding: 8px 10px;
+}
+
+.timecard-week {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.timecard-row {
+  display: grid;
+  grid-template-columns: minmax(76px, 0.8fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(80px, 0.8fr);
+  gap: 6px;
+  align-items: end;
+  padding: 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  background: var(--note-bg);
+}
+
+.timecard-row__day {
+  align-self: center;
+  color: var(--header-color);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.timecard-row label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.timecard-row input {
+  padding: 7px 8px;
+}
+
+
+.timecard-note {
+  display: none !important;
+}
+
+.timecard-row__hours {
+  align-self: center;
+  justify-self: end;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.timecard-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--container-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 760px) {
+  .timecard-row {
+    grid-template-columns: 1fr;
+  }
+
+  .timecard-row__hours {
+    justify-self: start;
+  }
+}
