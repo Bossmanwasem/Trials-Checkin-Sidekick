@@ -2490,12 +2490,14 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
 }
 
 .timecard-row label {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
   margin: 0;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .timecard-row input {
@@ -2506,6 +2508,7 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 4px;
+  min-width: 0;
 }
 
 .timecard-input-copy .copy-btn {
