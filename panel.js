@@ -8405,16 +8405,8 @@ async function renderTimecardWeek() {
     row.className = "timecard-row";
     row.innerHTML = `
       <div class="timecard-row__day">${day}</div>
-      <label>In <input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="in" value="${escapeTimecardAttribute(entry.in)}" placeholder="8:00 AM"></label>
-      <div class="timecard-copy-pair">
-        <input class="copy-field" type="text" readonly value="${escapeTimecardAttribute(formatTimecardCopy("in", entry))}">
-        <button class="copy-btn" type="button" data-timecard-copy-day="${day}" data-timecard-copy-field="in">Copy</button>
-      </div>
-      <label>Out <input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="out" value="${escapeTimecardAttribute(entry.out)}" placeholder="4:30 PM"></label>
-      <div class="timecard-copy-pair">
-        <input class="copy-field" type="text" readonly value="${escapeTimecardAttribute(formatTimecardCopy("out", entry))}">
-        <button class="copy-btn" type="button" data-timecard-copy-day="${day}" data-timecard-copy-field="out">Copy</button>
-      </div>
+      <label>In <span class="timecard-input-copy"><input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="in" value="${escapeTimecardAttribute(entry.in)}" placeholder="8:00 AM"><button class="copy-btn" type="button" data-timecard-copy-day="${day}" data-timecard-copy-field="in">Copy</button></span></label>
+      <label>Out <span class="timecard-input-copy"><input type="text" inputmode="text" data-timecard-day="${day}" data-timecard-field="out" value="${escapeTimecardAttribute(entry.out)}" placeholder="4:30 PM"><button class="copy-btn" type="button" data-timecard-copy-day="${day}" data-timecard-copy-field="out">Copy</button></span></label>
       <label class="timecard-note">Note <input type="text" data-timecard-day="${day}" data-timecard-field="notes" value="${escapeTimecardAttribute(entry.notes)}" placeholder="Optional"></label>
       <div class="timecard-row__hours">${hours.toFixed(2)} hrs</div>
     `;
