@@ -4955,6 +4955,13 @@ function updateLandingVersion() {
   setText("landingVersion", version ? `Version ${version}` : "");
 }
 
+const DAILY_COUNTER_WEIGHTS = {
+  checkins: 0.7058,
+  preps: 1.6012,
+  qas: 0.6930,
+  custom: 1
+};
+
 function getDefaultDailyCounters() {
   return {
     checkins: 0,
@@ -4964,8 +4971,23 @@ function getDefaultDailyCounters() {
   };
 }
 
+function getDailyCounterWeight(key) {
+  return DAILY_COUNTER_WEIGHTS[key] ?? 1;
+}
+
 function getDailyCountersTotal(counters) {
-  return Object.values(counters || {}).reduce((total, value) => total + (Number(value) || 0), 0);
+  return Object.entries(counters || {}).reduce((total, [key, value]) => {
+    return total + ((Number(value) || 0) * getDailyCounterWeight(key));
+  }, 0);
+}
+
+function normalizeCounterTotal(total) {
+  const rounded = Number((Number(total) || 0).toFixed(4));
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+function formatCounterTotal(total) {
+  return String(normalizeCounterTotal(total));
 }
 
 function normalizeCustomCounterLabel(label) {
@@ -5176,7 +5198,7 @@ async function getWeeklyCounterTotal() {
 }
 
 async function setWeeklyCounterTotal(total) {
-  await setStoredValue(WEEKLY_COUNTER_STORAGE_KEY, Math.max(0, Number(total) || 0));
+  await setStoredValue(WEEKLY_COUNTER_STORAGE_KEY, normalizeCounterTotal(Math.max(0, Number(total) || 0)));
 }
 
 async function getDailyCounters() {
@@ -5199,7 +5221,7 @@ function updateDailyCounterDisplay(counters) {
 }
 
 function updateWeeklyCounterDisplay(total) {
-  setText("weeklyTotalCount", String(total ?? 0));
+  setText("weeklyTotalCount", formatCounterTotal(total ?? 0));
 }
 
 function applyCounterCollapseState({ toggleId, contentId }, collapsed) {
@@ -5284,7 +5306,7 @@ async function adjustWeeklyCounterByDelta(delta) {
     return await refreshWeeklyCounters();
   }
   const current = await getWeeklyCounterTotal();
-  const nextTotal = Math.max(0, current + delta);
+  const nextTotal = normalizeCounterTotal(Math.max(0, current + delta));
   await setWeeklyCounterTotal(nextTotal);
   updateWeeklyCounterDisplay(nextTotal);
   return nextTotal;
@@ -5298,7 +5320,7 @@ async function incrementDailyCounter(key) {
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
   const nextTotal = getDailyCountersTotal(updated);
-  await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
+  await adjustWeeklyCounterByDelta(normalizeCounterTotal(nextTotal - previousTotal));
   return updated;
 }
 
@@ -5311,7 +5333,7 @@ async function adjustDailyCounter(key, delta) {
   await setDailyCounters(updated);
   updateDailyCounterDisplay(updated);
   const nextTotal = getDailyCountersTotal(updated);
-  await adjustWeeklyCounterByDelta(nextTotal - previousTotal);
+  await adjustWeeklyCounterByDelta(normalizeCounterTotal(nextTotal - previousTotal));
   return updated;
 }
 
