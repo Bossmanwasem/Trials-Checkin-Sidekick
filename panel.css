@@ -359,6 +359,17 @@ body[data-theme^="customTheme-"] .container > * {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.weekly-average__input {
+  width: min(90px, 100%);
+  margin: 4px auto 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-color);
+  text-align: center;
+}
+
 .daily-counter__item {
   padding: clamp(5px, 2vw, 8px);
   border-radius: 10px;
