@@ -227,6 +227,12 @@
                 <button class="daily-counter__btn" type="button" data-weekly-delta="1" aria-label="Increase weekly total">+</button>
               </div>
             </div>
+            <div class="daily-counter__item weekly-average" id="weeklyAverageItem">
+              <label class="daily-counter__label" for="weeklyDaysWorkedInput">Days worked</label>
+              <input class="weekly-average__input" type="number" id="weeklyDaysWorkedInput" min="1" max="7" step="1" inputmode="numeric" />
+              <span class="daily-counter__label">Average/day</span>
+              <span class="daily-counter__value" id="weeklyAverageCount">0</span>
+            </div>
           </div>
         </div>
       </div>
@@ -353,6 +359,10 @@
           <input type="checkbox" id="settingsCrmCustomCssToggle" />
           Enable matching CRM page theme
         </label>
+        <label class="checkbox-row" for="settingsWeeklyAverageToggle">
+          <input type="checkbox" id="settingsWeeklyAverageToggle" />
+          Show weekly task average on the landing page
+        </label>
         <div class="settings-passcode-option">
           <label class="checkbox-row" for="settingsPrePrepToggle">
             <input type="checkbox" id="settingsPrePrepToggle" />
@@ -471,6 +481,12 @@
                   <div class="daily-counter__item">
                     <span class="daily-counter__label">Total</span>
                     <span class="daily-counter__value">12</span>
+                  </div>
+                  <div class="daily-counter__item weekly-average">
+                    <span class="daily-counter__label">Days worked</span>
+                    <span class="daily-counter__value">4</span>
+                    <span class="daily-counter__label">Average/day</span>
+                    <span class="daily-counter__value">3</span>
                   </div>
                 </div>
               </div>

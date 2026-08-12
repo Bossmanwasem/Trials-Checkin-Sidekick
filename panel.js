@@ -41,6 +41,8 @@ const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAILY_CUSTOM_COUNTER_LABEL_STORAGE_KEY = "ttmtDailyCustomCounterLabel";
 const DAILY_CUSTOM_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyCustomCounterEnabled";
 const WEEKLY_COUNTER_STORAGE_KEY = "ttmtWeeklyTaskCounterTotal";
+const WEEKLY_AVERAGE_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskAverageEnabled";
+const WEEKLY_AVERAGE_DAYS_STORAGE_KEY = "ttmtWeeklyTaskAverageDaysWorked";
 const TIMECARD_STORAGE_KEY = "ttmtTimecardSidekickWeek";
 const WEEKLY_COUNTER_ENABLED_STORAGE_KEY = "ttmtWeeklyTaskCounterEnabled";
 const DAILY_COUNTER_COLLAPSED_STORAGE_KEY = "ttmtDailyTaskCounterCollapsed";
@@ -4436,6 +4438,7 @@ initOutlookSetupFlow();
 initDailyCounterSetting();
 initLandingTooltipsSetting();
 initCrmCustomCssThemeSetting();
+initWeeklyAverageSetting();
 initPrePrepSidekickSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
@@ -5034,6 +5037,31 @@ async function setWeeklyCounterEnabled(enabled) {
   await setStoredValue(WEEKLY_COUNTER_ENABLED_STORAGE_KEY, Boolean(enabled));
 }
 
+async function getWeeklyAverageEnabled() {
+  const stored = await getStoredValue(WEEKLY_AVERAGE_ENABLED_STORAGE_KEY);
+  if (stored === null || typeof stored === "undefined") return false;
+  return Boolean(stored);
+}
+
+async function setWeeklyAverageEnabled(enabled) {
+  await setStoredValue(WEEKLY_AVERAGE_ENABLED_STORAGE_KEY, Boolean(enabled));
+}
+
+function normalizeWeeklyAverageDays(days) {
+  const parsed = Number.parseInt(days, 10);
+  if (Number.isNaN(parsed)) return 0;
+  return Math.min(7, Math.max(0, parsed));
+}
+
+async function getWeeklyAverageDaysWorked() {
+  const stored = await getStoredValue(WEEKLY_AVERAGE_DAYS_STORAGE_KEY);
+  return normalizeWeeklyAverageDays(stored);
+}
+
+async function setWeeklyAverageDaysWorked(days) {
+  await setStoredValue(WEEKLY_AVERAGE_DAYS_STORAGE_KEY, normalizeWeeklyAverageDays(days));
+}
+
 async function getLandingTooltipsEnabled() {
   const stored = await getStoredValue(LANDING_TOOLTIPS_ENABLED_STORAGE_KEY);
   if (stored === null || typeof stored === "undefined") return true;
@@ -5094,6 +5122,16 @@ async function initCrmCustomCssThemeSetting() {
   toggle.checked = await getCrmCustomCssThemeEnabled();
   toggle.addEventListener("change", async () => {
     await setCrmCustomCssThemeEnabled(Boolean(toggle.checked));
+  });
+}
+
+async function initWeeklyAverageSetting() {
+  const toggle = document.getElementById("settingsWeeklyAverageToggle");
+  if (!toggle) return;
+  toggle.checked = await getWeeklyAverageEnabled();
+  toggle.addEventListener("change", async () => {
+    await setWeeklyAverageEnabled(Boolean(toggle.checked));
+    await updateWeeklyAverageVisibility();
   });
 }
 
@@ -5220,8 +5258,19 @@ function updateDailyCounterDisplay(counters) {
   setText("dailyCustomCount", String(counters.custom ?? 0));
 }
 
+async function updateWeeklyAverageDisplay(total) {
+  const days = await getWeeklyAverageDaysWorked();
+  const input = document.getElementById("weeklyDaysWorkedInput");
+  if (input && document.activeElement !== input) {
+    input.value = days ? String(days) : "";
+  }
+  const average = days > 0 ? normalizeCounterTotal((Number(total) || 0) / days) : 0;
+  setText("weeklyAverageCount", formatCounterTotal(average));
+}
+
 function updateWeeklyCounterDisplay(total) {
   setText("weeklyTotalCount", formatCounterTotal(total ?? 0));
+  void updateWeeklyAverageDisplay(total ?? 0);
 }
 
 function applyCounterCollapseState({ toggleId, contentId }, collapsed) {
@@ -5291,12 +5340,25 @@ async function updateDailyCustomCounterSettings() {
   return enabled;
 }
 
+async function updateWeeklyAverageVisibility() {
+  const enabled = await getWeeklyAverageEnabled();
+  const item = document.getElementById("weeklyAverageItem");
+  if (item) item.style.display = enabled ? "" : "none";
+  if (enabled) {
+    await updateWeeklyAverageDisplay(await getWeeklyCounterTotal());
+  }
+  const toggle = document.getElementById("settingsWeeklyAverageToggle");
+  if (toggle) toggle.checked = enabled;
+  return enabled;
+}
+
 async function updateWeeklyCounterVisibility() {
   const enabled = await getWeeklyCounterEnabled();
   const section = document.getElementById("weeklyCounterSection");
   if (section) section.style.display = enabled ? "" : "none";
   if (enabled) {
     await refreshWeeklyCounters();
+    await updateWeeklyAverageVisibility();
   }
   return enabled;
 }
@@ -8567,6 +8629,12 @@ async function setCurrentTimecardPunch(field) {
       if (Number.isNaN(delta)) return;
       await adjustWeeklyCounterByDelta(delta);
     });
+  });
+
+  document.getElementById("weeklyDaysWorkedInput")?.addEventListener("input", async event => {
+    const days = normalizeWeeklyAverageDays(event.target.value);
+    await setWeeklyAverageDaysWorked(days);
+    await updateWeeklyAverageDisplay(await getWeeklyCounterTotal());
   });
 
   document.getElementById("gridSidekickBtn")?.addEventListener("click", async () => {
