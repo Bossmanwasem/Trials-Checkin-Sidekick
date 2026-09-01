@@ -7527,7 +7527,9 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
     lines.push("", crmLink);
   }
 
-  const to = "trials.us@smartboxaac.com,trialsoperations.us@smartboxaac.com";
+  const to = data?.mountNotFoundNote
+    ? "trials.us@smartboxaac.com,trialsoperations.us@smartboxaac.com"
+    : "trials.us@smartboxaac.com";
   const from = "trialsoperations.us@smartboxaac.com";
   return { subject, body: lines.join("\n"), to, from };
 }
