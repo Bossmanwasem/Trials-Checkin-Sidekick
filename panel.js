@@ -7410,6 +7410,7 @@ function collectCheckinFormDataForDaf() {
     clampMount: getFormValue('input[name="clampMount"]'),
     tableMount: getFormValue('input[name="tableMount"]'),
     rollingMount: getFormValue('input[name="rollingMount"]'),
+    mountNotFoundNote: buildMountNotFoundNote(),
     isLtlUpdate: isLtlUpdateFlow()
   };
 }
@@ -7518,11 +7519,15 @@ function buildOutlookEmailPayload(data, { crmLink = "" } = {}) {
     lines.push(`Rolling Mount: ${data.rollingMount}`);
   }
 
+  if (data?.mountNotFoundNote) {
+    lines.push("", data.mountNotFoundNote);
+  }
+
   if (crmLink) {
     lines.push("", crmLink);
   }
 
-  const to = "trials.us@smartboxaac.com";
+  const to = "trials.us@smartboxaac.com,trialsoperations.us@smartboxaac.com";
   const from = "trialsoperations.us@smartboxaac.com";
   return { subject, body: lines.join("\n"), to, from };
 }
