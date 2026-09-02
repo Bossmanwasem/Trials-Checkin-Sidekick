@@ -283,11 +283,22 @@
           </button>
         </div>
       </div>
+      <div class="landing-section" id="prePrepToolsSection" data-layout-item="prePrepTools" style="display:none;">
+        <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="pre-prep-tools" aria-expanded="false" data-tooltip="Secure folder for authorized Pre-Prep workflows.">
+          Pre-Prep Tools
+          <span class="landing-section__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="landing-section__content" data-collapsible-content="pre-prep-tools" hidden>
+          <button id="prePrepSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Build a pre-prep scan list with corrected device serials and internal serial fields.">
+            Pre-prep Sidekick
+          </button>
+          <button id="lockDownSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Submit a Lost Mode request note to a CRM record.">
+            Lock down Sidekick
+          </button>
+        </div>
+      </div>
       <button id="qaFormBtn" class="toggle-btn landing-btn" data-layout-item="qaForm" type="button" data-tooltip="Opens the QA form.">
         QA Form
-      </button>
-      <button id="prePrepSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Build a pre-prep scan list with corrected device serials and internal serial fields." style="display:none;">
-        Pre-prep Sidekick
       </button>
       <div class="landing-section" data-layout-item="trialsLinks">
         <button class="toggle-btn landing-btn landing-section__toggle" type="button" data-collapsible="trials-links" aria-expanded="false" data-tooltip="Folder of useful links like CRM Navigator, APP override codes, and KG request form.">
@@ -640,6 +651,23 @@
     </div>
   </div>
 
+
+  <!-- LOCK DOWN SIDEKICK VIEW -->
+  <div class="container lock-down-view" id="lockDownView" style="display:none;">
+    <h1>Lock down Sidekick</h1>
+    <p class="complete-intro">Enter the CRM link and device number to submit the Pre-Prep Lost Mode note.</p>
+    <form id="lockDownForm" class="lookup-form">
+      <label for="lockDownCrmLink">CRM link</label>
+      <input type="url" id="lockDownCrmLink" placeholder="https://portal.talktometechnologies.com/…" required />
+      <label for="lockDownDeviceNumber">Device number</label>
+      <input type="text" id="lockDownDeviceNumber" placeholder="Enter device number" required />
+      <button type="submit" id="lockDownSubmitBtn">Submit</button>
+      <div id="lockDownStatus" class="status-line" role="status" aria-live="polite"></div>
+    </form>
+    <div class="crm-nav-footer">
+      <button id="lockDownReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+  </div>
 
   <!-- PRE-PREP SIDEKICK VIEW -->
   <div class="container pre-prep-view" id="prePrepView" style="display:none;">
