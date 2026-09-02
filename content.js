@@ -329,6 +329,16 @@ function setDropdownByVisibleText(xpath, text) {
   return true;
 }
 
+function selectOptionByXPath(xpath) {
+  const option = getElementByXPath(xpath);
+  const select = option?.parentElement;
+  if (!option || option.tagName !== "OPTION" || !select || select.tagName !== "SELECT") return false;
+
+  select.value = option.value;
+  dispatchChangeEvents(select);
+  return select.value === option.value;
+}
+
 function clickByXPath(xpath) {
   const el = getElementByXPath(xpath);
   if (!el) return false;
@@ -530,6 +540,12 @@ if (runtime?.onMessage?.addListener) {
 
   if (msg.type === "SET_DROPDOWN_BY_TEXT") {
     const ok = setDropdownByVisibleText(msg.xpath, msg.text);
+    sendResponse({ ok });
+    return true;
+  }
+
+  if (msg.type === "SELECT_OPTION_BY_XPATH") {
+    const ok = selectOptionByXPath(msg.xpath);
     sendResponse({ ok });
     return true;
   }

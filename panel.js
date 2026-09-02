@@ -7,6 +7,7 @@ const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
 const NOTES_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpNotes"]/span';
+const LOCK_DOWN_NOTE_CATEGORY_OPTION_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]/option[60]';
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]/span';
 const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
 const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
@@ -9013,11 +9014,10 @@ async function setCurrentTimecardPunch(field) {
       await new Promise(resolve => setTimeout(resolve, 400));
       const setNote = await sendToCrmTab(tab.id, "SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
       if (!setNote.ok) throw new Error("The CRM note box could not be found.");
-      const setCategory = await sendToCrmTab(tab.id, "SET_DROPDOWN_BY_TEXT", {
-        xpath: NOTE_CATEGORY_XPATH,
-        text: "Device Updated"
+      const setCategory = await sendToCrmTab(tab.id, "SELECT_OPTION_BY_XPATH", {
+        xpath: LOCK_DOWN_NOTE_CATEGORY_OPTION_XPATH
       });
-      if (!setCategory.ok) throw new Error('The "Device Updated" note category could not be selected.');
+      if (!setCategory.ok) throw new Error('The "Trials Operations" note category could not be selected.');
       const submitted = await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
       if (!submitted.ok) throw new Error("The CRM note could not be submitted.");
 
