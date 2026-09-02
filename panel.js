@@ -6,6 +6,8 @@
 const NOTE_BOX_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_txtNote"]';
 const NOTE_CATEGORY_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]';
 const NOTE_SUBMIT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_btnAddNote"]';
+const NOTES_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpNotes"]/span';
+const LOCK_DOWN_NOTE_CATEGORY_OPTION_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpNotes_ddlEditNoteCategory"]/option[60]';
 const DOCUMENTS_TAB_XPATH = '//*[@id="__tab_ctl00_MainContent_Tabs_tpDocuments"]/span';
 const DOCUMENT_UPLOAD_INPUT_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_filUpload"]';
 const DOCUMENT_UPLOAD_BUTTON_XPATH = '//*[@id="ctl00_MainContent_Tabs_tpDocuments_btnUpload"]';
@@ -100,7 +102,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "timecardView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "lockDownView", "timecardView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -209,6 +211,7 @@ const LANDING_LAYOUT_ITEMS = [
   { id: "crmNavigator", label: "CRM navigator" },
   { id: "checkinTools", label: "Check-in tools button" },
   { id: "prepTools", label: "Prep tools button" },
+  { id: "prePrepTools", label: "Pre-Prep tools button" },
   { id: "qaForm", label: "QA form button" },
   { id: "trialsLinks", label: "Trials links button" },
   { id: "userSettings", label: "User settings button" }
@@ -482,6 +485,7 @@ function showThemeBuilderView() {
   refreshThemeBuilderFromActiveTheme();
 }
 function showPrePrepView() { showView("prePrepView"); }
+function showLockDownView() { showView("lockDownView"); }
 function showTimecardView() {
   showView("timecardView");
   void renderTimecardWeek();
@@ -5146,9 +5150,9 @@ async function setPrePrepSidekickEnabled(enabled) {
 }
 
 function applyPrePrepSidekickEnabled(enabled) {
-  const button = document.getElementById("prePrepSidekickBtn");
-  if (button) {
-    button.style.display = enabled ? "inline-flex" : "none";
+  const section = document.getElementById("prePrepToolsSection");
+  if (section) {
+    section.style.display = enabled ? "block" : "none";
   }
 }
 
@@ -7355,6 +7359,48 @@ async function sendToCrm(type, payload = {}) {
   return res || { ok: false };
 }
 
+function buildLockDownNote(deviceNumber, date = new Date()) {
+  const formattedDate = new Intl.DateTimeFormat("en-US", {
+    month: "2-digit", day: "2-digit", year: "2-digit"
+  }).format(date);
+  return `Pre Prep submitted the action to put the device (${deviceNumber}) into "Lost Mode" on *${formattedDate}*. We (Pre-Prep) will continue to check in on the device and update Director and Leads when it has gone from pending to complete this will happen as soon as said device is connected to WIFI. I have entered the following note to be displayed when Lost Mode has successfully gone through.\n\n"This device is durable medical equipment, property of Smartbox. If found, please contact 877-392-2299 ext.6 or trials.us@smartboxaac.com "`;
+}
+
+function normalizeCrmLink(value) {
+  try {
+    const url = new URL(`${value || ""}`.trim());
+    return isCrmUrl(url.href) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function waitForTabToLoad(tabId, timeoutMs = 15000) {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = success => {
+      if (settled) return;
+      settled = true;
+      chrome.tabs.onUpdated.removeListener(listener);
+      clearTimeout(timeout);
+      resolve(success);
+    };
+    const listener = (updatedTabId, changeInfo) => {
+      if (updatedTabId === tabId && changeInfo.status === "complete") finish(true);
+    };
+    const timeout = setTimeout(() => finish(false), timeoutMs);
+    chrome.tabs.onUpdated.addListener(listener);
+    chrome.tabs.get(tabId).then(tab => {
+      if (tab?.status === "complete") finish(true);
+    }).catch(() => finish(false));
+  });
+}
+
+async function sendToCrmTab(tabId, type, payload = {}) {
+  const response = await chrome.tabs.sendMessage(tabId, { type, ...payload }).catch(() => null);
+  return response || { ok: false };
+}
+
 async function uploadDocumentsToCrm(uploads) {
   if (!uploads?.length) return { ok: true };
   return sendToCrm("UPLOAD_CRM_DOCUMENTS", {
@@ -8767,6 +8813,16 @@ async function setCurrentTimecardPunch(field) {
     renderPrePrepRows();
   });
 
+  document.getElementById("lockDownSidekickBtn")?.addEventListener("click", async () => {
+    if (!(await getPrePrepSidekickEnabled())) {
+      alert("Enable Pre-prep Sidekick in user settings first.");
+      await refreshPrePrepSidekickEnabled();
+      return;
+    }
+    setText("lockDownStatus", "");
+    showLockDownView();
+  });
+
   document.getElementById("qaFormBtn")?.addEventListener("click", async () => {
     const result = await runQaFlowAction("OPEN_QA_FORM");
     if (result?.status === "error") {
@@ -8922,6 +8978,57 @@ async function setCurrentTimecardPunch(field) {
 
   document.getElementById("prePrepReturnBtn")?.addEventListener("click", () => {
     showLandingView();
+  });
+
+  document.getElementById("lockDownReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
+  });
+
+  document.getElementById("lockDownForm")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const crmLinkInput = document.getElementById("lockDownCrmLink");
+    const deviceInput = document.getElementById("lockDownDeviceNumber");
+    const submitButton = document.getElementById("lockDownSubmitBtn");
+    const crmLink = normalizeCrmLink(crmLinkInput?.value);
+    const deviceNumber = `${deviceInput?.value || ""}`.trim();
+
+    if (!crmLink) {
+      setText("lockDownStatus", "Enter a valid Talk To Me Technologies CRM link.");
+      return;
+    }
+    if (!deviceNumber) {
+      setText("lockDownStatus", "Enter a device number.");
+      return;
+    }
+
+    if (submitButton) submitButton.disabled = true;
+    setText("lockDownStatus", "Opening the CRM and submitting the Lost Mode note…");
+    try {
+      const tab = await chrome.tabs.create({ url: crmLink, active: true });
+      if (!tab?.id || !(await waitForTabToLoad(tab.id))) {
+        throw new Error("The CRM page did not finish loading.");
+      }
+
+      const note = buildLockDownNote(deviceNumber);
+      await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTES_TAB_XPATH });
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const setNote = await sendToCrmTab(tab.id, "SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
+      if (!setNote.ok) throw new Error("The CRM note box could not be found.");
+      const setCategory = await sendToCrmTab(tab.id, "SELECT_OPTION_BY_XPATH", {
+        xpath: LOCK_DOWN_NOTE_CATEGORY_OPTION_XPATH
+      });
+      if (!setCategory.ok) throw new Error('The "Trials Operations" note category could not be selected.');
+      const submitted = await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
+      if (!submitted.ok) throw new Error("The CRM note could not be submitted.");
+
+      if (crmLinkInput) crmLinkInput.value = "";
+      if (deviceInput) deviceInput.value = "";
+      setText("lockDownStatus", `Lost Mode note submitted for device ${deviceNumber}.`);
+    } catch (error) {
+      setText("lockDownStatus", error instanceof Error ? error.message : "Unable to submit the Lost Mode note.");
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
   });
 
   document.getElementById("appOverridesReturnBtn")?.addEventListener("click", () => {
