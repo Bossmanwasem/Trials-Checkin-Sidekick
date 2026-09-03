@@ -655,14 +655,14 @@
   <!-- LOCK DOWN SIDEKICK VIEW -->
   <div class="container lock-down-view" id="lockDownView" style="display:none;">
     <h1>Lock down Sidekick</h1>
-    <p class="complete-intro">Enter the CRM link and device number to submit the Pre-Prep Lost Mode note.</p>
-    <form id="lockDownForm" class="lookup-form">
-      <label for="lockDownCrmLink">CRM link</label>
-      <input type="url" id="lockDownCrmLink" placeholder="https://portal.talktometechnologies.com/…" required />
-      <label for="lockDownDeviceNumber">Device number</label>
-      <input type="text" id="lockDownDeviceNumber" placeholder="Enter device number" required />
-      <button type="submit" id="lockDownSubmitBtn">Submit</button>
-      <div id="lockDownStatus" class="status-line" role="status" aria-live="polite"></div>
+    <p class="complete-intro">Add each CRM link beside its device number. Every paired request is tracked separately while the Lost Mode notes are submitted.</p>
+    <form id="lockDownForm" class="lock-down-form" novalidate>
+      <div class="lock-down-list" id="lockDownList"></div>
+      <div class="lock-down-actions">
+        <button type="button" id="lockDownAddBtn" class="toggle-btn">+ Add another device</button>
+        <button type="submit" id="lockDownSubmitBtn">Submit all</button>
+      </div>
+      <div id="lockDownStatus" class="status-line lock-down-summary" role="status" aria-live="polite"></div>
     </form>
     <div class="crm-nav-footer">
       <button id="lockDownReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>

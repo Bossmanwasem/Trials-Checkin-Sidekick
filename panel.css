@@ -2335,7 +2335,7 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
 }
 
 .pre-prep-view .lookup-form,
-.lock-down-view .lookup-form {
+.lock-down-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px 8px;
@@ -2350,30 +2350,89 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
 .pre-prep-view .lookup-form label,
 .pre-prep-view .lookup-form .lookup-meta,
 .pre-prep-view .lookup-form .status-line,
-.lock-down-view .lookup-form label,
-.lock-down-view .lookup-form input,
-.lock-down-view .lookup-form .status-line {
+.lock-down-form > .status-line {
   grid-column: 1 / -1;
 }
 
 .pre-prep-view .lookup-form label,
-.lock-down-view .lookup-form label {
+.lock-down-form label {
   margin: 0;
   font-size: clamp(0.78rem, 2.4vw, 0.95rem);
 }
 
 .pre-prep-view .lookup-form input,
-.lock-down-view .lookup-form input {
+.lock-down-form input {
   min-width: 0;
   padding: clamp(6px, 1.8vw, 8px);
   font-size: clamp(0.78rem, 2.4vw, 0.95rem);
 }
 
 .pre-prep-view .lookup-form button,
-.lock-down-view .lookup-form button {
+.lock-down-form button {
   white-space: nowrap;
   padding: clamp(6px, 1.8vw, 8px) clamp(8px, 2.4vw, 12px);
   font-size: clamp(0.72rem, 2.2vw, 0.9rem);
+}
+
+.lock-down-list {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.lock-down-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 8px;
+  padding: 10px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--container-bg);
+}
+
+.lock-down-entry__heading {
+  margin: 0;
+  align-self: center;
+  font-size: clamp(0.82rem, 2.5vw, 1rem);
+}
+
+.lock-down-entry__remove {
+  align-self: center;
+}
+
+.lock-down-entry label,
+.lock-down-entry input,
+.lock-down-entry .status-line {
+  grid-column: 1 / -1;
+}
+
+.lock-down-entry .status-line {
+  min-height: 1.25em;
+  margin: 0;
+}
+
+.lock-down-entry[data-state="running"] {
+  border-color: var(--accent);
+}
+
+.lock-down-entry[data-state="success"] {
+  border-color: #2e8b57;
+}
+
+.lock-down-entry[data-state="error"] {
+  border-color: var(--error-color);
+}
+
+.lock-down-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.lock-down-summary {
+  min-height: 1.25em;
 }
 
 .pre-prep-view .lookup-meta {

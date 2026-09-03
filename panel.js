@@ -7366,6 +7366,81 @@ function buildLockDownNote(deviceNumber, date = new Date()) {
   return `Pre Prep submitted the action to put the device (${deviceNumber}) into "Lost Mode" on *${formattedDate}*. We (Pre-Prep) will continue to check in on the device and update Director and Leads when it has gone from pending to complete this will happen as soon as said device is connected to WIFI. I have entered the following note to be displayed when Lost Mode has successfully gone through.\n\n"This device is durable medical equipment, property of Smartbox. If found, please contact 877-392-2299 ext.6 or trials.us@smartboxaac.com "`;
 }
 
+let lockDownEntrySequence = 0;
+
+function renumberLockDownEntries() {
+  document.querySelectorAll("#lockDownList .lock-down-entry").forEach((entry, index) => {
+    const heading = entry.querySelector(".lock-down-entry__heading");
+    if (heading) heading.textContent = `Lock down ${index + 1}`;
+  });
+}
+
+function addLockDownEntry(values = {}) {
+  const list = document.getElementById("lockDownList");
+  if (!list) return null;
+
+  lockDownEntrySequence += 1;
+  const entryId = `lockDownEntry${lockDownEntrySequence}`;
+  const crmInputId = `${entryId}CrmLink`;
+  const deviceInputId = `${entryId}DeviceNumber`;
+  const entry = document.createElement("section");
+  entry.className = "lock-down-entry";
+  entry.dataset.state = "ready";
+  entry.innerHTML = `
+    <h2 class="lock-down-entry__heading"></h2>
+    <button type="button" class="toggle-btn lock-down-entry__remove" data-lock-down-remove>Remove</button>
+    <label for="${crmInputId}">CRM link</label>
+    <input type="url" id="${crmInputId}" data-lock-down-crm-link placeholder="https://portal.talktometechnologies.com/…" autocomplete="off" />
+    <label for="${deviceInputId}">Device number</label>
+    <input type="text" id="${deviceInputId}" data-lock-down-device-number placeholder="Enter device number" autocomplete="off" />
+    <div class="status-line" data-lock-down-entry-status role="status" aria-live="polite"></div>
+  `;
+  entry.querySelector("[data-lock-down-crm-link]").value = values.crmLink || "";
+  entry.querySelector("[data-lock-down-device-number]").value = values.deviceNumber || "";
+  list.appendChild(entry);
+  renumberLockDownEntries();
+  return entry;
+}
+
+function setLockDownEntryStatus(entry, message, state) {
+  entry.dataset.state = state;
+  const status = entry.querySelector("[data-lock-down-entry-status]");
+  if (status) status.textContent = message;
+}
+
+async function submitLockDownEntry(entry, request) {
+  setLockDownEntryStatus(entry, `Opening CRM for device ${request.deviceNumber}…`, "running");
+  try {
+    const tab = await chrome.tabs.create({ url: request.crmLink, active: false });
+    if (!tab?.id || !(await waitForTabToLoad(tab.id))) {
+      throw new Error("The CRM page did not finish loading.");
+    }
+
+    const note = buildLockDownNote(request.deviceNumber);
+    await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTES_TAB_XPATH });
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const setNote = await sendToCrmTab(tab.id, "SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
+    if (!setNote.ok) throw new Error("The CRM note box could not be found.");
+    const setCategory = await sendToCrmTab(tab.id, "SELECT_OPTION_BY_XPATH", {
+      xpath: LOCK_DOWN_NOTE_CATEGORY_OPTION_XPATH
+    });
+    if (!setCategory.ok) throw new Error('The "Trials Operations" note category could not be selected.');
+    const submitted = await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
+    if (!submitted.ok) throw new Error("The CRM note could not be submitted.");
+
+    entry.querySelectorAll("input").forEach(input => { input.disabled = true; });
+    setLockDownEntryStatus(entry, `Complete: Lost Mode note submitted for device ${request.deviceNumber}.`, "success");
+    return true;
+  } catch (error) {
+    setLockDownEntryStatus(
+      entry,
+      error instanceof Error ? error.message : "Unable to submit the Lost Mode note.",
+      "error"
+    );
+    return false;
+  }
+}
+
 function normalizeCrmLink(value) {
   try {
     const url = new URL(`${value || ""}`.trim());
@@ -8820,6 +8895,7 @@ async function setCurrentTimecardPunch(field) {
       return;
     }
     setText("lockDownStatus", "");
+    if (!document.querySelector("#lockDownList .lock-down-entry")) addLockDownEntry();
     showLockDownView();
   });
 
@@ -8984,51 +9060,59 @@ async function setCurrentTimecardPunch(field) {
     showLandingView();
   });
 
+  document.getElementById("lockDownAddBtn")?.addEventListener("click", () => {
+    const entry = addLockDownEntry();
+    entry?.querySelector("[data-lock-down-crm-link]")?.focus();
+  });
+
+  document.getElementById("lockDownList")?.addEventListener("click", event => {
+    const removeButton = event.target.closest("[data-lock-down-remove]");
+    if (!removeButton) return;
+    removeButton.closest(".lock-down-entry")?.remove();
+    if (!document.querySelector("#lockDownList .lock-down-entry")) addLockDownEntry();
+    renumberLockDownEntries();
+  });
+
   document.getElementById("lockDownForm")?.addEventListener("submit", async event => {
     event.preventDefault();
-    const crmLinkInput = document.getElementById("lockDownCrmLink");
-    const deviceInput = document.getElementById("lockDownDeviceNumber");
     const submitButton = document.getElementById("lockDownSubmitBtn");
-    const crmLink = normalizeCrmLink(crmLinkInput?.value);
-    const deviceNumber = `${deviceInput?.value || ""}`.trim();
+    const pendingEntries = [...document.querySelectorAll("#lockDownList .lock-down-entry")]
+      .filter(entry => entry.dataset.state !== "success");
+    const requests = [];
 
-    if (!crmLink) {
-      setText("lockDownStatus", "Enter a valid Talk To Me Technologies CRM link.");
-      return;
-    }
-    if (!deviceNumber) {
-      setText("lockDownStatus", "Enter a device number.");
+    pendingEntries.forEach(entry => {
+      const crmLink = normalizeCrmLink(entry.querySelector("[data-lock-down-crm-link]")?.value);
+      const deviceNumber = `${entry.querySelector("[data-lock-down-device-number]")?.value || ""}`.trim();
+      if (!crmLink || !deviceNumber) {
+        const message = !crmLink
+          ? "Enter a valid Talk To Me Technologies CRM link for this device."
+          : "Enter a device number for this CRM link.";
+        setLockDownEntryStatus(entry, message, "error");
+        return;
+      }
+      requests.push({ entry, crmLink, deviceNumber });
+    });
+
+    if (!requests.length) {
+      const message = pendingEntries.length
+        ? "Fix the highlighted request before submitting."
+        : "All listed lock downs have already been submitted. Add another device to continue.";
+      setText("lockDownStatus", message);
       return;
     }
 
     if (submitButton) submitButton.disabled = true;
-    setText("lockDownStatus", "Opening the CRM and submitting the Lost Mode note…");
-    try {
-      const tab = await chrome.tabs.create({ url: crmLink, active: true });
-      if (!tab?.id || !(await waitForTabToLoad(tab.id))) {
-        throw new Error("The CRM page did not finish loading.");
-      }
-
-      const note = buildLockDownNote(deviceNumber);
-      await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTES_TAB_XPATH });
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const setNote = await sendToCrmTab(tab.id, "SET_CRM_NOTE", { xpath: NOTE_BOX_XPATH, noteText: note });
-      if (!setNote.ok) throw new Error("The CRM note box could not be found.");
-      const setCategory = await sendToCrmTab(tab.id, "SELECT_OPTION_BY_XPATH", {
-        xpath: LOCK_DOWN_NOTE_CATEGORY_OPTION_XPATH
-      });
-      if (!setCategory.ok) throw new Error('The "Trials Operations" note category could not be selected.');
-      const submitted = await sendToCrmTab(tab.id, "CLICK_BY_XPATH", { xpath: NOTE_SUBMIT_XPATH });
-      if (!submitted.ok) throw new Error("The CRM note could not be submitted.");
-
-      if (crmLinkInput) crmLinkInput.value = "";
-      if (deviceInput) deviceInput.value = "";
-      setText("lockDownStatus", `Lost Mode note submitted for device ${deviceNumber}.`);
-    } catch (error) {
-      setText("lockDownStatus", error instanceof Error ? error.message : "Unable to submit the Lost Mode note.");
-    } finally {
-      if (submitButton) submitButton.disabled = false;
-    }
+    setText("lockDownStatus", `Submitting ${requests.length} lock down${requests.length === 1 ? "" : "s"}…`);
+    const results = await Promise.all(requests.map(({ entry, ...request }) => submitLockDownEntry(entry, request)));
+    const completed = results.filter(Boolean).length;
+    const failed = results.length - completed;
+    setText(
+      "lockDownStatus",
+      failed
+        ? `${completed} completed; ${failed} failed. Review each request below and submit again to retry failures.`
+        : `${completed} lock down${completed === 1 ? "" : "s"} completed successfully.`
+    );
+    if (submitButton) submitButton.disabled = false;
   });
 
   document.getElementById("appOverridesReturnBtn")?.addEventListener("click", () => {
