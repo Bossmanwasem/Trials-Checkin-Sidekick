@@ -2530,6 +2530,63 @@ body[data-theme="sciFiCommand"] .landing-settings-btn::after {
   opacity: 0.82;
 }
 
+.device-wiper-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.device-wiper-form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.device-wiper-results {
+  margin-top: 14px;
+}
+
+.device-wiper-results__list {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.device-wiper-results__list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, auto);
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--note-border);
+  border-radius: 8px;
+  background: var(--container-bg);
+}
+
+.device-wiper-results__device {
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.device-wiper-results__state {
+  color: var(--muted-text);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.device-wiper-results__list li[data-state="running"] {
+  border-color: var(--accent);
+}
+
+.device-wiper-results__list li[data-state="success"] .device-wiper-results__state {
+  color: #2e8b57;
+}
+
+.device-wiper-results__list li[data-state="error"] .device-wiper-results__state {
+  color: var(--error-color);
+}
+
 .timecard-actions {
   display: flex;
   flex-wrap: wrap;

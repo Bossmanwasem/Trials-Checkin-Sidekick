@@ -102,7 +102,7 @@ let smartboxRepairTabId = null;
 const DEFAULT_LANDING_LAYOUT_POSITIONS = {};
 
 /* ---------------- Helpers ---------------- */
-const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "lockDownView", "timecardView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
+const VIEW_IDS = ["welcomeView", "onboardingView", "outlookSetupView", "landingView", "settingsView", "themeBuilderView", "prePrepView", "lockDownView", "deviceWiperView", "timecardView", "deviceLookupView", "gridView", "prepTypeView", "prepSlCrmView", "prepView", "prepChecklistOrderView", "gridPadPrepView", "gridPadChecklistOrderView", "ageCalculatorView", "formView", "completeView", "ltlCompletionView", "smartboxRepairView", "inventoryView", "dafRecapView", "emailView", "appOverridesView", "qaCompleteView"];
 const MULTI_THEME_IDS = new Set([
   "coral",
   "lagoon",
@@ -486,6 +486,7 @@ function showThemeBuilderView() {
 }
 function showPrePrepView() { showView("prePrepView"); }
 function showLockDownView() { showView("lockDownView"); }
+function showDeviceWiperView() { showView("deviceWiperView"); }
 function showTimecardView() {
   showView("timecardView");
   void renderTimecardWeek();
@@ -6205,6 +6206,154 @@ function clearPrePrepRows() {
   setText("prePrepStatus", "Pre-prep list cleared.");
 }
 
+const ENTRA_DEVICES_URL = "https://entra.microsoft.com/#view/Microsoft_AAD_Devices/DevicesMenuBlade/~/Devices/menuId/Overview";
+const ENTRA_SEARCH_XPATH = '//*[@id="SearchBox4"]';
+
+function parseDeviceWiperNumbers(value) {
+  return [...new Set(String(value || "")
+    .split(/[\n,;]+/)
+    .map(number => number.trim())
+    .filter(Boolean))];
+}
+
+function renderDeviceWiperResults(numbers) {
+  const card = document.getElementById("deviceWiperResultsCard");
+  const list = document.getElementById("deviceWiperResults");
+  if (!card || !list) return;
+  card.hidden = !numbers.length;
+  list.innerHTML = "";
+  numbers.forEach(number => {
+    const item = document.createElement("li");
+    item.dataset.deviceNumber = number;
+    item.dataset.state = "pending";
+    const device = document.createElement("span");
+    device.className = "device-wiper-results__device";
+    device.textContent = number;
+    const state = document.createElement("span");
+    state.className = "device-wiper-results__state";
+    state.textContent = "Waiting";
+    item.append(device, state);
+    list.append(item);
+  });
+}
+
+function updateDeviceWiperResult(number, state, message) {
+  const item = Array.from(document.querySelectorAll("#deviceWiperResults li"))
+    .find(row => row.dataset.deviceNumber === number);
+  if (!item) return;
+  item.dataset.state = state;
+  const stateEl = item.querySelector(".device-wiper-results__state");
+  if (stateEl) stateEl.textContent = message;
+}
+
+async function findEntraDevicesTab() {
+  const tabs = await chrome.tabs.query({ url: "https://entra.microsoft.com/*" });
+  return tabs.find(tab => tab.url?.includes("Microsoft_AAD_Devices/DevicesMenuBlade")) || tabs[0] || null;
+}
+
+async function searchAndOpenEntraDevice(tabId, deviceNumber) {
+  const [{ result } = {}] = await chrome.scripting.executeScript({
+    target: { tabId },
+    args: [deviceNumber, ENTRA_SEARCH_XPATH],
+    func: async (targetNumber, searchXPath) => {
+      const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+      const normalize = value => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
+      const visible = element => {
+        if (!element) return false;
+        const style = getComputedStyle(element);
+        return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
+      };
+      const byXPath = xpath => document.evaluate(
+        xpath,
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      ).singleNodeValue;
+      const waitUntil = async (check, timeoutMs, errorMessage) => {
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < timeoutMs) {
+          const result = check();
+          if (result) return result;
+          await delay(200);
+        }
+        throw new Error(errorMessage);
+      };
+
+      const searchBox = await waitUntil(
+        () => byXPath(searchXPath),
+        15000,
+        "The Entra device search box was not found."
+      );
+      const input = searchBox.matches?.("input, textarea")
+        ? searchBox
+        : searchBox.querySelector?.("input, textarea");
+      if (!input) throw new Error("The Entra device search input was not found.");
+
+      input.focus();
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      if (setter) setter.call(input, targetNumber);
+      else input.value = targetNumber;
+      input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: targetNumber }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+
+      const wanted = normalize(targetNumber);
+      const exactTextElement = () => Array.from(document.querySelectorAll("a, [role='link'], [role='gridcell'], td, button"))
+        .filter(element => visible(element) && normalize(element.textContent) === wanted)
+        .find(element => !searchBox.contains(element));
+
+      const match = await waitUntil(
+        exactTextElement,
+        20000,
+        `No exact result appeared for ${targetNumber}.`
+      );
+      await delay(600);
+      const link = match.closest("a[href]") || match.querySelector?.("a[href]") || match.closest("[role='row']")?.querySelector("a[href]");
+      if (!link) throw new Error(`The exact result for ${targetNumber} could not be opened.`);
+
+      const previousTarget = link.getAttribute("target");
+      link.setAttribute("target", "_blank");
+      link.click();
+      if (previousTarget === null) link.removeAttribute("target");
+      else link.setAttribute("target", previousTarget);
+      return { opened: true };
+    }
+  });
+  return result;
+}
+
+async function runDeviceWiper(numbers) {
+  const submitButton = document.getElementById("deviceWiperSubmitBtn");
+  if (submitButton) submitButton.disabled = true;
+  renderDeviceWiperResults(numbers);
+  let opened = 0;
+
+  try {
+    const entraTab = await findEntraDevicesTab();
+    if (!entraTab?.id) {
+      setText("deviceWiperStatus", "Open the Microsoft Entra Devices overview in a tab, sign in, and submit again.");
+      chrome.tabs.create({ url: ENTRA_DEVICES_URL });
+      return;
+    }
+
+    await chrome.tabs.update(entraTab.id, { active: true });
+    for (const [index, number] of numbers.entries()) {
+      updateDeviceWiperResult(number, "running", "Searching…");
+      setText("deviceWiperStatus", `Searching ${number} (${index + 1} of ${numbers.length})…`);
+      try {
+        await searchAndOpenEntraDevice(entraTab.id, number);
+        opened += 1;
+        updateDeviceWiperResult(number, "success", "Opened");
+      } catch (error) {
+        updateDeviceWiperResult(number, "error", error?.message || "Not found");
+      }
+    }
+    setText("deviceWiperStatus", `Finished. Opened ${opened} of ${numbers.length} devices.`);
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+}
+
 function getSheetRows(workbook, sheetName) {
   if (!workbook?.sheets?.[sheetName]) return [];
   return workbook.sheets[sheetName];
@@ -8897,6 +9046,31 @@ async function setCurrentTimecardPunch(field) {
     setText("lockDownStatus", "");
     if (!document.querySelector("#lockDownList .lock-down-entry")) addLockDownEntry();
     showLockDownView();
+  });
+
+  document.getElementById("deviceWiperBtn")?.addEventListener("click", async () => {
+    if (!(await getPrePrepSidekickEnabled())) {
+      alert("Enable Pre-prep Sidekick in user settings first.");
+      await refreshPrePrepSidekickEnabled();
+      return;
+    }
+    setText("deviceWiperStatus", "");
+    showDeviceWiperView();
+  });
+
+  document.getElementById("deviceWiperForm")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const input = document.getElementById("deviceWiperInput");
+    const numbers = parseDeviceWiperNumbers(input?.value);
+    if (!numbers.length) {
+      setText("deviceWiperStatus", "Enter at least one internal device number.");
+      return;
+    }
+    await runDeviceWiper(numbers);
+  });
+
+  document.getElementById("deviceWiperReturnBtn")?.addEventListener("click", () => {
+    showLandingView();
   });
 
   document.getElementById("qaFormBtn")?.addEventListener("click", async () => {

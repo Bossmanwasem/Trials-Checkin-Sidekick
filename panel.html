@@ -295,6 +295,9 @@
           <button id="lockDownSidekickBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Submit a Lost Mode request note to a CRM record.">
             Lock down Sidekick
           </button>
+          <button id="deviceWiperBtn" class="toggle-btn landing-btn" type="button" data-tooltip="Search Microsoft Entra for a list of internal device numbers.">
+            Device Wiper
+          </button>
         </div>
       </div>
       <button id="qaFormBtn" class="toggle-btn landing-btn" data-layout-item="qaForm" type="button" data-tooltip="Opens the QA form.">
@@ -666,6 +669,26 @@
     </form>
     <div class="crm-nav-footer">
       <button id="lockDownReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
+    </div>
+  </div>
+
+  <!-- DEVICE WIPER VIEW -->
+  <div class="container device-wiper-view" id="deviceWiperView" style="display:none;">
+    <h1>Device Wiper</h1>
+    <p class="complete-intro">Enter one internal device number per line. Device Wiper will use your open Microsoft Entra Devices tab to search for each exact match.</p>
+    <form id="deviceWiperForm" class="device-wiper-form">
+      <label for="deviceWiperInput">Internal device numbers</label>
+      <textarea id="deviceWiperInput" rows="8" placeholder="Enter or paste one device number per line" required></textarea>
+      <p class="hint-text">Keep the Entra Devices overview open and signed in. Each matching device opens in its own tab.</p>
+      <button id="deviceWiperSubmitBtn" type="submit">Find devices</button>
+    </form>
+    <div id="deviceWiperStatus" class="status-line" role="status" aria-live="polite"></div>
+    <div class="note-preview device-wiper-results" id="deviceWiperResultsCard" hidden>
+      <div class="note-preview__title">Search progress</div>
+      <ol id="deviceWiperResults" class="device-wiper-results__list"></ol>
+    </div>
+    <div class="crm-nav-footer">
+      <button id="deviceWiperReturnBtn" class="toggle-btn" type="button">Return to CRM Sidekick</button>
     </div>
   </div>
 
