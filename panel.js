@@ -90,6 +90,7 @@ const DEVICE_LOOKUP_WORKBOOK_META_STORAGE_KEY = "ttmtDeviceLookupWorkbookMeta";
 const DEVICE_LOOKUP_HANDLE_KEY_PREFIX = "ttmtDeviceLookupWorkbook";
 const GRID_LOCK_CHANGES_STORAGE_KEY = "ttmtGridLockChanges";
 const PRE_PREP_SIDEKICK_ENABLED_STORAGE_KEY = "ttmtPrePrepSidekickEnabled";
+const DASHBOARD_INITIALS_STORAGE_KEY = "ttmtDashboardInitials";
 const PRE_PREP_SIDEKICK_PASSCODE = "@ppl3";
 const CRM_ORIGINS = [
   "https://portal.talktometechnologies.com",
@@ -4444,6 +4445,7 @@ initLandingTooltipsSetting();
 initCrmCustomCssThemeSetting();
 initWeeklyAverageSetting();
 initPrePrepSidekickSetting();
+initDashboardInitialsSetting();
 initCleanupFolderSetting();
 initLogFolderSetting();
 initTrialFilesFolderSetting();
@@ -5126,6 +5128,33 @@ async function initCrmCustomCssThemeSetting() {
   toggle.checked = await getCrmCustomCssThemeEnabled();
   toggle.addEventListener("change", async () => {
     await setCrmCustomCssThemeEnabled(Boolean(toggle.checked));
+  });
+}
+
+async function initDashboardInitialsSetting() {
+  const input = document.getElementById("settingsDashboardInitials");
+  const status = document.getElementById("settingsDashboardInitialsStatus");
+  if (!input) return;
+
+  input.value = String(await getStoredValue(DASHBOARD_INITIALS_STORAGE_KEY) || "");
+  const save = async () => {
+    const initials = input.value.trim().toUpperCase();
+    input.value = initials;
+    if (initials) {
+      await setStoredValue(DASHBOARD_INITIALS_STORAGE_KEY, initials);
+      if (status) status.textContent = "Dashboard initials saved. Keep Dashboard Queue open to receive prep alerts.";
+    } else {
+      await removeStoredValue(DASHBOARD_INITIALS_STORAGE_KEY);
+      if (status) status.textContent = "Enter your Dashboard initials to turn on prep alerts.";
+    }
+  };
+
+  input.addEventListener("change", save);
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      input.blur();
+    }
   });
 }
 

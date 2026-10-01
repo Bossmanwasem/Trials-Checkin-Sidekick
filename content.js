@@ -80,6 +80,8 @@ function resolveInputTarget(el) {
 }
 const UNSAFE_NAME_REGEX = /\s?(\*\d{5}|\*.*?\*|\(.*?\)|\b\d{5}\b|"[^"]*")/g;
 const DAF_DATA_STORAGE_KEY = "ttmtLastCheckinForDaf";
+const DASHBOARD_INITIALS_STORAGE_KEY = "ttmtDashboardInitials";
+const DASHBOARD_QUEUE_SOURCE_DOC = "7af0d2ad-3c23-44fc-ab7b-7441886cbf9b";
 const DAILY_COUNTER_STORAGE_KEY = "ttmtDailyTaskCounters";
 const DAILY_COUNTER_ENABLED_STORAGE_KEY = "ttmtDailyTaskCounterEnabled";
 const DAF_CONSULTANT_LISTBOX_XPATHS = [
@@ -516,6 +518,94 @@ async function runInventoryManageFlow(searchValue) {
   searchButton.click();
   return { ok: true, searchValue };
 }
+
+/* ---------------- Dashboard Queue prep notifications ---------------- */
+
+function isDashboardQueueWorkbook() {
+  if (window.location.hostname !== "smartboxassistivetnam.sharepoint.com") return false;
+  const sourceDoc = new URLSearchParams(window.location.search)
+    .get("sourcedoc")
+    ?.replace(/[{}]/g, "")
+    .toLowerCase();
+  return sourceDoc === DASHBOARD_QUEUE_SOURCE_DOC;
+}
+
+function getDashboardCellAddress(cell) {
+  const attributes = ["data-cell-address", "aria-label", "title", "id"];
+  for (const attribute of attributes) {
+    const value = cell.getAttribute(attribute) || "";
+    const match = value.match(/(?:^|[^A-Z0-9])\$?N\$?(\d+)(?:[^0-9]|$)/i);
+    if (match) return `N${match[1]}`;
+  }
+
+  const columnIndex = Number(cell.getAttribute("aria-colindex") || cell.getAttribute("data-col-index"));
+  const rowIndex = Number(cell.getAttribute("aria-rowindex") || cell.getAttribute("data-row-index"));
+  return columnIndex === 14 && rowIndex > 0 ? `N${rowIndex}` : "";
+}
+
+function readDashboardColumnNCells() {
+  const cells = document.querySelectorAll(
+    '[role="gridcell"], [data-cell-address], [aria-colindex="14"], [data-col-index="14"]'
+  );
+  const snapshot = new Map();
+  cells.forEach(cell => {
+    const address = getDashboardCellAddress(cell);
+    if (!address) return;
+    const value = (cell.innerText || cell.textContent || "").replace(/\s+/g, " ").trim().toUpperCase();
+    snapshot.set(address, value);
+  });
+  return snapshot;
+}
+
+function startDashboardPrepWatcher() {
+  if (!isDashboardQueueWorkbook() || !chrome?.storage?.local) return;
+
+  let initials = "";
+  let previousSnapshot = new Map();
+  let hasBaseline = false;
+  let scanTimer = null;
+
+  const loadInitials = () => {
+    chrome.storage.local.get(DASHBOARD_INITIALS_STORAGE_KEY, result => {
+      initials = String(result?.[DASHBOARD_INITIALS_STORAGE_KEY] || "").trim().toUpperCase();
+      previousSnapshot = readDashboardColumnNCells();
+      hasBaseline = true;
+    });
+  };
+
+  const scan = () => {
+    scanTimer = null;
+    const nextSnapshot = readDashboardColumnNCells();
+    if (hasBaseline && initials) {
+      for (const [address, oldValue] of previousSnapshot) {
+        if (oldValue === initials && nextSnapshot.has(address) && nextSnapshot.get(address) === "") {
+          chrome.runtime.sendMessage({ type: "DASHBOARD_PREP_ASSIGNED" }).catch(() => {});
+        }
+      }
+    }
+    previousSnapshot = nextSnapshot;
+    hasBaseline = true;
+  };
+
+  const scheduleScan = () => {
+    clearTimeout(scanTimer);
+    scanTimer = setTimeout(scan, 250);
+  };
+
+  loadInitials();
+  new MutationObserver(scheduleScan).observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["aria-label", "aria-rowindex", "aria-colindex", "data-cell-address"]
+  });
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && changes[DASHBOARD_INITIALS_STORAGE_KEY]) loadInitials();
+  });
+}
+
+startDashboardPrepWatcher();
 
 const runtime = typeof chrome !== "undefined" ? chrome.runtime : undefined;
 
