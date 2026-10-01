@@ -18,3 +18,21 @@ chrome.action.onClicked.addListener(async (tab) => {
 
   // IMPORTANT: do NOT call chrome.sidePanel.open() here
 });
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type !== "DASHBOARD_PREP_ASSIGNED") return false;
+
+  chrome.notifications.create({
+    type: "basic",
+    iconUrl: "assets/SB logo.png",
+    title: "CRM Sidekick",
+    message: "You've Been Assigned a Prep",
+    priority: 2
+  }).then(notificationId => {
+    sendResponse({ ok: true, notificationId });
+  }).catch(error => {
+    console.error("Unable to show prep assignment notification.", error);
+    sendResponse({ ok: false });
+  });
+  return true;
+});
